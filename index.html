@@ -1,0 +1,29 @@
+<style type="text/css">
+	.rectangle-slider{
+		position: relative;
+		width: 200px;
+		height: 200px;
+		background: gray;
+	}
+</style>
+<link rel="stylesheet" type="text/css" href="jquery.slide-area.css">
+
+<h1>jquery.slide-areas</h1>
+<p>Generic case dragging area</p>
+
+<div class="rectangle-slider area" data-restrict-movement="true" data-dimensions="2" data-pickers="3"></div>
+
+<output></output>
+
+<script src="js/zepto.js"></script>
+<script src="jquery.slide-area.js"></script>
+<script type="text/javascript">
+	$(function(){
+		$(".area").slideArea({
+			change: function(value){
+				//console.log(value);
+				$("output").val(value)
+			}
+		});
+	})
+</script>
