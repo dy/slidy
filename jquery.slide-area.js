@@ -144,7 +144,6 @@
 
 			//init drag state object
 			this.dragstate = {
-				event: null,
 				picker: this.pickers[0], //current picker to drag
 				pickerBox: {
 					top: 0,
@@ -154,7 +153,8 @@
 					top: this.element.offsetTop,
 					left: this.element.offsetLeft,
 					height: this.element.clientHeight,
-					width: this.element.clientWidth
+					width: this.element.clientWidth,
+					center: [this.element.width * .5, this.element.height * .5]
 				}
 			}
 
@@ -187,10 +187,11 @@
 		},
 
 		dragstart: function(e){
+			var o = this.options;
 			//init state — find closest picker
-			this.dragstate.event = e;
 			this.dragstate.pickerBox.left = e.pageX - this.dragstate.elementBox.left;
 			this.dragstate.pickerBox.top = e.pageY - this.dragstate.elementBox.top;
+
 			this.dragstate.picker = this._findClosestPicker(this.dragstate.pickerBox.left, this.dragstate.pickerBox.top);
 
 			this.updatePicker();
@@ -203,14 +204,14 @@
 		},
 
 		drag: function(e){
-			//NOTE: try not to find out picker offset throught style/etc, instead, update it’s coords based on event obtained
-			var difX = e.pageX - this.dragstate.event.pageX,
-				difY = e.pageY - this.dragstate.event.pageY;
+			var o = this.options;
 
-			//update state
-			this.dragstate.event = e;
-			this.dragstate.pickerBox.top += difY;
-			this.dragstate.pickerBox.left += difX;
+			//NOTE: try not to find out picker offset throught style/etc, instead, update it’s coords based on event obtained
+
+			if (o.restrictMovement){
+				this.dragstate.pickerBox.left = this.limit(e.pageX - this.dragstate.elementBox.left, 0, this.dragstate.elementBox.width);
+				this.dragstate.pickerBox.top = this.limit(e.pageY - this.dragstate.elementBox.top, 0, this.dragstate.elementBox.height);
+			}				
 
 			this.updatePicker();
 
@@ -224,6 +225,11 @@
 			.off("selectstart" + this.evSuffix)
 			.off("mouseup" + this.evSuffix)
 			.off("mouseleave" + this.evSuffix)
+		},
+
+		//max/min
+		limit: function(val, min, max){
+			return Math.max(min, Math.min(max, val));
 		},
 
 		//make picker corresond to the dragstate
@@ -261,13 +267,13 @@
 
 			//get normalized(not necessary) value
 			l = o.mappingFn.call(this, this.dragstate.pickerBox, this.dragstate.elementBox);
-
 			if ($.isArray(l)){
 				//multiple dimensions
 				var res = [];
-				for (var i = 0; i < l.lenght; i++){
+				for (var i = 0; i < l.length; i++){
 					res.push((o.transferFn[i] || o.transferFn).call(this, l[i]));
 				}
+				return res;
 			} else {
 				//apply transfer function
 				return o.transferFn.call(this, l);

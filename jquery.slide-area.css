@@ -1,5 +1,6 @@
 .slide-area{
 	position: relative;
+	cursor: default;
 }
 
 .slide-area-picker{
@@ -8,5 +9,7 @@
 	left: 0;
 	width: 20px;
 	height: 20px;
+	margin-top: -10px;
+	margin-left: -10px;
 	background: black;
 }
