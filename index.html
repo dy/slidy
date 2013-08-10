@@ -1,6 +1,8 @@
 <style type="text/css">
 	.area{
-		margin-left: 50%;
+		margin-left: 20px;
+		vertical-align: top;
+		display: inline-block;
 	}
 	.rectangle-slider{
 		position: relative;
@@ -40,7 +42,7 @@
 		$("#multi-2d-slider").slideArea({
 			change: function(value, picker){
 				//$("#output-1").val(value)
-				picker.innerHTML = value;
+				picker.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
 			}
 		});
 

@@ -4,6 +4,7 @@
 		$body = $(window.document.body);
 
 	var pluginName = "slideArea",
+		className = "slide-area",
 		cssPrefix = detectCSSPrefix();
 
 	//Main plugin class
@@ -115,7 +116,7 @@
 
 			//treat element
 			this.$element = $(this.element);
-			this.$element.addClass(pluginName);
+			this.$element.addClass(className);
 
 			//setup fns
 			if (o.dimensions == 2){
@@ -216,8 +217,8 @@
 				this.dragstate.pickerBox.top = e.pageY - this.dragstate.elementBox.top;
 			} else {
 				//ctrl+click continues sniper-mode picking, not repositioning picker
-				this.dragstate.pickerBox.left = this.dragstate.picker.left
-				this.dragstate.pickerBox.top = this.dragstate.picker.top
+				this.dragstate.pickerBox.left = this.dragstate.pickerBox.left
+				this.dragstate.pickerBox.top = this.dragstate.pickerBox.top
 			}
 
 			this.updatePicker();
@@ -236,7 +237,9 @@
 				//difX = (e.pageX - this.dragstate.elementBox.left) - this.dragstate.pickerBox.left,
 				//difY = (e.pageY - this.dragstate.elementBox.top) - this.dragstate.pickerBox.top; //absolute coords method
 				difX = e.pageX - this.dragstate.pointer.x,
-				difY = e.pageY - this.dragstate.pointer.y
+				difY = e.pageY - this.dragstate.pointer.y,
+				x = e.pageX - this.dragstate.elementBox.left, //container offset
+				y = e.pageY - this.dragstate.elementBox.top
 			
 			//slow down in ctrl mode
 			if (isCtrl) {
@@ -245,33 +248,60 @@
 			}
 
 			this.dragstate.pointer.x = e.pageX;
-			this.dragstate.pointer.y = e.pageY;
-
-			this.dragstate.pickerBox.left += difX;
-			this.dragstate.pickerBox.top += difY;
+			this.dragstate.pointer.y = e.pageY;			
 
 			if (o.repeat){
-				//TODO: this is faily
+				this.dragstate.pickerBox.left += difX;
+				this.dragstate.pickerBox.top += difY;
 				this.dragstate.pickerBox.left = this.dragstate.pickerBox.left % this.dragstate.elementBox.width;
 				this.dragstate.pickerBox.top = this.dragstate.pickerBox.top % this.dragstate.elementBox.height;
 				this.dragstate.pickerBox.left += (this.dragstate.pickerBox.left < 0 ? this.dragstate.elementBox.width : 0)
 				this.dragstate.pickerBox.top += (this.dragstate.pickerBox.top < 0 ? this.dragstate.elementBox.height : 0)
 			} else if (o.restrict){
-				this.dragstate.pickerBox.left = this.limit(this.dragstate.pickerBox.left, 0, this.dragstate.elementBox.width);
-				this.dragstate.pickerBox.top = this.limit(this.dragstate.pickerBox.top, 0, this.dragstate.elementBox.height);
-			}	
+				//test bounds
+				if (x <= 0){
+					this.dragstate.pickerBox.left = 0;
+				} else if (x >= this.dragstate.elementBox.width){
+					this.dragstate.pickerBox.left = this.dragstate.elementBox.width;				
+				} else {
+					this.dragstate.pickerBox.left += difX;
+					this.dragstate.pickerBox.left = this.limit(this.dragstate.pickerBox.left, 0, this.dragstate.elementBox.width);
+				}
+				if (y <= 0){
+					this.dragstate.pickerBox.top = 0;
+				} else if (y >= this.dragstate.elementBox.height){
+					this.dragstate.pickerBox.top = this.dragstate.elementBox.height;				
+				} else {
+					this.dragstate.pickerBox.top += difY;
+					this.dragstate.pickerBox.top = this.limit(this.dragstate.pickerBox.top, 0, this.dragstate.elementBox.height);
+				}
+
+			}
 
 			this.updatePicker();
-
-			this._trigger("change", this._calcValue(), this.dragstate.picker, this.dragstate.element);
 		},
 
 		_dragstop: function(e){
+			//save picker data
+			this.dragstate.picker.top = this.dragstate.pickerBox.top
+			this.dragstate.picker.left = this.dragstate.pickerBox.left;
+
 			//unbind events
 			$doc.off("mousemove" + this.evSuffix)
 			.off("selectstart" + this.evSuffix)
 			.off("mouseup" + this.evSuffix)
 			.off("mouseleave" + this.evSuffix)
+		},
+
+		//checks whether picker inside of container
+		_isInside: function(x, y, container){
+			if (x >= 0 && 
+				x <= container.width &&
+				y >= 0 &&
+				y <= container.height){
+				return true;
+			}
+			return false;
 		},
 
 		//max/min
@@ -284,7 +314,7 @@
 			var o = this.options,
 				left = this.dragstate.pickerBox.left,
 				top = this.dragstate.pickerBox.top,
-				str = "translate3d("
+				str = "translate3d(";
 
 			//restrict horizontal movement
 			if (o.dimensions == 1){
@@ -304,9 +334,7 @@
 			
 			this.dragstate.picker.style[cssPrefix + "transform"] = str;
 
-			//simple picker model update
-			this.dragstate.picker.top = top;
-			this.dragstate.picker.left = left;
+			this._trigger("change", this._calcValue(), this.dragstate.picker, this.dragstate.element);
 		},
 
 		//get picker closest to the passed coords
