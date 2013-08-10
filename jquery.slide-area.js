@@ -35,6 +35,7 @@
 			decart2d: function(picker, container){
 				var l = 0, o = this.options;
 
+				//TODO: think how to set directions
 				l = [picker.left / container.width, picker.top / container.height];
 
 				return l;
@@ -78,42 +79,35 @@
 
 	P.prototype = {
 		options: {
-			dimensions: 1,
-			pickers: 1,
+			pickers: 1, //could be custom pickers passed, each with it’s own settings
 
-			//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier
-			direction: "right", //keywords or degrees
-			//TODO: replace direction by custom function
-
-			mappingFn: P.mappingFn.decart1d,
+			//picker-specific options
+			dimensions: 1, //how much values picker will get
+			direction: "right", //keywords or degrees //TODO: replace direction with custom function
+			mappingFn: P.mappingFn.decart1d, //x,y → normalized l (or [l1, l2])
 			transferFn: P.transferFn.linear, ///can pass array of functions for each coordinate
-
 			step: 10,
 			min: 0,
 			max: 100,
-			snap: false,
-			readonly: false,
-			pickersNumber: 1,
-			infinite: true, //whether to rotate infinity or cycle h/v scroll
-			grid: true, //or array of grid coordinates
+			snap: false, //snap value to the grid
 			rigidSnap: false, //whether to snap straightforward or smoother drop effect
-			restrictMovement: true, //whether to restrict picker moving area
+			restrict: true, //whether to restrict picker moving area
+			grid: false, //or array of grid coords to snap
+			repeat: false, //whether to rotate infinity or cycle h/v scroll
 
-			//inverted: false, //whether to drag plot insteadof picker //TODO: replace with very huge thumb
-
-			evSuffix: pluginName,
-
-			//external hooks
+			//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier			
+			readonly: false, //no events
+			sniperSpeed: .25, //sniper key slowing down amt
 
 			//callbacks
 			create: null,
 			dragstart: null,
 			drag: null,
-			dragstop: null,
+			_dragstop: null,
 			destroy: null,
-			change: null
-
+			change: null //picker callback
 		},
+
 		_create: function(opts){
 			this.options = $.extend({}, this.options);
 			$.extend(this.options, opts);
@@ -132,18 +126,39 @@
 			
 			//create picker(s)
 			this.pickers = [];
-			for (var i = 0; i < o.pickers; i++){
-				var picker = document.createElement("div")
-				picker.className = "slide-area-picker";
-				picker.id = "picker-" + i;
-				picker.top = 0; //quite bad, but let it bee: used to calc closest picker
-				picker.left = 0;
-				this.element.appendChild(picker);
-				this.pickers.push(picker);
+			if (!$.isArray(o.pickers)){
+				//if passed just number of pickers - they all the same, based on options
+				for (var i = 0; i < o.pickers; i++){
+					var picker = document.createElement("div")
+					picker.className = "slide-area-picker";
+					picker.id = "picker-" + i;
+
+					picker.top = 0; //quite bad to write props right to the element, but let it bee: used to calc closest picker
+					picker.left = 0;
+
+
+					this.element.appendChild(picker);
+					this.pickers.push(picker);
+				}
+			} else {
+				//custom pickers passed
+				for (var i = 0; i < o.pickers.length; i++){
+					var picker = document.createElement("div"),
+						po = o.pickers[i];
+					picker.className = "slide-area-picker";
+					picker.id = "picker-" + po.id || i;
+
+					picker.top = 0; //quite bad, but let it bee: used to calc closest picker
+					picker.left = 0;
+
+					this.element.appendChild(picker);
+					this.pickers.push(picker);
+				}
 			}
 
 			//init drag state object
 			this.dragstate = {
+				pointer: {x:0,y:0},
 				picker: this.pickers[0], //current picker to drag
 				pickerBox: {
 					top: 0,
@@ -177,49 +192,81 @@
 				console.log("flat:" + e.y)
 				console.log("scrollTop:" + $wnd.scrollTop())
 			})*/
-			this.$element.on("mousedown", this.dragstart.bind(this));
+			this.$element.on("mousedown", this._dragstart.bind(this));
 		},
 
 		//simple trigger routine
-		_trigger: function(evtName, arg1, arg2, arg3){			
+		_trigger: function(evtName, arg1, arg2, arg3){
 			if (this.options[evtName]) this.options[evtName].call(this.$element, arg1, arg2, arg3); 
 			this.$element.trigger(evtName, [arg1, arg2, arg3])
 		},
 
-		dragstart: function(e){
-			var o = this.options;
+		_dragstart: function(e){
+			var o = this.options,
+				isCtrl = e.ctrlKey;
 			//init state — find closest picker
-			this.dragstate.pickerBox.left = e.pageX - this.dragstate.elementBox.left;
-			this.dragstate.pickerBox.top = e.pageY - this.dragstate.elementBox.top;
+			this.dragstate.pointer.x = e.pageX;
+			this.dragstate.pointer.y = e.pageY;
 
-			this.dragstate.picker = this._findClosestPicker(this.dragstate.pickerBox.left, this.dragstate.pickerBox.top);
+			this.dragstate.picker = this._findClosestPicker(e.pageX - this.dragstate.elementBox.left, e.pageY - this.dragstate.elementBox.top);
+
+			if (!isCtrl) {
+				//normal click leads to leap of picker to the place of lcick
+				this.dragstate.pickerBox.left = e.pageX - this.dragstate.elementBox.left;
+				this.dragstate.pickerBox.top = e.pageY - this.dragstate.elementBox.top;
+			} else {
+				//ctrl+click continues sniper-mode picking, not repositioning picker
+				this.dragstate.pickerBox.left = this.dragstate.picker.left
+				this.dragstate.pickerBox.top = this.dragstate.picker.top
+			}
 
 			this.updatePicker();
 
 			//bind moving
 			$doc.on("selectstart" + this.evSuffix, function(){return false})
-			.on("mousemove" + this.evSuffix, this.drag.bind(this))
-			.on("mouseup" + this.evSuffix, this.dragstop.bind(this))
-			.on("mouseleave" + this.evSuffix, this.dragstop.bind(this))
+			.on("mousemove" + this.evSuffix, this._drag.bind(this))
+			.on("mouseup" + this.evSuffix, this._dragstop.bind(this))
+			.on("mouseleave" + this.evSuffix, this._dragstop.bind(this))
 		},
 
-		drag: function(e){
-			var o = this.options;
+		_drag: function(e){
+			//NOTE: try not to find out picker offset throught style/etc, instead, update it’s coords based on event obtained			
+			var o = this.options,
+				isCtrl = e.ctrlKey,
+				//difX = (e.pageX - this.dragstate.elementBox.left) - this.dragstate.pickerBox.left,
+				//difY = (e.pageY - this.dragstate.elementBox.top) - this.dragstate.pickerBox.top; //absolute coords method
+				difX = e.pageX - this.dragstate.pointer.x,
+				difY = e.pageY - this.dragstate.pointer.y
+			
+			//slow down in ctrl mode
+			if (isCtrl) {
+				difX *= o.sniperSpeed;
+				difY *= o.sniperSpeed;
+			}
 
-			//NOTE: try not to find out picker offset throught style/etc, instead, update it’s coords based on event obtained
+			this.dragstate.pointer.x = e.pageX;
+			this.dragstate.pointer.y = e.pageY;
 
-			if (o.restrictMovement){
-				this.dragstate.pickerBox.left = this.limit(e.pageX - this.dragstate.elementBox.left, 0, this.dragstate.elementBox.width);
-				this.dragstate.pickerBox.top = this.limit(e.pageY - this.dragstate.elementBox.top, 0, this.dragstate.elementBox.height);
-			}				
+			this.dragstate.pickerBox.left += difX;
+			this.dragstate.pickerBox.top += difY;
+
+			if (o.repeat){
+				//TODO: this is faily
+				this.dragstate.pickerBox.left = this.dragstate.pickerBox.left % this.dragstate.elementBox.width;
+				this.dragstate.pickerBox.top = this.dragstate.pickerBox.top % this.dragstate.elementBox.height;
+				this.dragstate.pickerBox.left += (this.dragstate.pickerBox.left < 0 ? this.dragstate.elementBox.width : 0)
+				this.dragstate.pickerBox.top += (this.dragstate.pickerBox.top < 0 ? this.dragstate.elementBox.height : 0)
+			} else if (o.restrict){
+				this.dragstate.pickerBox.left = this.limit(this.dragstate.pickerBox.left, 0, this.dragstate.elementBox.width);
+				this.dragstate.pickerBox.top = this.limit(this.dragstate.pickerBox.top, 0, this.dragstate.elementBox.height);
+			}	
 
 			this.updatePicker();
 
-			this._trigger("change", this._calcValue());
+			this._trigger("change", this._calcValue(), this.dragstate.picker, this.dragstate.element);
 		},
 
-		dragstop: function(e){
-
+		_dragstop: function(e){
 			//unbind events
 			$doc.off("mousemove" + this.evSuffix)
 			.off("selectstart" + this.evSuffix)
@@ -237,9 +284,27 @@
 			var o = this.options,
 				left = this.dragstate.pickerBox.left,
 				top = this.dragstate.pickerBox.top,
-				str = "translate3d(" + left + "px," + top + "px,0)";
+				str = "translate3d("
+
+			//restrict horizontal movement
+			if (o.dimensions == 1){
+				switch (o.direction){
+					case "top":
+					case "bottom":
+						left = this.dragstate.elementBox.width * .5;
+						break;
+					case "left":
+					case "right":
+						top = this.dragstate.elementBox.height * .5;
+						break;
+				}
+			}
+			
+			str += left + "px," + top + "px,0)";				 
 			
 			this.dragstate.picker.style[cssPrefix + "transform"] = str;
+
+			//simple picker model update
 			this.dragstate.picker.top = top;
 			this.dragstate.picker.left = left;
 		},
@@ -278,6 +343,20 @@
 				//apply transfer function
 				return o.transferFn.call(this, l);
 			}
+		},
+
+
+		//API methods
+		setValue: function(value){
+			throw "unimplemented"
+		},
+
+		getValue: function(){
+			return this._calcValue();
+		},
+
+		val: function(){
+			throw "unimplemented"
 		}
 	}
 

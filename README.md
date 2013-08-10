@@ -24,4 +24,8 @@ Generalization of dragging areas, like in color-picker plots etc. Moved out to t
 ##Use
 Make element `<div class="slide-area" data-min="100" data-max="500"></div>` and use exactly as input type="range".
 
-* Bind to `change` event or callback: change(event, value1[, value2]){ … }
+* Bind to `change` event or callback: change(value){ … }
+
+* Pass options as data-attribs
+
+* Pass custom pickers

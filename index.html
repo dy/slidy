@@ -1,9 +1,22 @@
 <style type="text/css">
+	.area{
+		margin-left: 50%;
+	}
 	.rectangle-slider{
 		position: relative;
 		width: 200px;
 		height: 200px;
 		background: gray;
+	}
+
+	.linear-slider{
+		width: 200px;
+		height: 40px;
+		position: relative;
+		background: -webkit-linear-gradient(left, red 0%, yellow 16.6%, green 33%, cyan 50%, blue 66.6%, magenta 83.3%, red 100%);
+		background: -moz-linear-gradient(left, red 0%, yellow 16.6%, green 33%, cyan 50%, blue 66.6%, magenta 83.3%, red 100%);
+		background: -o-linear-gradient(left, red 0%, yellow 16.6%, green 33%, cyan 50%, blue 66.6%, magenta 83.3%, red 100%);
+		background: linear-gradient(left, red 0%, yellow 16.6%, green 33%, cyan 50%, blue 66.6%, magenta 83.3%, red 100%);
 	}
 </style>
 <link rel="stylesheet" type="text/css" href="jquery.slide-area.css">
@@ -11,17 +24,31 @@
 <h1>jquery.slide-areas</h1>
 <p>Generic case dragging area</p>
 
-<div class="rectangle-slider area" data-restrict-movement="true" data-dimensions="2" data-pickers="3"></div>
+<div class="rectangle-slider area" id="multi-2d-slider" data-dimensions="2" data-pickers="3"></div>
+<output id="output-1"></output>
 
-<output></output>
+<div class="linear-slider area" id="linear-strict-slider" data-min="0" data-max="360" data-repeat></div>
+<output id="output-2"></output>
+
+<div class="rectangle-slider area" id="multi-2d-slider" data-dimensions="2" data-pickers="3"></div>
+<output id="output-3"></output>
 
 <script src="js/zepto.js"></script>
 <script src="jquery.slide-area.js"></script>
 <script type="text/javascript">
 	$(function(){
-		$(".area").slideArea({
-			change: function(value){
-				$("output").val(value)
+		$("#multi-2d-slider").slideArea({
+			change: function(value, picker){
+				//$("#output-1").val(value)
+				picker.innerHTML = value;
+			}
+		});
+
+		$("#linear-strict-slider").slideArea({
+			change: function(value, picker){
+				//$("#output-2").val(value)
+				picker.innerHTML = value.toFixed(2);
+				picker.style.background = "hsl(" + value + ", 100%, 50%)";
 			}
 		});
 	})
