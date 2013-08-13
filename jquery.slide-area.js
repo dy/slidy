@@ -35,6 +35,7 @@
 			//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier			
 			readonly: false, //no events
 			sniperSpeed: .25, //sniper key slowing down amt
+			html5drag: true,
 
 			evSuffix: pluginName,
 			//callbacks
@@ -75,6 +76,8 @@
 				y:0,
 				difX: 0,
 				difY: 0,
+				pageX: 0,
+				pageY: 0,
 				picker: this.pickers[0] //current picker to drag				
 			}
 
@@ -112,7 +115,9 @@
 			this.dragstate.y = e.pageY - this.top,
 			this.dragstate.difX = 0;
 			this.dragstate.difY = 0;
-			this.dragstate.isCtrl = e.ctrlKey;
+			this.dragstate.isCtrl = e.ctrlKey
+			this.dragstate.pageX = e.pageX; 
+			this.dragstate.pageY = e.pageY;
 			this.dragstate.picker = this._findClosestPicker(this.dragstate.x, this.dragstate.y);
 			
 			this.dragstate.picker.dragstart(this.dragstate);
@@ -129,10 +134,16 @@
 			var o = this.options;
 
 			this.dragstate.isCtrl = e.ctrlKey;
-			this.dragstate.difX = e.pageX - this.left - this.dragstate.x;
-			this.dragstate.difY = e.pageY - this.top - this.dragstate.y;
-			this.dragstate.x = e.pageX - this.left;
-			this.dragstate.y = e.pageY - this.top;
+			this.dragstate.difX = e.pageX - this.dragstate.pageX;
+			this.dragstate.difY = e.pageY - this.dragstate.pageY;
+			if (e.ctrlKey) {
+				this.dragstate.difX *= o.sniperSpeed;
+				this.dragstate.difY *= o.sniperSpeed;
+			}
+			this.dragstate.x += this.dragstate.difX;
+			this.dragstate.y += this.dragstate.difY;
+			this.dragstate.pageX = e.pageX; 
+			this.dragstate.pageY = e.pageY; 
 			
 			this.dragstate.picker.drag(this.dragstate);
 		},
