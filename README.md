@@ -21,6 +21,11 @@ Generalization of dragging areas, like in color-picker plots etc. Moved out to t
 
 * Callbacks ins tyle of jquery UI: cb(event, data);
 
+* It’s bad idea to pass options to the instance. This will mess runtime object scope (tech objects) with options (mode, settings)
+
+* Try not to pass sercret function context to any functions, pass all needed variables right to the args.
+	
+
 ##Use
 Make element `<div class="slide-area" data-min="100" data-max="500"></div>` and use exactly as input type="range".
 

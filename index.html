@@ -42,15 +42,15 @@
 		$("#multi-2d-slider").slideArea({
 			change: function(value, picker){
 				//$("#output-1").val(value)
-				picker.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
+				picker.element.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
 			}
 		});
 
 		$("#linear-strict-slider").slideArea({
 			change: function(value, picker){
 				//$("#output-2").val(value)
-				picker.innerHTML = value.toFixed(2);
-				picker.style.background = "hsl(" + value + ", 100%, 50%)";
+				picker.element.innerHTML = value.toFixed(2);
+				picker.element.style.background = "hsl(" + value + ", 100%, 50%)";
 			}
 		});
 	})

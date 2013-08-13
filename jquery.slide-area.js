@@ -8,85 +8,21 @@
 		cssPrefix = detectCSSPrefix();
 
 	//Main plugin class
-	function P(el, opts){
+	function Area(el, opts){
 		this.element = el;
 		this._create(opts)
 	}
 
-	$.extend(P, {
-		//Transforms normalized value of length to the real value. Same goal as transfer fn.
-		//NOTE: supposed that multiple pickers are independent of each other, so we don’t need to pass an array of pickers.
-		//NOTE: supposed that multiple dimensions are independent of each other, so you can safely describe one-dimension case
-		//NOTE: supposed that l is normalized coordinate (0..1) relative to the lenght of the sliding line
-		//NOTE: direction functions, as well as [decart-polar] mapping ones is the different thing. There’s just 
-		//TODO: think of how to name functions set
-		transferFn: {
-			//unifirm mapping to the min/max range
-			linear: function(l){
-				var o = this.options,
-					value = l * (o.max - o.min) - o.min;
-				return value;
-			},
-			logarithmic: function(l){
-			}
-		},
-
-		//Transforms x,y picker & element coords to the l value, or couple of l
-		mappingFn: {
-			decart2d: function(picker, container){
-				var l = 0, o = this.options;
-
-				//TODO: think how to set directions
-				l = [picker.left / container.width, picker.top / container.height];
-
-				return l;
-			},
-			decart1d: function(picker, container){
-				var l = 0, o = this.options;
-
-				switch(o.direction){
-					case "top":
-						l = 1 - picker.top / container.height;
-						break
-					case "bottom":
-						l = picker.top / container.height;
-						break;
-					case "left":
-						l = 1 - picker.left / container.width;
-						break;
-					case "right":
-						l = picker.left / container.width;
-						break;
-					default: //degrees case
-						//TODO: calc degrees
-				}
-
-				return l;
-			},
-
-			//the same as decart, but with different clipping
-			ray1d: function(){
-
-			},
-			polar2d: function(x, y){
-
-			},
-			polar1d: function(x, y){
-
-			}
-		}
-
-	})
-
-	P.prototype = {
+	Area.prototype = {
 		options: {
 			pickers: 1, //could be custom pickers passed, each with it’s own settings
 
 			//picker-specific options
-			dimensions: 1, //how much values picker will get
+			dimensions: 1, //how much values picker will get //TODO: replace with mapping fn
 			direction: "right", //keywords or degrees //TODO: replace direction with custom function
-			mappingFn: P.mappingFn.decart1d, //x,y → normalized l (or [l1, l2])
-			transferFn: P.transferFn.linear, ///can pass array of functions for each coordinate
+			placingFn: null,
+			mappingFn: null, //x,y → normalized l (or [l1, l2])
+			transferFn: null, ///can pass array of functions for each coordinate
 			step: 10,
 			min: 0,
 			max: 100,
@@ -100,11 +36,12 @@
 			readonly: false, //no events
 			sniperSpeed: .25, //sniper key slowing down amt
 
+			evSuffix: pluginName,
 			//callbacks
 			create: null,
 			dragstart: null,
 			drag: null,
-			_dragstop: null,
+			dragstop: null,
 			destroy: null,
 			change: null //picker callback
 		},
@@ -118,69 +55,40 @@
 			this.$element = $(this.element);
 			this.$element.addClass(className);
 
-			//setup fns
-			if (o.dimensions == 2){
-				o.mappingFn = P.mappingFn.decart2d;
-			} else {
+			//update element size
+			this.top= this.element.offsetTop;
+			this.left= this.element.offsetLeft;
+			this.height= this.element.clientHeight;
+			this.width= this.element.clientWidth;
+			this.center= {x: this.element.width * .5, y: this.element.height * .5};
 
-			}
-			
 			//create picker(s)
 			this.pickers = [];
-			if (!$.isArray(o.pickers)){
-				//if passed just number of pickers - they all the same, based on options
-				for (var i = 0; i < o.pickers; i++){
-					var picker = document.createElement("div")
-					picker.className = "slide-area-picker";
-					picker.id = "picker-" + i;
-
-					picker.top = 0; //quite bad to write props right to the element, but let it bee: used to calc closest picker
-					picker.left = 0;
-
-
-					this.element.appendChild(picker);
-					this.pickers.push(picker);
-				}
-			} else {
-				//custom pickers passed
-				for (var i = 0; i < o.pickers.length; i++){
-					var picker = document.createElement("div"),
-						po = o.pickers[i];
-					picker.className = "slide-area-picker";
-					picker.id = "picker-" + po.id || i;
-
-					picker.top = 0; //quite bad, but let it bee: used to calc closest picker
-					picker.left = 0;
-
-					this.element.appendChild(picker);
-					this.pickers.push(picker);
-				}
+			var pNum = o.pickers.length || o.pickers;
+			for (var i = 0; i < pNum; i++){
+				this.addPicker(o.pickers[i] || o);
 			}
 
 			//init drag state object
 			this.dragstate = {
-				pointer: {x:0,y:0},
-				picker: this.pickers[0], //current picker to drag
-				pickerBox: {
-					top: 0,
-					left: 0
-				},
-				elementBox: {
-					top: this.element.offsetTop,
-					left: this.element.offsetLeft,
-					height: this.element.clientHeight,
-					width: this.element.clientWidth,
-					center: [this.element.width * .5, this.element.height * .5]
-				}
+				x:0,
+				y:0,
+				difX: 0,
+				difY: 0,
+				picker: this.pickers[0] //current picker to drag				
 			}
 
-			this.updatePicker();
-
 			//set up events
-			this.evSuffix = "." + this.options.evSuffix;
+			this.evSuffix = "." + o.evSuffix;
+
 			this._bindEvents();
 
-			this._trigger("create");
+			this.$element.trigger("create");
+		},
+
+		//add new picker
+		addPicker: function(opts){
+			this.pickers.push(new Picker(this, opts));
 		},
 
 		_bindEvents: function(){
@@ -196,32 +104,18 @@
 			this.$element.on("mousedown", this._dragstart.bind(this));
 		},
 
-		//simple trigger routine
-		_trigger: function(evtName, arg1, arg2, arg3){
-			if (this.options[evtName]) this.options[evtName].call(this.$element, arg1, arg2, arg3); 
-			this.$element.trigger(evtName, [arg1, arg2, arg3])
-		},
-
 		_dragstart: function(e){
-			var o = this.options,
-				isCtrl = e.ctrlKey;
-			//init state — find closest picker
-			this.dragstate.pointer.x = e.pageX;
-			this.dragstate.pointer.y = e.pageY;
+			var o = this.options;
 
-			this.dragstate.picker = this._findClosestPicker(e.pageX - this.dragstate.elementBox.left, e.pageY - this.dragstate.elementBox.top);
-
-			if (!isCtrl) {
-				//normal click leads to leap of picker to the place of lcick
-				this.dragstate.pickerBox.left = e.pageX - this.dragstate.elementBox.left;
-				this.dragstate.pickerBox.top = e.pageY - this.dragstate.elementBox.top;
-			} else {
-				//ctrl+click continues sniper-mode picking, not repositioning picker
-				this.dragstate.pickerBox.left = this.dragstate.pickerBox.left
-				this.dragstate.pickerBox.top = this.dragstate.pickerBox.top
-			}
-
-			this.updatePicker();
+			//init dragstate
+			this.dragstate.x = e.pageX - this.left,
+			this.dragstate.y = e.pageY - this.top,
+			this.dragstate.difX = 0;
+			this.dragstate.difY = 0;
+			this.dragstate.isCtrl = e.ctrlKey;
+			this.dragstate.picker = this._findClosestPicker(this.dragstate.x, this.dragstate.y);
+			
+			this.dragstate.picker.dragstart(this.dragstate);
 
 			//bind moving
 			$doc.on("selectstart" + this.evSuffix, function(){return false})
@@ -232,109 +126,26 @@
 
 		_drag: function(e){
 			//NOTE: try not to find out picker offset throught style/etc, instead, update it’s coords based on event obtained			
-			var o = this.options,
-				isCtrl = e.ctrlKey,
-				//difX = (e.pageX - this.dragstate.elementBox.left) - this.dragstate.pickerBox.left,
-				//difY = (e.pageY - this.dragstate.elementBox.top) - this.dragstate.pickerBox.top; //absolute coords method
-				difX = e.pageX - this.dragstate.pointer.x,
-				difY = e.pageY - this.dragstate.pointer.y,
-				x = e.pageX - this.dragstate.elementBox.left, //container offset
-				y = e.pageY - this.dragstate.elementBox.top
+			var o = this.options;
+
+			this.dragstate.isCtrl = e.ctrlKey;
+			this.dragstate.difX = e.pageX - this.left - this.dragstate.x;
+			this.dragstate.difY = e.pageY - this.top - this.dragstate.y;
+			this.dragstate.x = e.pageX - this.left;
+			this.dragstate.y = e.pageY - this.top;
 			
-			//slow down in ctrl mode
-			if (isCtrl) {
-				difX *= o.sniperSpeed;
-				difY *= o.sniperSpeed;
-			}
-
-			this.dragstate.pointer.x = e.pageX;
-			this.dragstate.pointer.y = e.pageY;			
-
-			if (o.repeat){
-				this.dragstate.pickerBox.left += difX;
-				this.dragstate.pickerBox.top += difY;
-				this.dragstate.pickerBox.left = this.dragstate.pickerBox.left % this.dragstate.elementBox.width;
-				this.dragstate.pickerBox.top = this.dragstate.pickerBox.top % this.dragstate.elementBox.height;
-				this.dragstate.pickerBox.left += (this.dragstate.pickerBox.left < 0 ? this.dragstate.elementBox.width : 0)
-				this.dragstate.pickerBox.top += (this.dragstate.pickerBox.top < 0 ? this.dragstate.elementBox.height : 0)
-			} else if (o.restrict){
-				//test bounds
-				if (x <= 0){
-					this.dragstate.pickerBox.left = 0;
-				} else if (x >= this.dragstate.elementBox.width){
-					this.dragstate.pickerBox.left = this.dragstate.elementBox.width;				
-				} else {
-					this.dragstate.pickerBox.left += difX;
-					this.dragstate.pickerBox.left = this.limit(this.dragstate.pickerBox.left, 0, this.dragstate.elementBox.width);
-				}
-				if (y <= 0){
-					this.dragstate.pickerBox.top = 0;
-				} else if (y >= this.dragstate.elementBox.height){
-					this.dragstate.pickerBox.top = this.dragstate.elementBox.height;				
-				} else {
-					this.dragstate.pickerBox.top += difY;
-					this.dragstate.pickerBox.top = this.limit(this.dragstate.pickerBox.top, 0, this.dragstate.elementBox.height);
-				}
-
-			}
-
-			this.updatePicker();
+			this.dragstate.picker.drag(this.dragstate);
 		},
 
 		_dragstop: function(e){
-			//save picker data
-			this.dragstate.picker.top = this.dragstate.pickerBox.top
-			this.dragstate.picker.left = this.dragstate.pickerBox.left;
+			//Move picker to the final value (snapped, rounded, limited etc)
+			this.dragstate.picker.update();
 
 			//unbind events
 			$doc.off("mousemove" + this.evSuffix)
 			.off("selectstart" + this.evSuffix)
 			.off("mouseup" + this.evSuffix)
 			.off("mouseleave" + this.evSuffix)
-		},
-
-		//checks whether picker inside of container
-		_isInside: function(x, y, container){
-			if (x >= 0 && 
-				x <= container.width &&
-				y >= 0 &&
-				y <= container.height){
-				return true;
-			}
-			return false;
-		},
-
-		//max/min
-		limit: function(val, min, max){
-			return Math.max(min, Math.min(max, val));
-		},
-
-		//make picker corresond to the dragstate
-		updatePicker: function(){
-			var o = this.options,
-				left = this.dragstate.pickerBox.left,
-				top = this.dragstate.pickerBox.top,
-				str = "translate3d(";
-
-			//restrict horizontal movement
-			if (o.dimensions == 1){
-				switch (o.direction){
-					case "top":
-					case "bottom":
-						left = this.dragstate.elementBox.width * .5;
-						break;
-					case "left":
-					case "right":
-						top = this.dragstate.elementBox.height * .5;
-						break;
-				}
-			}
-			
-			str += left + "px," + top + "px,0)";				 
-			
-			this.dragstate.picker.style[cssPrefix + "transform"] = str;
-
-			this._trigger("change", this._calcValue(), this.dragstate.picker, this.dragstate.element);
 		},
 
 		//get picker closest to the passed coords
@@ -353,46 +164,311 @@
 			return this.pickers[closestPicker];
 		},
 
-		//returns value from drag state
-		_calcValue: function(){
+		//set pickers reflect their’s real values
+		updatePickers: function(){
+			for (var i = 0; i < this.pickers.length; i++){
+				this.pickers[i].update();
+			}
+		}
+	}
+
+
+	/* Picker class - a picker controller.
+	Moved out to the external class because of has too much own properties.
+	NOTE: experimental class architecture:
+	- parent passed instead of target element
+	- options contained right on the element itself, w/o options object 
+	*/
+	function Picker(parent, opts){
+		this.container = parent;
+		this._create(opts);
+	}
+
+	//Static
+	$.extend(Picker, {
+		//Functions of placing picker based on dragstate
+		//Main value-forming function: value is obtained based on new picker coords defined by this function
+		//?should return picker coords
+		placingFn: {
+			circular: function(){
+
+			},
+			conical: function(){
+
+			},
+			rectangular: function(x,y, picker, container, o){				
+				var to = {x:0, y:0}
+				//test bounds
+				if (x <= 0){
+					to.x = 0;
+				} else if (x >= container.width){
+					to.x = container.width;				
+				} else {
+					to.x = x;
+					to.x = limit(to.x, 0, container.width);
+				}
+				if (y <= 0){
+					to.y = 0;
+				} else if (y >= container.height){
+					to.y = container.height;				
+				} else {
+					to.y = y;
+					to.y = limit(to.y, 0, container.height);
+				}
+				return to;
+			},
+			linear: function(dragstate, o){
+				switch (o.direction){
+					case "top":
+					case "bottom":
+						toX = this.container.width * .5;
+						break;
+					case "left":
+					case "right":
+						toY = this.container.height * .5;
+						break;
+				}
+			},
+			free: function(){
+
+			},
+			repeat: function(x, y, picker, container, o){
+				var to = {x: 0, y:0}
+				to.x = x % container.width;
+				to.y = y % container.height;
+				to.x += (to.x < 0 ? container.width : 0)
+				to.y += (to.y < 0 ? container.height : 0)
+				return to;
+			}
+		},
+
+		//Transforms picker & element to the l value, or couple of l for multiple dimensions.
+		//l is normalized value [0..1] reflecting picker position within the area.
+		//Area can be an SVG of any shape or element
+		//picker & area - class instances, not DOM-elements
+		//out == based on l passed set coords of picker
+		//NOTE: 2d can be passed in options
+		mappingFn: {
+			linear: {
+				toL: function(picker, container, o){
+					var l = 0;
+					if (o.dimensions == 2){
+						l = [picker.left / container.width, picker.top / container.height];
+					} else {
+						switch(o.direction){
+							case "top":
+								l = 1 - picker.top / container.height;
+								break
+							case "bottom":
+								l = picker.top / container.height;
+								break;
+							case "left":
+								l = 1 - picker.left / container.width;
+								break;
+							case "right":
+								l = picker.left / container.width;
+								break;
+							default: //degrees case
+								//TODO: calc degrees
+						}
+					}
+					return l;
+				},
+				fromL: function(l, picker, container, o){
+					picker.left = l * container.width;
+					picker.top = l * container.height;
+				}
+			},
+			polar: {
+				toL: function(picker, container, o){
+					//TODO
+					throw "unimplemented"
+				},
+				fromL: function(picker, container, o){
+					//TODO
+					throw "unimplemented"
+				}
+			},
+			svg: {
+				to: function(){
+
+				},
+				from: function(){
+
+				}
+			}
+		},
+
+		//Transforms normalized l passed to the target value and vice-versa
+		//moved out of mappingFn cause to combine with mappingFn and cause 
+		transferFn: {
+			linear: {
+				toValue: function(l, o){
+					return l * (o.max - o.min) - o.min;
+				},
+				fromValue: function(value, o){
+					return (value + o.min) / (o.max - o.min);
+				}
+			},
+
+			quadratic: {
+				toValue: function(){
+
+				},
+				fromValue: function(){
+
+				}
+			},
+
+			cubic: function(){
+				//TODO
+			},
+
+			logarithmic: function(){
+				//TODO
+			}
+		}
+	})
+
+	//Prototype
+	Picker.prototype = {
+		options: {
+			dimensions: 1, //how much values picker will get //TODO: replace with mapping fn
+			direction: "right", //keywords or degrees //TODO: replace direction with custom function
+			placingFn: null,
+			mappingFn: null, //x,y → normalized l (or [l1, l2])
+			transferFn: null, //can pass array of functions for each coordinate
+			step: 10,
+			min: 0,
+			max: 100,
+			value: 0,
+			snap: false, //snap value to the grid
+			rigidSnap: false, //whether to snap straightforward or smoother drop effect
+			restrict: true, //whether to restrict picker moving area
+			grid: false, //or array of grid coords to snap
+			repeat: false, //whether to rotate infinity or cycle h/v scroll
+		},
+
+		_create: function(opts){
+			//make options contained in this
+			var o = $.extend({}, this.options);
+			this.options = $.extend(o, opts);
+
+			//init vars
+
+			//create picker element
+			this.element = document.createElement("div");
+			this.element.className = "slide-area-picker";
+			this.element.id = "picker-" + opts.id || this.pickers.length;
+			this.$element = $(this.element);
+			this.container.element.appendChild(this.element);
+
+			//setup placing fn
+			if (!o.placingFn){
+				if (o.repeat){
+					o.placingFn = Picker.placingFn.repeat;
+				} else {
+					o.placingFn = Picker.placingFn.rectangular;
+				}
+			}
+
+			//setup mapping fn
+			if (!o.mappingFn){
+				o.mappingFn = Picker.mappingFn.linear;
+			}
+
+			//setup transfer fn
+			if (!o.transferFn){
+				o.transferFn = Picker.transferFn.linear;
+			}
+
+			//init coords based on value passed
+			this.top = 0; //quite bad to write props right to the element, but let it bee: used to calc closest picker
+			this.left = 0;
+
+			//init element
+		},
+
+		//move, changevalue and trigger changing
+		to: function(x, y){
+			var str = "translate3d(",
+				to = this.options.placingFn(x, y, this, this.container, this.options);
+
+			str += to.x + "px," + to.y + "px, 0)";
+			this.element.style[cssPrefix + "transform"] = str;
+
+			this.top = to.y;
+			this.left = to.x;
+			
+			this.value = this._calcValue(to.x, to.y);
+
+			this._trigger("change", [this.value], this);
+		},
+
+		//make position reflect value
+		update: function(){
+
+		},
+
+		dragstart: function(dragstate){
+			this.to(dragstate.x, dragstate.y)			
+		},
+
+		drag: function(dragstate){
+			this.to(dragstate.x, dragstate.y)
+		},
+
+	
+		_trigger: function(evName, args, picker){
+			this.$element.trigger(evName, args);
+			if (this.options[evName]) this.options[evName].apply(this, args.concat(picker));
+			if (this.container.options[evName]) this.container.options[evName].apply(this, args.concat(picker));
+		},
+
+
+		//returns value from current coords
+		_calcValue: function(x, y){
 			var o = this.options,
 				l = .0; //length of the value [0..1]
-
 			//get normalized(not necessary) value
-			l = o.mappingFn.call(this, this.dragstate.pickerBox, this.dragstate.elementBox);
+			l = o.mappingFn.toL.call(this, this, this.container, o);
 			if ($.isArray(l)){
 				//multiple dimensions
 				var res = [];
 				for (var i = 0; i < l.length; i++){
-					res.push((o.transferFn[i] || o.transferFn).call(this, l[i]));
+					res.push(o.transferFn.toValue.call(this, l[i], o));
 				}
 				return res;
 			} else {
 				//apply transfer function
-				return o.transferFn.call(this, l);
+				return o.transferFn.toValue.call(this, l, o);
 			}
 		},
 
-
-		//API methods
-		setValue: function(value){
-			throw "unimplemented"
-		},
-
 		getValue: function(){
-			return this._calcValue();
+			return this.value;
 		},
 
-		val: function(){
-			throw "unimplemented"
+		setValue: function(value){
+			var o = this.options;
+			this.value = value;
+			this.l = o.transferFn.out(value);
+			o.mappingFn.from(l);
+		},
+
+		value: function(value){
+			if (value !== undefined) this.setValue(value);
+			else this.getValue();
 		}
 	}
+
+
 
 
 	//Plugin
 	$.fn[pluginName] = function (arg) {
 		return $(this).each(function (i, el) {
-			var instance = new P(el, $.extend(arg || {}, $.parseDataAttributes(el)));
+			var instance = new Area(el, $.extend(arg || {}, $.parseDataAttributes(el)));
 			if (!$(el).data(pluginName)) $(el).data(pluginName, instance);
 		})
 	}
@@ -438,6 +514,11 @@
 		if (style["-o-transform"]) return "-o-";
 		if (style["-khtml-transform"]) return "-khtml-";
 		return "";
+	}
+
+	//simple math limiter
+	function limit(v, min, max){
+		return Math.max(min, Math.min(max, v));
 	}
 
 
