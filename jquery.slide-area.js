@@ -35,7 +35,6 @@
 			//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier			
 			readonly: false, //no events
 			sniperSpeed: .25, //sniper key slowing down amt
-			html5drag: true,
 
 			evSuffix: pluginName,
 			//callbacks
@@ -96,52 +95,7 @@
 
 		_bindEvents: function(){
 			var o = this.options;
-			/*$doc.click(function(e){
-				console.log("------------")
-				console.log("offset:" + e.offsetY)
-				console.log("client:" + e.clientY)
-				console.log("screen:" + e.screenY)
-				console.log("page:" + e.pageY)
-				console.log("flat:" + e.y)
-				console.log("scrollTop:" + $wnd.scrollTop())
-			})*/
-			if (o.html5drag){
-				this.pickers[0].el.draggable = true;
-				this.pickers[0].$el.on("dragstart", function(e){
-					e.dataTransfer.effectAllowed='all';
-					e.dataTransfer.dropEffect='link';
-					e.dataTransfer.setData('Text', "123");
-					e.dataTransfer.setDragImage(this.pickers[0].el, this.pickers[0].width * .5, this.pickers[0].height * .5);
-					setTimeout(function(){
-						this.pickers[0].$el.addClass("dragging");
-					}.bind(this), 0)
-				}.bind(this)).on("drag", function(e){
-					e.preventDefault();
-					e.dataTransfer.effectAllowed='all';
-					e.dataTransfer.dropEffect='link';
-					e.dataTransfer.setData('Text', "123");
-				}.bind(this)).on("dragend", function(e){
-					this.pickers[0].$el.removeClass("dragging");
-				}.bind(this))
-
-				this.el.dropzone = true;
-				this.$el.on("dragover", function(e){
-					e.preventDefault();
-					//e.dataTransfer.effectAllowed='move';
-					//e.dataTransfer.dropEffect='move';
-				}.bind(this)).on("dragleave", function(e){
-					console.log("leave")
-					e.dataTransfer.setDragImage(this.pickers[0].el, 0, 0);
-					//this.pickers[0].$el.removeClass("dragging");
-				}.bind(this)).on("dragenter", function(e){
-					console.log("enter")
-					this.pickers[0].$el.addClass("dragging");
-					e.dataTransfer.setDragImage(this.pickers[0].el, this.pickers[0].width * .5, this.pickers[0].height * .5);
-				}.bind(this))
-				
-			} else {
-				this.$el.on("mousedown", this._dragstart.bind(this));
-			}
+			this.$el.on("mousedown", this._dragstart.bind(this));
 		},
 
 		_dragstart: function(e){
@@ -155,9 +109,10 @@
 			this.dragstate.isCtrl = e.ctrlKey
 			this.dragstate.pageX = e.pageX; 
 			this.dragstate.pageY = e.pageY;
-			this.dragstate.picker = this._findClosestPicker(this.dragstate.x, this.dragstate.y);
-			
+			this.dragstate.picker = this._findClosestPicker(this.dragstate.x, this.dragstate.y);			
 			this.dragstate.picker.dragstart(this.dragstate);
+
+			this.$el.addClass("dragging");
 
 			//bind moving
 			$doc.on("selectstart" + this.evSuffix, function(){return false})
@@ -188,6 +143,8 @@
 		_dragstop: function(e){
 			//Move picker to the final value (snapped, rounded, limited etc)
 			this.dragstate.picker.update();
+
+			this.$el.removeClass("dragging");
 
 			//unbind events
 			$doc.off("mousemove" + this.evSuffix)
@@ -263,19 +220,21 @@
 					to.y = y;
 					to.y = limit(to.y, 0, container.height);
 				}
-				return to;
-			},
-			linear: function(dragstate, o){
-				switch (o.direction){
-					case "top":
-					case "bottom":
-						toX = this.container.width * .5;
-						break;
-					case "left":
-					case "right":
-						toY = this.container.height * .5;
-						break;
+
+				//correct dimensions
+				if (o.dimensions == 1) {
+					switch (o.direction){
+						case "top":
+						case "bottom":
+							to.x = container.width * .5;
+							break;
+						case "left":
+						case "right":
+							to.y = container.height * .5;
+							break;
+					}
 				}
+				return to;
 			},
 			free: function(){
 
@@ -286,6 +245,18 @@
 				to.y = y % container.height;
 				to.x += (to.x < 0 ? container.width : 0)
 				to.y += (to.y < 0 ? container.height : 0)
+				if (o.dimensions == 1) {				
+					switch (o.direction){
+						case "top":
+						case "bottom":
+							to.x = container.width * .5;
+							break;
+						case "left":
+						case "right":
+							to.y = container.height * .5;
+							break;
+					}
+				}
 				return to;
 			}
 		},

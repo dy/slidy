@@ -1,11 +1,4 @@
-* Make dragstate passing minimum info: difs, pointer (plot) coords
-	* keep pickerbox data in picker objects, not in dragstate
-
-
-* Make external placing functions
-
-* Make multiple different pickers
-	* Think of moving to the separate class: different placing fns, different values, different mapping, different events, different settings, instances.
+* Prevent picker value from selecting by mouse
 
 * Count on mobile devices touchdragging
 

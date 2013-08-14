@@ -12,20 +12,17 @@
 	display: none;
 }
 
-.dragging{
-	display: none;
+.slide-area.dragging, .slide-area.dragging .slide-area-picker{
+	cursor: none;
 }
 
 .slide-area{
 	position: relative;
 	cursor: default;
-
-  cursor: move;
 }
 
 .slide-area-picker{
-
-  cursor: move;
+	pointer-events: none;
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -34,6 +31,6 @@
 	margin-top: -10px;
 	margin-left: -10px;
 	background: black;
-	cursor: default;
+	cursor: none;
 	color: white;
 }
