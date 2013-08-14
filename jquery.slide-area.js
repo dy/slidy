@@ -9,7 +9,7 @@
 
 	//Main plugin class
 	function Area(el, opts){
-		this.element = el;
+		this.el = el;
 		this._create(opts)
 	}
 
@@ -53,15 +53,15 @@
 			var o = this.options;
 
 			//treat element
-			this.$element = $(this.element);
-			this.$element.addClass(className);
+			this.$el = $(this.el);
+			this.$el.addClass(className);
 
 			//update element size
-			this.top= this.element.offsetTop;
-			this.left= this.element.offsetLeft;
-			this.height= this.element.clientHeight;
-			this.width= this.element.clientWidth;
-			this.center= {x: this.element.width * .5, y: this.element.height * .5};
+			this.top= this.el.offsetTop;
+			this.left= this.el.offsetLeft;
+			this.height= this.el.clientHeight;
+			this.width= this.el.clientWidth;
+			this.center= {x: this.el.width * .5, y: this.el.height * .5};
 
 			//create picker(s)
 			this.pickers = [];
@@ -86,7 +86,7 @@
 
 			this._bindEvents();
 
-			this.$element.trigger("create");
+			this.$el.trigger("create");
 		},
 
 		//add new picker
@@ -95,6 +95,7 @@
 		},
 
 		_bindEvents: function(){
+			var o = this.options;
 			/*$doc.click(function(e){
 				console.log("------------")
 				console.log("offset:" + e.offsetY)
@@ -104,7 +105,43 @@
 				console.log("flat:" + e.y)
 				console.log("scrollTop:" + $wnd.scrollTop())
 			})*/
-			this.$element.on("mousedown", this._dragstart.bind(this));
+			if (o.html5drag){
+				this.pickers[0].el.draggable = true;
+				this.pickers[0].$el.on("dragstart", function(e){
+					e.dataTransfer.effectAllowed='all';
+					e.dataTransfer.dropEffect='link';
+					e.dataTransfer.setData('Text', "123");
+					e.dataTransfer.setDragImage(this.pickers[0].el, this.pickers[0].width * .5, this.pickers[0].height * .5);
+					setTimeout(function(){
+						this.pickers[0].$el.addClass("dragging");
+					}.bind(this), 0)
+				}.bind(this)).on("drag", function(e){
+					e.preventDefault();
+					e.dataTransfer.effectAllowed='all';
+					e.dataTransfer.dropEffect='link';
+					e.dataTransfer.setData('Text', "123");
+				}.bind(this)).on("dragend", function(e){
+					this.pickers[0].$el.removeClass("dragging");
+				}.bind(this))
+
+				this.el.dropzone = true;
+				this.$el.on("dragover", function(e){
+					e.preventDefault();
+					//e.dataTransfer.effectAllowed='move';
+					//e.dataTransfer.dropEffect='move';
+				}.bind(this)).on("dragleave", function(e){
+					console.log("leave")
+					e.dataTransfer.setDragImage(this.pickers[0].el, 0, 0);
+					//this.pickers[0].$el.removeClass("dragging");
+				}.bind(this)).on("dragenter", function(e){
+					console.log("enter")
+					this.pickers[0].$el.addClass("dragging");
+					e.dataTransfer.setDragImage(this.pickers[0].el, this.pickers[0].width * .5, this.pickers[0].height * .5);
+				}.bind(this))
+				
+			} else {
+				this.$el.on("mousedown", this._dragstart.bind(this));
+			}
 		},
 
 		_dragstart: function(e){
@@ -368,11 +405,11 @@
 			//init vars
 
 			//create picker element
-			this.element = document.createElement("div");
-			this.element.className = "slide-area-picker";
-			this.element.id = "picker-" + opts.id || this.pickers.length;
-			this.$element = $(this.element);
-			this.container.element.appendChild(this.element);
+			this.el = document.createElement("div");
+			this.el.className = "slide-area-picker";
+			this.el.id = "picker-" + opts.id || this.pickers.length;
+			this.$el = $(this.el);
+			this.container.el.appendChild(this.el);
 
 			//setup placing fn
 			if (!o.placingFn){
@@ -396,6 +433,8 @@
 			//init coords based on value passed
 			this.top = 0; //quite bad to write props right to the element, but let it bee: used to calc closest picker
 			this.left = 0;
+			this.height = this.el.clientHeight;
+			this.width = this.el.clientWidth;
 
 			//init element
 		},
@@ -406,7 +445,7 @@
 				to = this.options.placingFn(x, y, this, this.container, this.options);
 
 			str += to.x + "px," + to.y + "px, 0)";
-			this.element.style[cssPrefix + "transform"] = str;
+			this.el.style[cssPrefix + "transform"] = str;
 
 			this.top = to.y;
 			this.left = to.x;
@@ -431,7 +470,7 @@
 
 	
 		_trigger: function(evName, args, picker){
-			this.$element.trigger(evName, args);
+			this.$el.trigger(evName, args);
 			if (this.options[evName]) this.options[evName].apply(this, args.concat(picker));
 			if (this.container.options[evName]) this.container.options[evName].apply(this, args.concat(picker));
 		},
@@ -505,7 +544,7 @@
 				[].forEach.call(el.attributes, function(attr) {
 					if (/^data-/.test(attr.name)) {
 						var camelCaseName = attr.name.substr(5).replace(/-(.)/g, function ($0, $1) {
-						    return $1.toUpperCase();
+							return $1.toUpperCase();
 						});
 						data[camelCaseName] = attr.value;
 					}
