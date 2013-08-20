@@ -99,7 +99,7 @@
 						data[prop] = true;
 					} else if (el.dataset[prop] === "false") {
 						data[prop] = false;
-					} else if (v = parseFloat(el.dataset[prop])) {
+					} else if ((v = parseFloat(el.dataset[prop])) !== NaN) {
 						data[prop] = v;
 					} else {
 						data[prop] = el.dataset[prop];
@@ -234,63 +234,63 @@
 			conical: function(){
 
 			},
-			rectangular: function(x,y, picker, container, o){
-				var to = {x:0, y:0}
-				//test bounds
-				if (x <= 0){
-					to.x = 0;
-				} else if (x >= container.width){
-					to.x = container.width;				
-				} else {
-					to.x = x;
-					to.x = limit(to.x, 0, container.width);
-				}
-				if (y <= 0){
-					to.y = 0;
-				} else if (y >= container.height){
-					to.y = container.height;				
-				} else {
-					to.y = y;
-					to.y = limit(to.y, 0, container.height);
-				}
+			rectangular: function(x,y, picker){
+				var to = {},
+					container = picker.container,
+					o = picker.options;
 
-				//snap to the line, if one-dimensoin
-				/*if (o.dimensions == 1) {
-					switch (o.direction){
-						case "top":
-						case "bottom":
-							to.x = container.width * .5;
-							break;
-						case "left":
-						case "right":
-							to.y = container.height * .5;
-							break;
-					}
-				}*/
+				//test bounds
+				switch (o.direction){
+					case "top":
+					case "bottom":
+						if (y <= 0){
+							to.y = 0;
+						} else if (y >= container.height){
+							to.y = container.height;				
+						} else {
+							to.y = y;
+							to.y = limit(to.y, 0, container.height);
+						}
+						break;
+					case "left":
+					case "right":
+						if (x <= 0){
+							to.x = 0;
+						} else if (x >= container.width){
+							to.x = container.width;				
+						} else {
+							to.x = x;
+							to.x = limit(to.x, 0, container.width);
+						}
+						break;
+				}
 
 				return to;
 			},
 			free: function(){
 
 			},
-			repeat: function(x, y, picker, container, o){
-				var to = {x: 0, y:0}
-				to.x = x % container.width;
-				to.y = y % container.height;
-				to.x += (to.x < 0 ? container.width : 0)
-				to.y += (to.y < 0 ? container.height : 0)
-				if (o.dimensions == 1) {
-					switch (o.direction){
-						case "top":
-						case "bottom":
-							to.x = container.width * .5;
-							break;
-						case "left":
-						case "right":
-							to.y = container.height * .5;
-							break;
-					}
+			repeat: function(x, y, picker){
+				var to = {},
+					container = picker.container,
+					o = picker.options,
+					tx = x % container.width,
+					ty = y % container.height
+
+				tx += (tx < 0 ? container.width : 0)
+				ty += (ty < 0 ? container.height : 0)
+
+				switch (o.direction){
+					case "top":
+					case "bottom":
+						to.y = ty;
+						break;
+					case "left":
+					case "right":
+						to.x = tx;
+						break;
 				}
+
 				return to;
 			}
 		},
@@ -303,8 +303,10 @@
 		//NOTE: 2d can be passed in options
 		mappingFn: {
 			linear: {
-				toL: function(picker, container, o){
-					var l = 0;
+				toL: function(picker){
+					var l = 0,
+						o = picker.options,
+						container = picker.container;
 					switch(o.direction){
 						case "top":
 							l = 1 - picker.top / container.height;
@@ -323,17 +325,17 @@
 					}
 					return l;
 				},
-				fromL: function(l, picker, container, o){
-					picker.left = l * container.width;
-					picker.top = l * container.height;
+				fromL: function(l, picker){
+					picker.left = l * picker.container.width;
+					picker.top = l * picker.container.height;
 				}
 			},
 			polar: {
-				toL: function(picker, container, o){
+				toL: function(picker){
 					//TODO
 					throw "unimplemented"
 				},
-				fromL: function(picker, container, o){
+				fromL: function(picker){
 					//TODO
 					throw "unimplemented"
 				}
@@ -353,8 +355,7 @@
 		transferFn: {
 			linear: {
 				toValue: function(l, o){
-					var v = [];
-					v = l * (o.max - o.min) - (o.min);
+					v = l * (o.max - o.min) + (o.min);
 					return v;
 				},
 				fromValue: function(value, o){
@@ -444,23 +445,11 @@
 				o.transferFn = Picker.transferFn.linear;
 			}
 
-			//correct directions
-			/*if (o.dimensions == 2){
-				var dir = o.direction.match(/([a-z])+/gi);
-				if (dir.length == 1) {
-					dir.push("bottom")
-				} else if (dir.length == 0){
-					dir[0] = "right";
-					dir[1] = "bottom";
-				}
-				o.direction = dir;
-			}*/
-
 			//init coords based on value passed
-			this.top = 0; //quite bad to write props right to the element, but let it bee: used to calc closest picker
-			this.left = 0;
 			this.height = this.el.clientHeight;
 			this.width = this.el.clientWidth;
+			this.top = this.container.height * .5;
+			this.left = this.container.height * .5;
 
 			//init element
 		},
@@ -469,17 +458,23 @@
 		//x & y are coords relative to sliding area
 		to: function(x, y){
 			var str = "translate3d(",
-				to = this.options.placingFn(x, y, this, this.container, this.options);
+				to = this.options.placingFn(x, y, this);
 
-			str += to.x + "px," + to.y + "px, 0)";
+			if (this.altPicker){
+				//to = this.altPicker.options.placingFn(to.x, to.y, this.altPicker);
+			}
+
+			if (to.y !== undefined) this.top = to.y;
+			if (to.x !== undefined) this.left = to.x;
+
+			str += this.left + "px," + this.top + "px, 0)";
 			this.el.style[cssPrefix + "transform"] = str;
 
-			this.top = to.y;
-			this.left = to.x;
-			
-			this.value = this._calcValue(to.x, to.y);
+			this.value = this._calcValue(this.top, this.left);
 
 			this._trigger("change", [this.value], this);
+
+			return to;
 		},
 
 		//make position reflect value
@@ -509,11 +504,15 @@
 				l = .0; //length of the value [0..1]
 				//TODDO: calc multiple pickers
 
+			if (o.altPicker) {
+				//TODO: send event instead of value
+			}
+
 			//get normalized(not necessary) value
-			l = o.mappingFn.toL.call(this, this, this.container, o);
+			l = o.mappingFn.toL(this);
 
 			//apply transfer function
-			return o.transferFn.toValue.call(this, l, o);
+			return o.transferFn.toValue(l, o);
 		},
 
 		getValue: function(){

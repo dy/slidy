@@ -23,6 +23,7 @@ Generalization of dragging areas, like in color-picker plots etc. Moved out to t
 * It’s bad to init element inside controller. You cannot pass any element you want in this case, like one element for N controllers, as happened with pickers.
 
 * Try not to pass sercret function context to any functions, pass all needed variables right to the args.
+	* Actually, it’s better to pass event: object, containing value along with surrounding things (env).
 
 
 	

@@ -38,7 +38,7 @@
 	<div class="linear-slider area" id="linear-strict-slider" data-min="0" data-max="360" data-repeat></div>
 	<output id="output-2"></output>
 
-	<div class="rectangle-slider area" id="multi-2d-slider-reversed" data-dimensions="2" data-direction="left, top"></div>
+	<div class="rectangle-slider area" id="multi-2d-slider-reversed" data-dimensions="2" data-direction="left"></div>
 	<output id="output-3"></output>
 </section>
 
@@ -67,13 +67,13 @@
 		var s3 = new $.SlideArea(document.getElementById("multi-2d-slider-reversed"), {
 			change: function(value, picker){
 				//$("#output-1").val(value)
-				picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
-				//picker.el.innerHTML = value.toFixed(1);
+				//picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
+				picker.el.innerHTML = value.toFixed(1);
 			},
 			pickers: [
 				{
 					max: 123,
-					min: -2,
+					min: -123,
 					direction: "top",
 					altPicker: {
 						max: 360,
