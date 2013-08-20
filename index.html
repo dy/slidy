@@ -10,6 +10,11 @@
 		height: 200px;
 		background: gray;
 	}
+	.centered{
+		width: 60%;
+		margin: 0 auto;
+		position: relative;
+	}
 
 	.linear-slider{
 		width: 200px;
@@ -26,24 +31,28 @@
 <h1>jquery.slide-areas</h1>
 <p>Generic case dragging area</p>
 
-<div class="rectangle-slider area" id="multi-2d-slider" data-dimensions="2" data-pickers="3"></div>
-<output id="output-1"></output>
+<section class="centered">
+	<div class="rectangle-slider area" id="multi-2d-slider"></div>
+	<output id="output-1"></output>
 
-<div class="linear-slider area" id="linear-strict-slider" data-min="0" data-max="360" data-repeat></div>
-<output id="output-2"></output>
+	<div class="linear-slider area" id="linear-strict-slider" data-min="0" data-max="360" data-repeat></div>
+	<output id="output-2"></output>
 
-<div class="rectangle-slider area" id="multi-2d-slider" data-dimensions="2" data-pickers="3"></div>
-<output id="output-3"></output>
+	<div class="rectangle-slider area" id="multi-2d-slider-reversed" data-dimensions="2" data-direction="left, top"></div>
+	<output id="output-3"></output>
+</section>
 
 <script src="js/zepto.js"></script>
 <script src="jquery.slide-area.js"></script>
 <script type="text/javascript">
 	$(function(){
-		$("#multi-2d-slider").slideArea({
+		var s1 = new $.SlideArea(document.getElementById("multi-2d-slider"), {
 			change: function(value, picker){
 				//$("#output-1").val(value)
-				picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
-			}
+				//picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
+				picker.el.innerHTML = value.toFixed(1);
+			},
+			dimensions: 2
 		});
 
 		$("#linear-strict-slider").slideArea({
@@ -53,5 +62,28 @@
 				picker.el.style.background = "hsl(" + value + ", 100%, 50%)";
 			}
 		});
-	})
+
+
+		var s3 = new $.SlideArea(document.getElementById("multi-2d-slider-reversed"), {
+			change: function(value, picker){
+				//$("#output-1").val(value)
+				picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
+				//picker.el.innerHTML = value.toFixed(1);
+			},
+			pickers: [
+				{
+					max: 123,
+					min: -2,
+					direction: "top",
+					altPicker: {
+						max: 360,
+						repeat: true,
+						min: 0,
+						direction: "right"
+					}
+				}				
+			]
+		});
+
+	})	
 </script>

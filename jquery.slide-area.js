@@ -8,12 +8,13 @@
 		cssPrefix = detectCSSPrefix();
 
 	//Main plugin class
-	function Area(el, opts){
-		this.el = el;
+	function SlideArea(el, opts){
+		this.$el = $(el);
+		this.el = this.$el[0];
 		this._create(opts)
 	}
 
-	Area.prototype = {
+	SlideArea.prototype = {
 		options: {
 			pickers: 1, //could be custom pickers passed, each with it’s own settings
 
@@ -47,8 +48,9 @@
 		},
 
 		_create: function(opts){
+			//init options
 			this.options = $.extend({}, this.options);
-			$.extend(this.options, opts);
+			$.extend(this.options, this._parseDataAttributes(), opts);
 			var o = this.options;
 
 			//treat element
@@ -56,15 +58,16 @@
 			this.$el.addClass(className);
 
 			//update element size
-			this.top= this.el.offsetTop;
-			this.left= this.el.offsetLeft;
+			var offset = this.$el.offset();
+			this.top= offset.top;
+			this.left= offset.left;
 			this.height= this.el.clientHeight;
 			this.width= this.el.clientWidth;
 			this.center= {x: this.el.width * .5, y: this.el.height * .5};
 
 			//create picker(s)
 			this.pickers = [];
-			var pNum = o.pickers.length || o.pickers;
+			var pNum = o.pickers.length || o.pickers; //whether number of pickers or init options
 			for (var i = 0; i < pNum; i++){
 				this.addPicker(o.pickers[i] || o);
 			}
@@ -88,9 +91,38 @@
 			this.$el.trigger("create");
 		},
 
+		_parseDataAttributes: function() {
+			var data = {}, v, el = this.el;
+			if (el.dataset) {
+				for (var prop in el.dataset) {
+					if (el.dataset[prop] === "true" || el.dataset[prop] === "") {
+						data[prop] = true;
+					} else if (el.dataset[prop] === "false") {
+						data[prop] = false;
+					} else if (v = parseFloat(el.dataset[prop])) {
+						data[prop] = v;
+					} else {
+						data[prop] = el.dataset[prop];
+					}
+				}
+			} else {
+				Array.prototype.forEach.call(el.attributes, function(attr) {
+					if (/^data-/.test(attr.name)) {
+						var camelCaseName = attr.name.substr(5).replace(/-(.)/g, function ($0, $1) {
+							return $1.toUpperCase();
+						});
+						data[camelCaseName] = attr.value;
+					}
+				});
+			}
+			return data;
+		},
+
 		//add new picker
 		addPicker: function(opts){
-			this.pickers.push(new Picker(this, opts));
+			var el = document.createElement("div"); //TODO
+			this.pickers.push(new Picker(el, this, opts));
+			this.el.appendChild(el);
 		},
 
 		_bindEvents: function(){
@@ -184,8 +216,9 @@
 	- parent passed instead of target element
 	- options contained right on the element itself, w/o options object 
 	*/
-	function Picker(parent, opts){
-		this.container = parent;
+	function Picker(el, container, opts){
+		this.el = el;
+		this.container = container;
 		this._create(opts);
 	}
 
@@ -201,7 +234,7 @@
 			conical: function(){
 
 			},
-			rectangular: function(x,y, picker, container, o){				
+			rectangular: function(x,y, picker, container, o){
 				var to = {x:0, y:0}
 				//test bounds
 				if (x <= 0){
@@ -221,8 +254,8 @@
 					to.y = limit(to.y, 0, container.height);
 				}
 
-				//correct dimensions
-				if (o.dimensions == 1) {
+				//snap to the line, if one-dimensoin
+				/*if (o.dimensions == 1) {
 					switch (o.direction){
 						case "top":
 						case "bottom":
@@ -233,7 +266,8 @@
 							to.y = container.height * .5;
 							break;
 					}
-				}
+				}*/
+
 				return to;
 			},
 			free: function(){
@@ -245,7 +279,7 @@
 				to.y = y % container.height;
 				to.x += (to.x < 0 ? container.width : 0)
 				to.y += (to.y < 0 ? container.height : 0)
-				if (o.dimensions == 1) {				
+				if (o.dimensions == 1) {
 					switch (o.direction){
 						case "top":
 						case "bottom":
@@ -271,25 +305,21 @@
 			linear: {
 				toL: function(picker, container, o){
 					var l = 0;
-					if (o.dimensions == 2){
-						l = [picker.left / container.width, picker.top / container.height];
-					} else {
-						switch(o.direction){
-							case "top":
-								l = 1 - picker.top / container.height;
-								break
-							case "bottom":
-								l = picker.top / container.height;
-								break;
-							case "left":
-								l = 1 - picker.left / container.width;
-								break;
-							case "right":
-								l = picker.left / container.width;
-								break;
-							default: //degrees case
-								//TODO: calc degrees
-						}
+					switch(o.direction){
+						case "top":
+							l = 1 - picker.top / container.height;
+							break
+						case "bottom":
+							l = picker.top / container.height;
+							break;
+						case "left":
+							l = 1 - picker.left / container.width;
+							break;
+						case "right":
+							l = picker.left / container.width;
+							break;
+						default: //degrees case
+							//TODO: calc degrees
 					}
 					return l;
 				},
@@ -323,7 +353,9 @@
 		transferFn: {
 			linear: {
 				toValue: function(l, o){
-					return l * (o.max - o.min) - o.min;
+					var v = [];
+					v = l * (o.max - o.min) - (o.min);
+					return v;
 				},
 				fromValue: function(value, o){
 					return (value + o.min) / (o.max - o.min);
@@ -353,7 +385,7 @@
 	Picker.prototype = {
 		options: {
 			dimensions: 1, //how much values picker will get //TODO: replace with mapping fn
-			direction: "right", //keywords or degrees //TODO: replace direction with custom function
+			direction: "right", //keywords, degrees or array of ones //TODO: replace direction with custom function
 			placingFn: null,
 			mappingFn: null, //x,y → normalized l (or [l1, l2])
 			transferFn: null, //can pass array of functions for each coordinate
@@ -366,6 +398,7 @@
 			restrict: true, //whether to restrict picker moving area
 			grid: false, //or array of grid coords to snap
 			repeat: false, //whether to rotate infinity or cycle h/v scroll
+			altPicker: null //pickers changing values along with one
 		},
 
 		_create: function(opts){
@@ -373,14 +406,24 @@
 			var o = $.extend({}, this.options);
 			this.options = $.extend(o, opts);
 
-			//init vars
-
-			//create picker element
-			this.el = document.createElement("div");
-			this.el.className = "slide-area-picker";
-			this.el.id = "picker-" + opts.id || this.pickers.length;
+			//init picker element
 			this.$el = $(this.el);
-			this.container.el.appendChild(this.el);
+
+			//prevent existing picker from appending classes etc second time
+			if (this.el.getAttribute("data-sa-picker")){
+				//case of adjacent picker
+				this.$el.addClass("slide-area-alt-picker");
+				this.isAdjacent = true;
+			} else {
+				this.el.className = "slide-area-picker";
+				this.el.setAttribute("data-sa-picker", true);
+				this.isAdjacent = false;
+			}
+
+			//make adjacent pickers
+			if (o.altPicker){
+				this.altPicker = new Picker(this.el, this.container, o.altPicker);
+			}
 
 			//setup placing fn
 			if (!o.placingFn){
@@ -401,6 +444,18 @@
 				o.transferFn = Picker.transferFn.linear;
 			}
 
+			//correct directions
+			/*if (o.dimensions == 2){
+				var dir = o.direction.match(/([a-z])+/gi);
+				if (dir.length == 1) {
+					dir.push("bottom")
+				} else if (dir.length == 0){
+					dir[0] = "right";
+					dir[1] = "bottom";
+				}
+				o.direction = dir;
+			}*/
+
 			//init coords based on value passed
 			this.top = 0; //quite bad to write props right to the element, but let it bee: used to calc closest picker
 			this.left = 0;
@@ -411,6 +466,7 @@
 		},
 
 		//move, changevalue and trigger changing
+		//x & y are coords relative to sliding area
 		to: function(x, y){
 			var str = "translate3d(",
 				to = this.options.placingFn(x, y, this, this.container, this.options);
@@ -441,7 +497,7 @@
 
 	
 		_trigger: function(evName, args, picker){
-			this.$el.trigger(evName, args);
+			this.$el.trigger(evName, args.concat(picker));
 			if (this.options[evName]) this.options[evName].apply(this, args.concat(picker));
 			if (this.container.options[evName]) this.container.options[evName].apply(this, args.concat(picker));
 		},
@@ -451,19 +507,13 @@
 		_calcValue: function(x, y){
 			var o = this.options,
 				l = .0; //length of the value [0..1]
+				//TODDO: calc multiple pickers
+
 			//get normalized(not necessary) value
 			l = o.mappingFn.toL.call(this, this, this.container, o);
-			if ($.isArray(l)){
-				//multiple dimensions
-				var res = [];
-				for (var i = 0; i < l.length; i++){
-					res.push(o.transferFn.toValue.call(this, l[i], o));
-				}
-				return res;
-			} else {
-				//apply transfer function
-				return o.transferFn.toValue.call(this, l, o);
-			}
+
+			//apply transfer function
+			return o.transferFn.toValue.call(this, l, o);
 		},
 
 		getValue: function(){
@@ -488,42 +538,14 @@
 
 	//Plugin
 	$.fn[pluginName] = function (arg) {
-		return $(this).each(function (i, el) {
-			var instance = new Area(el, $.extend(arg || {}, $.parseDataAttributes(el)));
-			if (!$(el).data(pluginName)) $(el).data(pluginName, instance);
-		})
+		var $el = $(this),
+			instance = new SlideArea($el, $.extend($el[0], arg));
+		$el.data(pluginName, null);
+		$el.data(pluginName, instance);
+		return instance;
 	}
 
-
-	//Simple options parser. The same as $.fn.data(), or element.dataset but for zepto	
-	if (!$.parseDataAttributes) {
-		$.parseDataAttributes = function(el) {
-			var data = {}, v;
-			if (el.dataset) {
-				for (var prop in el.dataset) {
-					if (el.dataset[prop] === "true" || el.dataset[prop] === "") {
-						data[prop] = true;
-					} else if (el.dataset[prop] === "false") {
-						data[prop] = false;
-					} else if (v = parseFloat(el.dataset[prop])) {
-						data[prop] = v;
-					} else {
-						data[prop] = el.dataset[prop];
-					}
-				}
-			} else {
-				[].forEach.call(el.attributes, function(attr) {
-					if (/^data-/.test(attr.name)) {
-						var camelCaseName = attr.name.substr(5).replace(/-(.)/g, function ($0, $1) {
-							return $1.toUpperCase();
-						});
-						data[camelCaseName] = attr.value;
-					}
-				});
-			}
-			return data;
-		}
-	}
+	$.SlideArea = SlideArea;
 
 
 	//stupid prefix detector
