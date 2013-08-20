@@ -446,10 +446,9 @@
 			}
 
 			//init coords based on value passed
-			this.height = this.el.clientHeight;
-			this.width = this.el.clientWidth;
 			this.top = this.container.height * .5;
 			this.left = this.container.height * .5;
+			//TODO: better init with default value, not the middle of container 
 
 			//init element
 		},
@@ -461,7 +460,9 @@
 				to = this.options.placingFn(x, y, this);
 
 			if (this.altPicker){
-				//to = this.altPicker.options.placingFn(to.x, to.y, this.altPicker);
+				console.log(to)
+				$.extend(to, this.altPicker.options.placingFn(x, y, this.altPicker));
+				console.log(to)
 			}
 
 			if (to.y !== undefined) this.top = to.y;
