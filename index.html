@@ -47,28 +47,26 @@
 <script type="text/javascript">
 	$(function(){
 		var s1 = new $.SlideArea(document.getElementById("multi-2d-slider"), {
-			change: function(value, picker){
+			change: function(data){
 				//$("#output-1").val(value)
 				//picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
-				picker.el.innerHTML = value.toFixed(1);
+				data.picker.el.innerHTML = data.value.toFixed(1);
 			},
 			dimensions: 2
 		});
 
 		$("#linear-strict-slider").slideArea({
-			change: function(value, picker){
+			change: function(data){
 				//$("#output-2").val(value)
-				picker.el.innerHTML = value.toFixed(2);
-				picker.el.style.background = "hsl(" + value + ", 100%, 50%)";
+				data.picker.el.innerHTML = value.toFixed(2);
+				data.picker.el.style.background = "hsl(" + value + ", 100%, 50%)";
 			}
 		});
 
 
 		var s3 = new $.SlideArea(document.getElementById("multi-2d-slider-reversed"), {
-			change: function(value, picker){
-				//$("#output-1").val(value)
-				//picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
-				picker.el.innerHTML = value.toFixed(1);
+			change: function(data){
+				data.picker.el.innerHTML = data.value.toFixed(1) + ":" + data.altValue.toFixed(1);
 			},
 			pickers: [
 				{

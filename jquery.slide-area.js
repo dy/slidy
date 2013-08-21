@@ -460,9 +460,9 @@
 				to = this.options.placingFn(x, y, this);
 
 			if (this.altPicker){
-				console.log(to)
+				//console.log(to)
 				$.extend(to, this.altPicker.options.placingFn(x, y, this.altPicker));
-				console.log(to)
+				//console.log(to)
 			}
 
 			if (to.y !== undefined) this.top = to.y;
@@ -473,7 +473,19 @@
 
 			this.value = this._calcValue(this.top, this.left);
 
-			this._trigger("change", [this.value], this);
+			if (this.altPicker){
+				this.altPicker.top = this.top;
+				this.altPicker.left = this.left;
+				this.altPicker.value = this.altPicker._calcValue(this.top, this.left);
+			}
+
+			this._trigger("change", [{
+				value: this.value,
+				altValue: this.altPicker.value,
+				picker: this,
+				altPicker: this.altPicker,
+				options: this.o
+			}]);
 
 			return to;
 		},
@@ -492,10 +504,10 @@
 		},
 
 	
-		_trigger: function(evName, args, picker){
-			this.$el.trigger(evName, args.concat(picker));
-			if (this.options[evName]) this.options[evName].apply(this, args.concat(picker));
-			if (this.container.options[evName]) this.container.options[evName].apply(this, args.concat(picker));
+		_trigger: function(evName, args){
+			this.$el.trigger(evName, args);
+			if (this.options[evName]) this.options[evName].apply(this, args);
+			if (this.container.options[evName]) this.container.options[evName].apply(this, args);
 		},
 
 
@@ -504,10 +516,6 @@
 			var o = this.options,
 				l = .0; //length of the value [0..1]
 				//TODDO: calc multiple pickers
-
-			if (o.altPicker) {
-				//TODO: send event instead of value
-			}
 
 			//get normalized(not necessary) value
 			l = o.mappingFn.toL(this);
