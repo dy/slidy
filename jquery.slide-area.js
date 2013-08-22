@@ -32,6 +32,7 @@
 			restrict: true, //whether to restrict picker moving area
 			grid: false, //or array of grid coords to snap
 			repeat: false, //whether to rotate infinity or cycle h/v scroll
+			pickerClass: "",
 
 			//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier			
 			readonly: false, //no events
@@ -121,6 +122,8 @@
 		//add new picker
 		addPicker: function(opts){
 			var el = document.createElement("div"); //TODO
+			el.className = this.options.pickerClass;
+
 			this.pickers.push(new Picker(el, this, opts));
 			this.el.appendChild(el);
 		},
@@ -416,7 +419,7 @@
 				this.$el.addClass("slide-area-alt-picker");
 				this.isAdjacent = true;
 			} else {
-				this.el.className = "slide-area-picker";
+				this.$el.addClass("slide-area-picker");
 				this.el.setAttribute("data-sa-picker", true);
 				this.isAdjacent = false;
 			}
@@ -447,7 +450,7 @@
 
 			//init coords based on value passed
 			this.top = this.container.height * .5;
-			this.left = this.container.height * .5;
+			this.left = this.container.width * .5;
 			//TODO: better init with default value, not the middle of container 
 
 			//init element
@@ -481,7 +484,7 @@
 
 			this._trigger("change", [{
 				value: this.value,
-				altValue: this.altPicker.value,
+				altValue: this.altPicker && this.altPicker.value,
 				picker: this,
 				altPicker: this.altPicker,
 				options: this.o
