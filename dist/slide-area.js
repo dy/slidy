@@ -34,7 +34,7 @@ function parseDataAttributes(el) {
 			data[prop] = true;
 		} else if (el.dataset[prop] === "false") {
 			data[prop] = false;
-		} else if (Number.isNaN(v = parseFloat(el.dataset[prop]))) {
+		} else if (!Number.isNaN(v = parseFloat(el.dataset[prop]))) {
 			data[prop] = v;
 		} else {
 			data[prop] = el.dataset[prop];
@@ -44,7 +44,7 @@ function parseDataAttributes(el) {
 }
 /*-----------------------------Main plugin class*/
 var cssPrefix = detectCSSPrefix(),
-	pluginName = (""/* #put ",'" + pluginName + "'" */); //preventor
+	pluginName = ("",'slideArea'); //preventor
 
 function SlideArea(el, opts){
 	this.el = el;
@@ -423,8 +423,8 @@ Picker.prototype = {
 
 	_create: function(opts){
 		//make options contained in this
-		var o = extend({}, this.options);
-		this.options = extend(o, opts);
+		this.options = extend({}, this.options, opts);
+		var o = this.options;
 
 		//prevent existing picker from appending classes etc second time
 		if (this.el.getAttribute("data-sa-picker")){

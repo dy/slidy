@@ -379,8 +379,8 @@ Picker.prototype = {
 
 	_create: function(opts){
 		//make options contained in this
-		var o = extend({}, this.options);
-		this.options = extend(o, opts);
+		this.options = extend({}, this.options, opts);
+		var o = this.options;
 
 		//prevent existing picker from appending classes etc second time
 		if (this.el.getAttribute("data-sa-picker")){

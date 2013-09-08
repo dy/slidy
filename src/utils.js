@@ -33,7 +33,7 @@ function parseDataAttributes(el) {
 			data[prop] = true;
 		} else if (el.dataset[prop] === "false") {
 			data[prop] = false;
-		} else if (Number.isNaN(v = parseFloat(el.dataset[prop]))) {
+		} else if (!Number.isNaN(v = parseFloat(el.dataset[prop]))) {
 			data[prop] = v;
 		} else {
 			data[prop] = el.dataset[prop];
