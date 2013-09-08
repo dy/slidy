@@ -26,7 +26,7 @@
 		background: linear-gradient(left, red 0%, yellow 16.6%, green 33%, cyan 50%, blue 66.6%, magenta 83.3%, red 100%);
 	}
 </style>
-<link rel="stylesheet" type="text/css" href="jquery.slide-area.css">
+<link rel="stylesheet" type="text/css" href="css/jquery.slide-area.css">
 
 <h1>jquery.slide-areas</h1>
 <p>Generic case dragging area</p>
@@ -43,11 +43,10 @@
 </section>
 
 <script src="js/zepto.js"></script>
-<script src="src/SlideArea.js"></script>
-<script src="src/jquery.slide-area.js"></script>
+<script src="dist/jquery.slide-area.js"></script>
 <script type="text/javascript">
 	$(function(){
-		var s1 = new SlideArea(document.getElementById("multi-2d-slider"), {
+		var s1 = new $.SlideArea(document.getElementById("multi-2d-slider"), {
 			change: function(data){
 				//$("#output-1").val(value)
 				//picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);

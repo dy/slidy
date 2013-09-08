@@ -2,8 +2,6 @@
 
 * Count on mobile devices touchdragging
 
-* Count vertical, horizontal scrolling
-
 * make shapes in basic case (including SVG)
 * make grid display (show some snapping lines)
 * make pins right on the plot

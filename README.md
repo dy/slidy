@@ -1,6 +1,6 @@
 # jquery.slide-area
 
-Generalization of dragging areas, like in color-picker plots etc. Moved out to the separate plugin to make it possible to use in different places.
+Generalization of dragging areas, like in color-picker plots etc. Moved out to the separate plugin to make it possible to use in different places. But primarily intended to use within color picker.
 
 ##Notes
 * One picker for array of values

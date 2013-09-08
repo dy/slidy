@@ -1,57 +1,12 @@
-/*----------------Utils*/
-function extend(a){
-	for (var i = 1, l = arguments.length; i<l; i++){
-		var b = arguments[i];
-		for (var k in b){
-			a[k] = b[k]
-		}	
-	}
-	return a
-}
-//stupid prefix detector
-function detectCSSPrefix(){
-	var style = document.defaultView.getComputedStyle(document.body, "");
-	if (style["transform"]) return "";
-	if (style["-webkit-transform"]) return "-webkit-";
-	if (style["-moz-transform"]) return "-moz-";
-	if (style["-o-transform"]) return "-o-";
-	if (style["-khtml-transform"]) return "-khtml-";
-	return "";
-}
-
-//simple math limiter
-function limit(v, min, max){
-	return Math.max(min, Math.min(max, v));
-}
-
-//attr parser
-function parseDataAttributes(el) {
-	var data = {}, v;
-	for (var prop in el.dataset) {
-		if (el.dataset[prop] === "true" || el.dataset[prop] === "") {
-			data[prop] = true;
-		} else if (el.dataset[prop] === "false") {
-			data[prop] = false;
-		} else if ((v = parseFloat(el.dataset[prop])) !== NaN) {
-			data[prop] = v;
-		} else {
-			data[prop] = el.dataset[prop];
-		}
-	}
-	return data;
-}
-
-
 /*-----------------------------Main plugin class*/
-var pluginName = "slideArea",
-	className = "slide-area",
-	cssPrefix = detectCSSPrefix();
-
+var cssPrefix = detectCSSPrefix(),
+	pluginName = (""/* #put ",'" + pluginName + "'" */); //preventor
 
 function SlideArea(el, opts){
 	this.el = el;
-	this._create(opts)
+	this._create(opts);
 }
+
 
 SlideArea.prototype = {
 	options: {
@@ -75,9 +30,8 @@ SlideArea.prototype = {
 
 		//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier			
 		readonly: false, //no events
-		sniperSpeed: .25, //sniper key slowing down amt
+		sniperSpeed: 0.25, //sniper key slowing down amt
 
-		evSuffix: pluginName,
 		//callbacks
 		create: null,
 		dragstart: null,
@@ -93,7 +47,7 @@ SlideArea.prototype = {
 		var o = this.options;
 
 		//treat element
-		this.el.classList.add(className);
+		if (pluginName) this.el.classList.add(pluginName);
 
 		//update element size
 		var offset = this.el.getBoundingClientRect();
@@ -101,7 +55,7 @@ SlideArea.prototype = {
 		this.left= offset.left;
 		this.height= offset.height; //this.el.clientHeight;
 		this.width= offset.width; //this.el.clientWidth;
-		this.center= {x: this.width * .5, y: this.height * .5};
+		this.center= {x: this.width * 0.5, y: this.height * 0.5};
 
 		//create picker(s)
 		this.pickers = [];
@@ -119,10 +73,7 @@ SlideArea.prototype = {
 			pageX: 0,
 			pageY: 0,
 			picker: this.pickers[0] //current picker to drag				
-		}
-
-		//set up events
-		this.evSuffix = "." + o.evSuffix;
+		};
 
 		this._bindEvents();
 
@@ -153,11 +104,11 @@ SlideArea.prototype = {
 		var o = this.options;
 
 		//init dragstate
-		this.dragstate.x = e.pageX - this.left,
-		this.dragstate.y = e.pageY - this.top,
+		this.dragstate.x = e.pageX - this.left;
+		this.dragstate.y = e.pageY - this.top;
 		this.dragstate.difX = 0;
 		this.dragstate.difY = 0;
-		this.dragstate.isCtrl = e.ctrlKey
+		this.dragstate.isCtrl = e.ctrlKey;
 		this.dragstate.pageX = e.pageX; 
 		this.dragstate.pageY = e.pageY;
 		this.dragstate.picker = this._findClosestPicker(this.dragstate.x, this.dragstate.y);			
@@ -166,13 +117,16 @@ SlideArea.prototype = {
 		this.el.classList.add("dragging");
 
 		//bind moving
-		document.addEventListener("selectstart", this._prevent, true)
-		document.addEventListener("mousemove", this._drag)
-		document.addEventListener("mouseup", this._dragstop)
-		document.addEventListener("mouseleave", this._dragstop)
+		document.addEventListener("selectstart", this._prevent, true);
+		document.addEventListener("mousemove", this._drag);
+		document.addEventListener("mouseup", this._dragstop);
+		document.addEventListener("mouseleave", this._dragstop);
 	},
 
-	_prevent: function(e){e.preventDefault(); return false},
+	_prevent: function(e){
+		e.preventDefault(); 
+		return false;
+	},
 
 	_drag: function(e){
 		//NOTE: try not to find out picker offset throught style/etc, instead, update it’s coords based on event obtained			
@@ -200,10 +154,10 @@ SlideArea.prototype = {
 		this.el.classList.remove("dragging");
 
 		//unbind events
-		document.removeEventListener("mousemove", this._drag)
-		document.removeEventListener("selectstart", this._prevent)
-		document.removeEventListener("mouseup", this._dragstop)
-		document.removeEventListener("mouseleave", this._dragstop)
+		document.removeEventListener("mousemove", this._drag);
+		document.removeEventListener("selectstart", this._prevent);
+		document.removeEventListener("mouseup", this._dragstop);
+		document.removeEventListener("mouseleave", this._dragstop);
 	},
 
 	//get picker closest to the passed coords
@@ -228,7 +182,7 @@ SlideArea.prototype = {
 			this.pickers[i].update();
 		}
 	}
-}
+};
 
 
 /* Picker class - a picker controller.
@@ -296,10 +250,10 @@ extend(Picker, {
 				container = picker.container,
 				o = picker.options,
 				tx = x % container.width,
-				ty = y % container.height
+				ty = y % container.height;
 
-			tx += (tx < 0 ? container.width : 0)
-			ty += (ty < 0 ? container.height : 0)
+			tx += (tx < 0 ? container.width : 0);
+			ty += (ty < 0 ? container.height : 0);
 
 			switch (o.direction){
 				case "top":
@@ -331,7 +285,7 @@ extend(Picker, {
 				switch(o.direction){
 					case "top":
 						l = 1 - picker.top / container.height;
-						break
+						break;
 					case "bottom":
 						l = picker.top / container.height;
 						break;
@@ -354,11 +308,11 @@ extend(Picker, {
 		polar: {
 			toL: function(picker){
 				//TODO
-				throw "unimplemented"
+				throw "unimplemented";
 			},
 			fromL: function(picker){
 				//TODO
-				throw "unimplemented"
+				throw "unimplemented";
 			}
 		},
 		svg: {
@@ -401,7 +355,7 @@ extend(Picker, {
 			//TODO
 		}
 	}
-})
+});
 
 //Prototype
 Picker.prototype = {
@@ -464,8 +418,8 @@ Picker.prototype = {
 		}
 
 		//init coords based on value passed
-		this.top = this.container.height * .5;
-		this.left = this.container.width * .5;
+		this.top = this.container.height * 0.5;
+		this.left = this.container.width * 0.5;
 		//TODO: better init with default value, not the middle of container 
 
 		//init element
@@ -515,11 +469,11 @@ Picker.prototype = {
 	},
 
 	dragstart: function(dragstate){
-		this.to(dragstate.x, dragstate.y)			
+		this.to(dragstate.x, dragstate.y);		
 	},
 
 	drag: function(dragstate){
-		this.to(dragstate.x, dragstate.y)
+		this.to(dragstate.x, dragstate.y);
 	},
 
 
@@ -529,7 +483,7 @@ Picker.prototype = {
 		if (this.container.options[evName]) this.container.options[evName].call(this, args);
 
 		//event
-		var evt = new CustomEvent(evName, {detail: args})
+		var evt = new CustomEvent(evName, {detail: args});
 		this.el.dispatchEvent(evt);
 	},
 
@@ -537,7 +491,7 @@ Picker.prototype = {
 	//returns value from current coords
 	_calcValue: function(x, y){
 		var o = this.options,
-			l = .0; //length of the value [0..1]
+			l = 0; //length of the value [0..1]
 			//TODDO: calc multiple pickers
 
 		//get normalized(not necessary) value
@@ -562,4 +516,4 @@ Picker.prototype = {
 		if (value !== undefined) this.setValue(value);
 		else this.getValue();
 	}
-}
+};
