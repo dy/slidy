@@ -1,3 +1,8 @@
+* Optimize for memory usage
+
+* Define pickers DOM-way
+	* Avoid classes & dom-attrs declarations = avoid styling problems
+
 * Prevent picker value from selecting by mouse
 
 * Count on mobile devices touchdragging
@@ -8,3 +13,5 @@
 
 * get/set value API for case of one picker
 	* reversive transfer, mapping & placing fn's
+
+* Prevent double-load

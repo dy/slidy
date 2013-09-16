@@ -19,6 +19,9 @@
 .slide-area{
 	position: relative;
 	cursor: default;
+	/* It’s not recommended to make areas less than finger size */
+	min-width: 20px;
+	min-height: 20px;
 }
 
 .slide-area-picker{

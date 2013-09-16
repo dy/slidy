@@ -5,6 +5,7 @@ Generalization of dragging areas, like in color-picker plots etc. Moved out to t
 ##Notes
 * One picker for array of values
 	* Bad idea: how to define different value limits, different behaviour along the axis
+	* Actually, it’s a good one. Use arrrays to calculate vector values.
 
 * similar to slidr.js, or enhancedInput.js, which is fully enriched input with any of known possibilities, like sliding etc.
 * Circular, triangle sliders
@@ -24,6 +25,8 @@ Generalization of dragging areas, like in color-picker plots etc. Moved out to t
 
 * Try not to pass sercret function context to any functions, pass all needed variables right to the args.
 	* Actually, it’s better to pass event: object, containing value along with surrounding things (env).
+
+* Do not isolate redefinable static functions. Use them as if they’re of instance. Do not pass any overhead arguments. You cannot detect beforehead which ones you’d need.
 
 
 	

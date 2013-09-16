@@ -1,19 +1,45 @@
+<meta charset="utf-8"> 
+<link rel="stylesheet" type="text/css" href="css/normalize.css">
+<link rel="stylesheet" href="css/highlight.css">
+<link rel="stylesheet" type="text/css" href="css/jquery.slide-area.css">
 <style type="text/css">
+	@import "http://webfonts.ru/import/certege.css";
+	/* Page-wide style */
 	.area{
-		margin-left: 20px;
+		margin-right: 20px;
 		vertical-align: top;
 		display: inline-block;
-	}
-	.rectangle-slider{
-		position: relative;
-		width: 200px;
-		height: 200px;
-		background: gray;
 	}
 	.centered{
 		width: 60%;
 		margin: 0 auto;
 		position: relative;
+	}
+	.use-case{
+		clear: both;
+	}
+	.offset-1{
+		margin-left: -10%;
+	}
+	.pull-left{
+		float: left;
+	}
+	.fork-ribbon{
+		background: rgba(18,22,33,1);
+		position: absolute;
+		top: 50px;
+		right: -50px;
+		-webkit-transform: rotate(45deg);
+		width: 232px;
+		line-height: 24px;
+		font-family: sans-serif;
+		color: white;
+		text-decoration: none;
+		font-size: 12px;
+		text-align: center;
+		font-weight: bolder;
+		border: 3px dotted white;
+		box-shadow: inset 0 0 0 1px white;
 	}
 
 	.linear-slider{
@@ -25,35 +51,336 @@
 		background: -o-linear-gradient(left, red 0%, yellow 16.6%, green 33%, cyan 50%, blue 66.6%, magenta 83.3%, red 100%);
 		background: linear-gradient(left, red 0%, yellow 16.6%, green 33%, cyan 50%, blue 66.6%, magenta 83.3%, red 100%);
 	}
+	pre{
+		overflow: hidden;
+		tab-size: 3;
+		font-size: 13px;
+	}
+
+	
 </style>
-<link rel="stylesheet" type="text/css" href="css/jquery.slide-area.css">
 
-<h1>jquery.slide-areas</h1>
-<p>Generic case dragging area</p>
-
-<section class="centered">
-	<div class="rectangle-slider area" id="multi-2d-slider"></div>
-	<output id="output-1"></output>
-
-	<div class="linear-slider area" id="linear-strict-slider" data-min="0" data-max="360" data-repeat></div>
-	<output id="output-2"></output>
-
-	<div class="rectangle-slider area" id="multi-2d-slider-reversed" data-dimensions="2" data-direction="left"></div>
-	<output id="output-3"></output>
-</section>
 
 <script src="js/zepto.js"></script>
-<script src="dist/jquery.slide-area.js"></script>
+<script src="src/utils.js"></script>
+<script src="src/area.js"></script>
+<script src="src/picker.js"></script>
+<script src="src/jquery.slide-area.js"></script>
+<!--<script src="jquery.slide-area.min.js"></script>-->
+
+
+<a href="https://github.com/dfcreative/slide-area" class="fork-ribbon">Fork me on GitHub!</a>
+
+
+<header id="page-header" class="centered">
+	<style type="text/css">
+		#page-header h1{			
+			font-family: 'Certege';
+			font-weight: normal;
+			font-style: normal;
+			display: block;
+			outline: 1px dotted gray;
+		}
+		#page-header-first-word{
+			width: 40%;
+			display: inline-block;
+			position: relative;
+			vertical-align: middle;
+		} 
+		#header-slider{
+			width: 55%;
+			position: relative;
+			display: inline-block;
+			vertical-align: middle;
+			min-height: 15px;
+			height: 2vw;
+			margin-left: 0%;
+
+			border-radius: 50px;
+			background: rgba(248,250,255,.25);
+			box-shadow: inset 0 .03em .19em rgba(40,60,120,.15), inset 0 .02em .06em rgba(10,15,20,.17);
+			transition: .2s linear border-color;
+		}
+		#header-slider:hover{
+		}
+		#header-slider-picker{
+			width: 3vw;
+			height: 3vw;
+			left: -1.5vw;
+			top: -1.5vw;
+			position: absolute;
+			border-radius: .04em;
+			background: -webkit-linear-gradient(top, rgba(244, 246, 248, 1) 0%, rgba(224, 226, 228, 1) 82%, rgba(215,216,217,.65) 100%);
+			box-shadow: .0em .04em .1em rgba(40,40,90,.22), 0 .01em .03em rgba(10,15,20,.21);
+		}
+		#header-slider-picker:before, #header-slider-picker:after{
+			content:'';
+			width: 50%;
+			height: 8%;
+			position: absolute;
+			top: 60%;
+			left: 50%;
+			margin-top: -4%;
+			margin-left: -25%;
+			background: rgba(210,212,214,.4);
+			box-shadow: 0 .02em 0 rgba(255,255,255,.6), 0 -.02em .02em rgba(180,185,190,.6);
+			border-radius: 10px;
+		}
+		#header-slider-picker:after{
+			top: 40%;
+		}
+	</style>
+	<h1>
+		<em id="page-header-first-word">jQuery.</em>
+		<div id="header-slider" data-value="50" title="slide-area.js">
+			<div id="header-slider-picker"></div>
+		</div>
+	</h1>
+	<p class="tagline">jquery.slide-area.js makes every conceivable kind of <a href="http://en.wikipedia.org/wiki/Slider_(computing)" title="Also known as trackbar">slider</a>.</p>
+
+	<div class="socials"><!-- include socials tpl here --></div>
+
+	<hr/>
+</header>
+
+
+<section class="centered">
+	<h2>Get started</h2>
+	<code>Some code to launch</code>
+
+	<p>jQuery.slide-area creates any kind of sliding areas. Allows to implement:</p>
+	<ul>
+		<li>Any number of pickers</li>
+		<li>Multiple picker values (like x, y coords)</li>
+		<li>Different picker behaviour</li>
+		<li>Specific shapes: 
+			<a href="#triangle-shape">triangle</a>, 
+			<a href="#circular-shape">circular</a>, 
+			<a href="#svg-shape">svg</a>
+		</li>
+		<li><a href="#snap">Rigid snapping</a>, <a href="#fluid-snap">fluid snapping</a></li>
+		<li>And <a href="#options">more</a></li>
+	</ul>
+
+	<h2 id="use-cases">Use cases</h2>
+		<div class="use-case">
+			<h3>Simple linear slider.</h3> Most common use of plugin.
+		</div>
+
+		<div class="use-case">
+			<h3>Range linear slider</h3>
+			<div class="linear-slider area" id="linear-strict-slider" data-min="0" data-max="360" data-repeat></div>
+			<output id="output-2"></output>
+		</div>
+
+		<!-- Rectangle single -->
+		<style type="text/css">
+			.rect-area{
+				position: relative;
+				width: 200px;
+				height: 200px;
+				background: gray;
+			}
+			.rect-area-picker{
+				position: absolute;
+				width: 20px;
+				height: 20px;
+				margin-left: -10px;
+				margin-top: -10px;
+				border-radius: 10px;
+				background: black;
+				color: white;
+				font-size: 10px;
+				text-align: center;
+				line-height: 20px;
+				white-space: nowrap;
+			}
+		</style>
+		<div class="use-case">
+			<h3>Rectangular 2d value picker</h3>
+			<p></p>
+			<div class="rect-area area offset-1 pull-left" id="rect-area-single">
+				<div class="rect-area-picker picker"
+					data-value="8, 12, 1"
+					data-min="-150, 120"
+					data-max="150, 200"
+					data-direction="right, top, bottom">
+				</div>
+			</div>
+			<div class="code"><h4>Code</h4>
+				<script type="text/javascript" class="show-code">
+					var s1 = new SlideArea(document.getElementById("rect-area-single"), {
+						change: function(data){
+							var res = [];
+							for (var i = 0; i < data.value.length; i++){
+								res.push(data.value[i].toFixed(0))
+							}
+							data.picker.el.innerHTML = res.join(", ");
+						},
+						dimensions: 2
+					});
+				</script>
+			</div>
+		</div>
+
+		<!-- Rectangle multi -->
+		<div class="use-case row">
+			<h3>Rectangular multiple slide-area</h3>
+			<p>You can add multiple pickers, each picking it’s own value with own restrictions. 
+			</p>
+			<div class="rect-area area offset-1 pull-left" id="multi-rect-slider">
+				<!--<div class="rectangle-area-picker picker"
+					data-value="3"
+					data-min="-10"
+					data-max="10"></div>-->
+				<div class="rectangle-area-picker picker"
+					data-value="8"
+					data-min="-150"
+					data-max="150"
+					data-direction="top"></div>
+				<!--<div class="rectangle-area-picker picker"
+					></div>-->
+			</div>
+			<div class="markup"><h4>Markup</h4>
+				<div id="multi-slider">
+					<div data-value="3" data-min="-10" data-max="10"></div>
+					<div></div>
+					<div></div>
+				</div>
+			</div>
+			<div class="code"><h4>Code</h4>
+				<script type="text/javascript" class="show-code">
+					var s1 = new SlideArea(document.getElementById("multi-rect-slider"), {
+						change: function(data){
+							data.picker.el.innerHTML = data.value;
+						},
+						dimensions: 2
+					});
+				</script>
+			</div>
+		<div>
+
+
+		<div class="use-case">
+			<h3>Circular</h3>
+		<div>
+
+		<div class="use-case">
+			<h3>SVG</h3>
+		<div>
+
+	<h2 id="API">API</h2>
+		<h3 id="init">Initialization</h3>
+		<p>At first, include script <code>...</code>.</p>
+		
+
+
+		<h3 id="options">Options</h3>
+		<dl>
+			<dt></dt>
+			<dd></dd>
+			<dt>pickers</dt>: 1, //could be custom pickers passed, each with it’s own settings
+
+			//picker-specific options
+			<dt>dimensions</dt>
+			<dd>default: 1
+				how much values picker will get //TODO: replace with mapping fn</dd>
+			<dt>direction</dt>
+			<dd>default: "ight", //keywords or degrees //TODO: replace direction with custom function</dd>
+			<dt>placingFn</dt>
+			<dd>default: null</dd>
+			<dt>mappingFn</dt>
+			<dd>default: null //x,y → normalized l (or [l1, l2])</dd>
+			<dt>transferFn</dt>
+			<dd>default: null ///can pass array of functions for each coordinate</dd>
+			<dt>step</dt>
+			<dd>default: 10</dd>
+			<dt>min</dt>
+			<dd>default: 0</dd>
+			<dt>max</dt>
+			<dd>default: 100</dd>
+			<dt>snap</dt>
+			<dd>default: false //snap value to the grid</dd>
+			<dt>rigidSnap</dt>
+			<dd>default: false //whether to snap straightforward or smoother drop effect</dd>
+			<dt>restrict</dt>
+			<dd>default: true //whether to restrict picker moving area</dd>
+			<dt>grid</dt>
+			<dd>default: false //or array of grid coords to snap</dd>
+			<dt>repeat</dt>
+			<dd>default: false //whether to rotate infinity or cycle h/v scroll</dd>
+			<dt>shape</dt>
+			<dd>default: "",//triangle, circular, SVG-shape in basic case; 2d/1d is different classifier</dd>
+			<dt>readonly</dt>
+			<dd>default: false //no events</dd>
+			<dt>sniperSpeed</dt>
+			<dd>default: 025, //sniper key slowing down amt</dd>
+
+			//callbacks
+			<dt>create</dt>
+			<dd>default: null</dd>
+			<dt>dragstart</dt>
+			<dd>default: null</dd>
+			<dt>drag</dt>
+			<dd>default: null</dd>
+			<dt>dragstop</dt>
+			<dd>default: null</dd>
+			<dt>destroy</dt>
+			<dd>default: null</dd>
+			<dt>change</dt>
+			<dd>default: null//picker callback</dd>
+		</dl>
+
+		<h3>Picker options</h3>
+
+
+	<h2>You ask</h2>
+		<dl>
+			<dt><em>Why not jquery-ui slider?</em></dt>
+				<dd>At first, it’s jquery ui, what means a ton of unnecessary code. At second, it means jquery, which is known as not the very fast thing. jquery.slide-area, despite of it’s name, fully buit on plain JS, and hooks up jquery plugin only if jquery/zepto is on, but work as well without jquery nonetheless.</dd>
+			<dt><em>Why not any other stand-alone solution?</em></dt>
+				<dd>Well, there’s not that much of sliders, providing that extensibility and generalized approach.</dd>
+			<dt><em>Why not native <code>input[type=range]?</code></em></dt>
+				<dd>At first, native input doesn’t allow to spawn any number of pickers you need. At second, native input doesn’t measure alternative value (like second axis) of picker. At third, native input doesn’t allow to define custom behaviour of pickers, like repeating. For the rest, there’s a <a href="#options">bunch</a> of useful options.</dd>
+		</dl>
+
+
+	<h2>Real life</h2>
+		<p>Projects, utilizing plugin: <a href="/">Cpickr</a>
+</section>
+
+<script src="js/jquery.fittext.js"></script>
+<script src="js/secret-source.js"></script>
+<script src="js/highlight.pack.js"></script>
 <script type="text/javascript">
 	$(function(){
-		var s1 = new $.SlideArea(document.getElementById("multi-2d-slider"), {
-			change: function(data){
-				//$("#output-1").val(value)
-				//picker.el.innerHTML = value[0].toFixed(1) + " : " + value[1].toFixed(1);
-				data.picker.el.innerHTML = data.value.toFixed(1);
-			},
-			dimensions: 2
+		//Show code blocks
+		SecretSource.show(document.querySelectorAll('.markup > div'), {
+			includeTag: true,
+			className: ''
 		});
+		SecretSource.show(document.querySelectorAll('.code > script'), {
+			className: ''
+		});
+
+		//highlight 
+		hljs.initHighlightingOnLoad();
+		
+		//Fit header
+		$("#page-header-first-word").fitText(.25, { minFontSize: '15px', maxFontSize: '120px' });
+	});
+
+	/*var headerSa = new $.SlideArea(document.getElementById("header-slider"),{
+		change: function(data){
+			//console.clear();
+			//console.log(data.value);
+		}
+	});
+
+	
+
+
+		
 
 		$("#linear-strict-slider").slideArea({
 			change: function(data){
@@ -66,7 +393,7 @@
 
 		var s3 = new $.SlideArea(document.getElementById("multi-2d-slider-reversed"), {
 			change: function(data){
-				data.picker.el.innerHTML = data.value.toFixed(1) + ":" + data.altValue.toFixed(1);
+				data.picker.el.innerHTML = data.value.toFixed(1) + ":" + (data.altValue && data.altValue.toFixed(1));
 			},
 			pickers: [
 				{
@@ -83,5 +410,5 @@
 			]
 		});
 
-	})	
+	})*/
 </script>

@@ -11,7 +11,8 @@ function extend(a){
 
 //stupid prefix detector
 function detectCSSPrefix(){
-	var style = document.defaultView.getComputedStyle(document.body, "");
+	var puppet = document.documentElement;
+	var style = document.defaultView.getComputedStyle(puppet, "");
 	if (style.transform) return "";
 	if (style["-webkit-transform"]) return "-webkit-";
 	if (style["-moz-transform"]) return "-moz-";
@@ -26,18 +27,44 @@ function limit(v, min, max){
 }
 
 //attr parser
-function parseDataAttributes(el) {
+function parseDataAttributes(el, multiple) {
 	var data = {}, v;
-	for (var prop in el.dataset) {
-		if (el.dataset[prop] === "true" || el.dataset[prop] === "") {
-			data[prop] = true;
-		} else if (el.dataset[prop] === "false") {
-			data[prop] = false;
-		} else if (!Number.isNaN(v = parseFloat(el.dataset[prop]))) {
-			data[prop] = v;
+	for (var prop in el.dataset){
+		var v;
+		if (multiple) {
+			v = el.dataset[prop].split(",");
+			for (var i = v.length; i--;){
+				v[i] = recognizeValue(v[i].trim());
+			}
 		} else {
-			data[prop] = el.dataset[prop];
+			v = recognizeValue(el.dataset[prop]);
 		}
+		
+		data[prop] = v;
 	}
 	return data;
 }
+
+//returns value from string with correct type 
+function recognizeValue(str){
+	if (str === "true" || str === "") {
+		return true;
+	} else if (str === "false") {
+		return false;
+	} else if (!Number.isNaN(v = parseFloat(str))) {
+		return v;
+	} else {
+		return str;
+	}
+}
+
+var cssPrefix = detectCSSPrefix(),
+//#ifdef pluginName && pickerClass && className && altPickerClass
+	/* #put "pluginName = '" + pluginName + "'," */
+	/* #put "className = '" + className + "'" */
+	/* #put "pickerClass = '" + pickerClass + "'" */
+//#else
+	pluginName = "slideArea",
+	className = "slide-area",
+	pickerClass = "slide-area-picker"
+//#endif

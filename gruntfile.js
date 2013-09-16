@@ -5,18 +5,13 @@ module.exports = function(grunt) {
 		pkg: grunt.file.readJSON('package.json'),
 
 		homemade: {
-			jquery:{
-				src: "build/build.jquery.js",
-				dest: "dist/jquery.<%= pkg.name %>.js",
+			main:{
+				src: "build.js",
+				dest: "jquery.<%= pkg.name %>.js",
 				context: {
-					pluginName: "slideArea" 
-				}
-			},
-			vanilla:{
-				src: "build/build.vanilla.js",
-				dest: "dist/<%= pkg.name %>.js",
-				context: {
-					pluginName: "slideArea" 
+					pluginName: "slideArea",
+					className: "slide-area",
+					env: null
 				}
 			}
 		},
@@ -42,17 +37,17 @@ module.exports = function(grunt) {
 			},
 			dist: {
 				src: ['src/utils.js', 'src/slide-area.js'],
-				dest: 'dist/<%= pkg.name %>.js'
+				dest: '<%= pkg.name %>.js'
 			},
 		},
 
 		uglify: {
 			options: {
-				banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+				//banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
 			},
 			dist: {
 				files: {
-					'dist/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
+					'jquery.<%= pkg.name %>.min.js': ['<%= homemade.main.dest %>']
 				}
 			}
 		},
@@ -77,6 +72,6 @@ module.exports = function(grunt) {
 
 	//register tasks
 	grunt.registerTask('test', ['jshint', 'qunit']);
-	grunt.registerTask('default', ['jshint', 'homemade']);
+	grunt.registerTask('default', ['homemade', 'uglify']);
 
 };
