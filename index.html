@@ -57,7 +57,18 @@
 		font-size: 13px;
 	}
 
-	
+	.markup .area{
+		display: none;
+	}
+
+	.row{
+		clear: both;
+	}
+
+	.span6{
+		float: left;
+		width: 50%;
+	}
 </style>
 
 
@@ -173,7 +184,7 @@
 			<output id="output-2"></output>
 		</div>
 
-		<!-- Rectangle single -->
+		<!-- Rectangle 2d -->
 		<style type="text/css">
 			.rect-area{
 				position: relative;
@@ -198,24 +209,23 @@
 		</style>
 		<div class="use-case">
 			<h3>Rectangular 2d value picker</h3>
-			<p></p>
-			<div class="rect-area area offset-1 pull-left" id="rect-area-single">
+			<div class="rect-area area pull-left" id="rect-area-single">
 				<div class="rect-area-picker picker"
-					data-value="8, 12, 1"
-					data-min="-150, 120"
-					data-max="150, 200"
+					data-value="-150, 50, , , , , ,"
+					data-min="-150, -150"
+					data-max=", 150"
 					data-direction="right, top, bottom">
 				</div>
+			</div>
+			<p>A list of values can be passed as a picker’s value, separated by comma. In that case picker’s value is processed as vector, according to the rest of settings. As in math.</p>
+			<p>It may be useful when you have to pick 2-dimensional (n-dimensional) coordinates.</p>
+			<div class="markup"><h4>Markup</h4>
 			</div>
 			<div class="code"><h4>Code</h4>
 				<script type="text/javascript" class="show-code">
 					var s1 = new SlideArea(document.getElementById("rect-area-single"), {
 						change: function(data){
-							var res = [];
-							for (var i = 0; i < data.value.length; i++){
-								res.push(data.value[i].toFixed(0))
-							}
-							data.picker.el.innerHTML = res.join(", ");
+							data.picker.el.innerHTML = data.value;
 						},
 						dimensions: 2
 					});
@@ -242,20 +252,20 @@
 					></div>-->
 			</div>
 			<div class="markup"><h4>Markup</h4>
-				<div id="multi-slider">
-					<div data-value="3" data-min="-10" data-max="10"></div>
+				<div id="multi-slider" class="area">
+					<div class="picker" data-value="3" data-min="-10" data-max="10"></div>
 					<div></div>
 					<div></div>
 				</div>
 			</div>
 			<div class="code"><h4>Code</h4>
 				<script type="text/javascript" class="show-code">
-					var s1 = new SlideArea(document.getElementById("multi-rect-slider"), {
+					/*var s1 = new SlideArea(document.getElementById("multi-rect-slider"), {
 						change: function(data){
 							data.picker.el.innerHTML = data.value;
 						},
 						dimensions: 2
-					});
+					});*/
 				</script>
 			</div>
 		<div>
@@ -269,7 +279,7 @@
 			<h3>SVG</h3>
 		<div>
 
-	<h2 id="API">API</h2>
+	<h2 id="api">API</h2>
 		<h3 id="init">Initialization</h3>
 		<p>At first, include script <code>...</code>.</p>
 		
@@ -333,7 +343,6 @@
 
 		<h3>Picker options</h3>
 
-
 	<h2>You ask</h2>
 		<dl>
 			<dt><em>Why not jquery-ui slider?</em></dt>
@@ -343,7 +352,6 @@
 			<dt><em>Why not native <code>input[type=range]?</code></em></dt>
 				<dd>At first, native input doesn’t allow to spawn any number of pickers you need. At second, native input doesn’t measure alternative value (like second axis) of picker. At third, native input doesn’t allow to define custom behaviour of pickers, like repeating. For the rest, there’s a <a href="#options">bunch</a> of useful options.</dd>
 		</dl>
-
 
 	<h2>Real life</h2>
 		<p>Projects, utilizing plugin: <a href="/">Cpickr</a>
@@ -370,45 +378,4 @@
 		$("#page-header-first-word").fitText(.25, { minFontSize: '15px', maxFontSize: '120px' });
 	});
 
-	/*var headerSa = new $.SlideArea(document.getElementById("header-slider"),{
-		change: function(data){
-			//console.clear();
-			//console.log(data.value);
-		}
-	});
-
-	
-
-
-		
-
-		$("#linear-strict-slider").slideArea({
-			change: function(data){
-				//$("#output-2").val(value)
-				data.picker.el.innerHTML = data.value.toFixed(2);
-				data.picker.el.style.background = "hsl(" + data.value + ", 100%, 50%)";
-			}
-		});
-
-
-		var s3 = new $.SlideArea(document.getElementById("multi-2d-slider-reversed"), {
-			change: function(data){
-				data.picker.el.innerHTML = data.value.toFixed(1) + ":" + (data.altValue && data.altValue.toFixed(1));
-			},
-			pickers: [
-				{
-					max: 123,
-					min: -123,
-					direction: "top",
-					altPicker: {
-						max: 360,
-						repeat: true,
-						min: 0,
-						direction: "right"
-					}
-				}				
-			]
-		});
-
-	})*/
 </script>

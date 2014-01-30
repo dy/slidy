@@ -1,6 +1,6 @@
 {
-	"name": "slide-area",
-	"version": "0.1.0",
+	"name": "slidr",
+	"version": "0.1.1",
 	"devDependencies": {
 		"grunt": "~0.4.1",
 		"grunt-contrib-jshint": "~0.6.4",
@@ -8,6 +8,6 @@
 		"grunt-contrib-concat": "~0.2.0",
 		"grunt-contrib-watch": "~0.2.0",
 		"grunt-contrib-uglify": "~0.2.4",
-		"grunt-preprocessor": "~0.2.0"
+		"grunt-homemade": "~0.2.0"
 	}
 }

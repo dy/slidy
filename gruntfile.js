@@ -9,8 +9,7 @@ module.exports = function(grunt) {
 				src: "build.js",
 				dest: "jquery.<%= pkg.name %>.js",
 				context: {
-					pluginName: "slideArea",
-					className: "slide-area",
+					pluginName: "slidr",
 					env: null
 				}
 			}

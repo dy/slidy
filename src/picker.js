@@ -3,132 +3,88 @@ Moved out to the external class because of has too much own properties.
 NOTE: experimental class architecture:
 - options are kept right on the element itself, w/o options object
 - any option can be comma-separated list, cause picker may change matrix, not one value
-- that way, every function working with value should handle array on input, not the single value 
+- that way, every function working with value should handle array on input, not the single value
 */
-function Picker(el, container, opts){
-	this._create.apply(this, arguments);
+function Picker(el, area, opts){
+	this.$el = el;
+	//TODO: detect if no area passed
+	this.area = area;
+
+	//make options
+	this.options = extend({}, this.options, parseDataAttributes(el, true), opts);
+	var o = this.options;
+
+	//TODO: (make initial coords centered) → move to initial coords
+	//this.left = Math.round(this.area.center.x);
+	//this.top = Math.round(this.area.center.y);
+
+	//causes update
+	/*Object.defineProperty(this, "value", {
+		get: function(){return value},
+		set: function(vector){
+			value = vector;
+			this.update();
+		},
+		enumerable: true,
+		configurable: true
+	})
+	this.value = o.value*/
+
+	//the only value that picker keeps - self values
+	this.x = this.options.x;
+	this.y = this.options.y;
+
+	this.offsetBox = getOffsetBox(this.$el);
+
+	this.change = this.change.bind(this);
 }
 
 
 //Prototype
 Picker.prototype = {
 	options: {
-		direction: "right", //keywords, degrees or array of ones //TODO: replace direction with custom function
-		placingFn: "linear",
-		mappingFn: "linear", //x,y → normalized l (or [l1, l2])
-		transferFn: "linear", //can pass array of functions for each coordinate
-		step: 10,
-		min: 0,
-		max: 100,
-		value: 0,
-		snap: false, //snap value to the grid
-		rigidSnap: false, //whether to snap straightforward or smoother drop effect
-		restrict: true, //whether to restrict picker moving area
-		grid: false, //or array of grid coords to snap
-		repeat: false, //whether to rotate infinity or cycle h/v scroll
-		altPicker: null //pickers changing values along with one
+		x: 0,
+		y: 0,
+		horizontal: true,
+		vertical: false,
+		//repeatX: false,
+		//repeatY: false
+		//snap: false, //snap value to the grid
+		//repeat: false, //whether to rotate infinity or cycle h/v scroll
 	},
 
-	_create: function(el, container, opts){
-		this.el = el;
-		this.container = container;
-
-		//make options
-		this.options = extend({}, this.options, parseDataAttributes(el, true), opts);
-		var o = this.options;
-
-		//detect maximum dimensions needed from options
-		this.dimensions = 1;
-		for (var opt in o){
-			if (o[opt] instanceof Array){
-				if (o[opt].length > this.dimensions){
-					this.dimensions = o[opt].length;
-				}
-			}
-		}
-
-		//make initial coords centered		
-		this.left = Math.round(this.container.center.x);
-		this.top = Math.round(this.container.center.y);
-
-		//init coords based on value passed
-		this.setValue(o.value);
+	//begin observing area
+	startTracking: function(){
+		this.area.addEventListener("change", this.change);
+		this.offsetBox = getOffsetBox(this.$el);
 	},
 
-	//move, changevalue and trigger changing
-	//x & y are coords relative to sliding area
-	to: function(x, y){
-		var o = this.options;
-		var to = Picker.placingFn[o.placingFn](x, y, this);
+	//stop observing area
+	stopTracking: function(){
+		this.area.removeEventListener("change", this.change);
+	},
 
-		if (this.altPickers && this.altPickers.length){
-			//console.log(to)
-			extend(to, this.altPicker.options.placingFn(x, y, this.altPicker));
-			//console.log(to)
-		}
+	//change tracker
+	change: function(state){
+		var gap = this.offsetBox.width * .5;
+		var x = between(state.x, 0, state.box.width - this.offsetBox.width);
+		var y = between(state.y, 0, state.box.height - this.offsetBox.height);
 
-		if (to.y !== undefined) this.top = to.y;
-		if (to.x !== undefined) this.left = to.x;
-
-		this.move(this.left, this.top);
-
-		this.value = this._calcValue(this.top, this.left);
-
-		if (this.altPicker){
-			this.altPicker.top = this.top;
-			this.altPicker.left = this.left;
-			this.altPicker.value = this.altPicker._calcValue(this.top, this.left);
-		}
-		
-		this._triggerChange();
-
-		return to;
+		trigger(this, "change", [x,y]);
+		this.move(x, y);
 	},
 
 	//just move picker to the relative coords
-	move: function(left, top){
-		this.el.style[cssPrefix + "transform"] = ["translate3d(", left, "px,", top, "px, 0)"].join("");
-	},
+	move: function(x, y, nX, nY){
+		//TODO: centrize picker
 
-	//make position reflect value
-	update: function(){
-		var o = this.options;
-		var l = Picker.transferFn[o.transferFn].fromValue(this.value, this);
-		Picker.mappingFn[o.mappingFn].fromL(l, this);
-		this.move(this.left, this.top);
-		this._triggerChange();
-	},
-
-	dragstart: function(dragstate){
-		this.to(dragstate.x, dragstate.y);		
-	},
-
-	drag: function(dragstate){
-		this.to(dragstate.x, dragstate.y);
-	},
-
-	_triggerChange: function(){
-		this._trigger("change",{
-			value: this.value,
-			altValue: this.altPicker && this.altPicker.value,
-			picker: this,
-			altPicker: this.altPicker,
-			container: this.container,
-			options: this.o
-		})
+		this.$el.style[cssPrefix + "transform"] = ["translate3d(", x, "px,", y, "px, 0)"].join("");
 	},
 
 
-	_trigger: function(evName, args){
-		//callbacks
-		if (this.options[evName]) this.options[evName].call(this, args);
-		if (this.container.options[evName]) this.container.options[evName].call(this, args);
-
-		//event
-		var evt = new CustomEvent(evName, {detail: args});
-		this.el.dispatchEvent(evt);
+	addEventListener: function(evt, fn){
+		addEventListenerTo(this, evt, fn)
 	},
-
 
 	//returns value from current coords
 	_calcValue: function(x, y){
@@ -137,215 +93,85 @@ Picker.prototype = {
 			//TODDO: calc multiple pickers
 
 		//get normalized(not necessary) value
-		l = Picker.mappingFn[o.mappingFn].toL(this);
+		l = this.mapToL();
 
 		//apply transfer function
-		return Picker.transferFn[o.transferFn].toValue(l, this);
+		return this.transferLToValue(l, this);
 	},
 
-
-	getValue: function(){
-		return this.value;
-	},
-
-	setValue: function(value){
-		var o = this.options;
-		this.value = value;
-		this.update();
-	}
-};
-
-//Static
-extend(Picker, {
-	//Functions of placing picker based on dragstate
-	//Main value-forming function: value is obtained based on new picker coords calculated by this function
-	//returns picker coords
-	placingFn: {
-		circular: function(){
-
-		},
-		conical: function(){
-
-		},
-		linear: function(x,y, picker){
-			var to = {},
-				container = picker.container,
-				o = picker.options;
-
-			//test bounds
-			for (var i = 0; i < picker.dimensions; i++){
-				var direction = o.direction[i] || Picker.prototype.options.direction;
-				switch (direction){
-					case "top":
-					case "bottom":
-						if (y <= 0){
-							to.y = 0;
-						} else if (y >= container.height){
-							to.y = container.height;				
-						} else {
-							to.y = y;
-							to.y = limit(to.y, 0, container.height);
-						}
-						break;
-					case "left":
-					case "right":
-						if (x <= 0){
-							to.x = 0;
-						} else if (x >= container.width){
-							to.x = container.width;				
-						} else {
-							to.x = x;
-							to.x = limit(to.x, 0, container.width);
-						}
-						break;
-				}
-			}
-
-			return to;
-		},
-		free: function(){
-
-		},
-		repeat: function(x, y, picker){
-			var to = {},
-				container = picker.container,
-				o = picker.options,
-				tx = x % container.width,
-				ty = y % container.height;
-
-			tx += (tx < 0 ? container.width : 0);
-			ty += (ty < 0 ? container.height : 0);
-
-			switch (o.direction){
-				case "top":
-				case "bottom":
-					to.y = ty;
-					break;
-				case "left":
-				case "right":
-					to.x = tx;
-					break;
-			}
-
-			return to;
+	//Transfers - transforms normalized l passed to the target value and vice-versa
+	//return l from value
+	transferValueToL: function(value){
+		var l = [], o = this.options;
+		for (var i = 0; i < this.dimensions; i++){
+			var min = o.min[i],
+				max = o.max[i]
+			l[i] = (value[i] - min) / (max - min);
 		}
+		return l;
 	},
 
-	//Transforms picker & element to the l value, or couple of l for multiple dimensions.
+	//return value from L
+	transferLToValue: function(l){
+		var v = [],
+			o = this.options;
+		for (var i = 0; i < this.dimensions; i++){
+			var min = o.min[i],
+				max = o.max[i];
+			v[i] = l[i] * (max - min) + (min);
+		}
+		return v;
+	},
+
+
+	//Transforms picker & element coordinates to l.
 	//l is normalized value [0..1] reflecting picker position within the area.
 	//Area can be an SVG of any shape or element
-	//picker & area - class instances, not DOM-elements
-	//out == based on l passed set coords of picker
-	//NOTE: 2d can be passed in options
-	mappingFn: {
-		linear: {
-			toL: function(picker){
-				var l = [],
-					o = picker.options,
-					container = picker.container;
-				for (var i = 0; i < picker.dimensions; i++){
-					switch(o.direction[i]){
-						case "top":
-							l.push(1 - picker.top / container.height);
-							break;
-						case "bottom":
-							l.push(picker.top / container.height);
-							break;
-						case "left":
-							l.push(1 - picker.left / container.width);
-							break;
-						case "right":
-							l.push(picker.left / container.width);
-							break;
-						default: //degrees case
-							//TODO: calc degrees
-					}
-				}
-				return l;
-			},
-			fromL: function(l, picker){
-				var o = picker.options;
-
-				for (var i = 0; i < picker.dimensions.length; i++){
-					var direction = o.direction[i] || Picker.prototype.options.direction;
-					switch (direction){
-						case "top":
-							picker.top = Math.round((1-l) * picker.container.height);
-							break;
-						case "bottom":
-							picker.top = Math.round(l * picker.container.height);
-							break;
-						case "right":
-							picker.left = Math.round((l) * picker.container.width);
-							break;
-						case "left":
-							picker.left = Math.round((1-l) * picker.container.width);
-							break;
-					}
-				}
-			}
-		},
-		polar: {
-			toL: function(picker){
-				//TODO
-				throw "unimplemented";
-			},
-			fromL: function(picker){
-				//TODO
-				throw "unimplemented";
-			}
-		},
-		svg: {
-			to: function(){
-
-			},
-			from: function(){
-
+	mapToL: function(){
+		var l = [],
+			o = this.options,
+			area = this.area;
+		for (var i = 0; i < this.dimensions; i++){
+			var direction = o.direction[i];
+			switch(o.direction[i]){
+				case "top":
+					l[i] = (1 - this.top / area.height);
+					break;
+				case "bottom":
+					l[i] = (this.top / area.height);
+					break;
+				case "left":
+					l[i] = (1 - this.left / area.width);
+					break;
+				case "right":
+					l[i] = (this.left / area.width);
+					break;
+				default: //degrees case
+					//TODO: calc degrees
 			}
 		}
+		return l;
 	},
+	mapFromL: function(l){
+		var o = this.options;
 
-	//Transforms normalized l passed to the target value and vice-versa
-	//moved out of mappingFn cause to combine with mappingFn and cause 
-	transferFn: {
-		linear: {
-			toValue: function(l, picker){
-				var v = [],
-					o = picker.options;
-				for (var i = 0; i < picker.dimensions; i++){
-					var min = o.min[i] || Picker.prototype.options.min,
-						max = o.max[i] || Picker.prototype.options.max
-					v.push(l[i] * (max - min) + (min));
-				}
-				return v;
-			},
-			fromValue: function(value, picker){
-				var l = [],
-					o = picker.options;
-				for (var i = 0; i < value.length; i++){
-					var min = o.min[i] || Picker.prototype.options.min,
-						max = o.max[i] || Picker.prototype.options.max
-					l.push((value[i] - min) / (max - min));
-				}
-				return l;
+		for (var i = 0; i < this.dimensions; i++){
+			var direction = o.direction[i];
+			switch (direction[i]){
+				case "top":
+					this.top = Math.round((1-l[i]) * this.area.height);
+					break;
+				case "bottom":
+					this.top = Math.round(l[i] * this.area.height);
+					break;
+				case "right":
+					this.left = Math.round((l[i]) * this.area.width);
+					break;
+				case "left":
+					this.left = Math.round((1-l[i]) * this.area.width);
+					break;
 			}
-		},
-
-		quadratic: {
-			toValue: function(){
-
-			},
-			fromValue: function(){
-
-			}
-		},
-
-		cubic: function(){
-			//TODO
-		},
-
-		logarithmic: function(){
-			//TODO
 		}
 	}
-});
+
+};
