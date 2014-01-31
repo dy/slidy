@@ -1,13 +1,21 @@
 {
-	"name": "slidr",
-	"version": "0.1.1",
-	"devDependencies": {
-		"grunt": "~0.4.1",
-		"grunt-contrib-jshint": "~0.6.4",
-		"grunt-contrib-qunit": "~0.2.2",
-		"grunt-contrib-concat": "~0.2.0",
-		"grunt-contrib-watch": "~0.2.0",
-		"grunt-contrib-uglify": "~0.2.4",
-		"grunt-homemade": "~0.2.0"
-	}
+  "name": "slidy",
+  "version": "0.1.1",
+  "devDependencies": {
+    "gulp": ">=3.4.0",
+    "grunt-contrib-jshint": "~0.6.4",
+    "grunt-contrib-qunit": "~0.2.2",
+    "grunt-contrib-concat": "~0.2.0",
+    "grunt-contrib-watch": "~0.2.0",
+    "grunt-contrib-uglify": "~0.2.4",
+    "grunt-traceur-build": "*",
+    "gulp-traceur": "*",
+    "grunt-homemade": "~0.2.0",
+    "grunt-closure-compiler": ">0.0.20",
+    "gulp-livereload": "~0.3.0",
+    "gulp-concat": "~2.1.7",
+    "gulp-autoprefixer": "0.0.5",
+    "gulp-jshint": "~1.3.4",
+    "gulp-watch": "~0.5.0"
+  }
 }

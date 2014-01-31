@@ -123,7 +123,6 @@ Area.prototype = {
 		this.dragstate.clientX = e.clientX;
 		this.dragstate.clientY = e.clientY;
 		this.dragstate.picker = this.findClosestPicker(this.dragstate.x, this.dragstate.y);
-		this.dragstate.picker.startTracking();
 
 		//init box
 		this.dragstate.box.top = this.offsetBox.top + this.paddingBox.top;
@@ -138,6 +137,8 @@ Area.prototype = {
 
 		this.$el.classList.add(this.options.dragClass);
 
+		this.dragstate.picker.startTracking();
+		trigger(this, "dragstart", this.dragstate)
 		trigger(this, "change", this.dragstate)
 
 		//bind moving
@@ -153,12 +154,14 @@ Area.prototype = {
 
 		this._captureDragstate(this.dragstate, e);
 
+		trigger(this, "drag", this.dragstate)
 		trigger(this, "change", this.dragstate)
 	},
 
 	_dragstop: function(e){
 		this._drag(e);
 
+		trigger(this, "dragstop", this.dragstate);
 		this.dragstate.picker.stopTracking();
 
 		this.$el.classList.remove(this.options.dragClass);

@@ -15,6 +15,9 @@
 	+ cute
 	+ real word
 	+ in accordance with sticky
+* slidie, stickie
+	+ nouns
+	+ common style
 
 ## Notes
 * One picker for array of values
@@ -51,4 +54,25 @@
 	* Area implements low-level dragging interactions.
 	*
 
-* Do not create abstract component class because it can slow down optimization. Better create a set of functions in utils.
+* Abstract `Component` class vs util functions
+	* -C It can slow down optimization. Better create a set of functions in utils.
+	* +C Util fns as methods may create extra-code, like: `addEventListener(){addEvtListener}`, besides it’ll ease some initialisations
+	* +C It can be reused a lot of times in other projects
+	* ? Then how to implement component gracefully?
+		* ?ES6 class
+			* Native way to implement extending
+		* ?sweet.js macro
+		* ?Plain class to extend
+	* +C it can include definition of jquery/platform stuff and utilize that
+	* Things to move to component
+		* options ()
+		* init element (classes)
+		* enable/disable component (classes, events)
+		* behaviour (states): state machine
+		* events (trigger, add/remove, options callbacks, DOM-document, DOM-element)
+		*
+
+* Seems that there’s nothing in component I can’t implement on a simple DOM-element.
+	* Options move to element attributes
+	* Events are covered by native methods
+	* $el, factually, have to be bound to real HTML class
