@@ -1,31 +1,34 @@
 /* container class */
 function Area(el, opts){
-	if (el) this.$el = el;
-	else {
-		throw new Error("No element passed to the constructor")
-		return false;
-	}
+	var $el = this.$el = this.self = el || document.createElement('div')
+
+	//intrude prototype to chain
+	var elProto = $el.__proto__;
+	$el.__proto__ = this;
+
+	//forgot about this, keep in mind self
+	var self = this.$el;
 
 	//init options
-	this.options = extend({}, this.options, parseDataAttributes(this.$el), opts);
-	var o = this.options;
+	self.options = extend({}, self.options, opts);
+	var o = self.options;
 
 	//treat element
-	this.$el.classList.add(pluginName);
+	self.classList.add(pluginName);
 
 	//update element size
-	this._captureSize();
+	self._captureSize();
 
 	//create picker(s)
-	this.pickers = [];
-	var children = this.$el.querySelectorAll("[data-picker]"),
+	self.pickers = [];
+	var children = self.querySelectorAll("[data-picker]"),
 		l = children.length,
 		pNum = 0;
 
 	//recognize inner elements as pickers
 	if (l > 0){
 		for (var i = 0; i<l; i++){
-			this.addPicker(children.item(i))
+			self.addPicker(children.item(i))
 		}
 	}
 
@@ -33,11 +36,11 @@ function Area(el, opts){
 	/*var pNum = (o.pickers.length || o.pickers) || 0;
 	for (var i = 0; i < pNum; i++){
 		var el = document.createElement("div"); //TODO
-		this.addPicker(el, o.pickers[i]);
+		self.addPicker(el, o.pickers[i]);
 	}*/
 
 	//init drag state object
-	this.dragstate = {
+	self.dragstate = {
 		initX:0,
 		initY:0,
 		x: 0,
@@ -47,17 +50,27 @@ function Area(el, opts){
 		clientX: 0,
 		clientY: 0,
 		box: {},
-		area: this,
+		area: self,
 		isCtrl: false,
 		picker: null //current picker to drag
 	};
 
-	this._listenEvents();
+	self._listenEvents();
 
-	trigger(this, "create");
+	self.dispatchEvent(new CustomEvent("create"));
+
+	return self;
 }
 
-Area.prototype = {
+
+Area.defaults = {
+	tag: 'div'
+}
+
+
+Area.prototype = Object.create(HTMLElement.prototype);
+
+extend(Area.prototype, {
 	options: {
 		//pickers: 1, //could be custom pickers passed, each with it’s own settings
 
@@ -77,22 +90,10 @@ Area.prototype = {
 		change: null //picker callback
 	},
 
-
-	addEventListener: function(evt, fn){
-		addEventListenerTo(this, evt, fn)
-	},
-
-	removeEventListener: function(evt, fn){
-		if (this.listeners[evt]){
-			var i = this.listeners[evt].indexOf(fn);
-			if (i >= 0) this.listeners[evt].splice(i,1);
-		}
-	},
-
 	//add new picker
 	addPicker: function(el){
 		//prevent adding new filter
-		this.pickers.push(new Picker(el, this));
+		this.pickers.push(new Picker(el, this.$el));
 	},
 
 	_listenEvents: function(){
@@ -104,7 +105,7 @@ Area.prototype = {
 		this._drag = this._drag.bind(this);
 		this._dragstop = this._dragstop.bind(this);
 
-		on(this.$el, "mousedown", this._dragstart);
+		this.$el.addEventListener("mousedown", this._dragstart);
 
 		on(window, "resize", function(){
 			self._captureSize();
@@ -137,9 +138,10 @@ Area.prototype = {
 
 		this.$el.classList.add(this.options.dragClass);
 
-		this.dragstate.picker.startTracking();
-		trigger(this, "dragstart", this.dragstate)
-		trigger(this, "change", this.dragstate)
+		this.dragstate.picker.dragstart(this.dragstate);
+		//this.dragstate.picker.startTracking();
+		this.dispatchEvent(new CustomEvent("dragstart", this.dragstate))
+		this.dispatchEvent(new CustomEvent("change", this.dragstate))
 
 		//bind moving
 		on(document, "selectstart", prevent);
@@ -154,15 +156,18 @@ Area.prototype = {
 
 		this._captureDragstate(this.dragstate, e);
 
-		trigger(this, "drag", this.dragstate)
-		trigger(this, "change", this.dragstate)
+		this.dragstate.picker.drag(this.dragstate);
+		this.dispatchEvent(new CustomEvent("drag", this.dragstate))
+		this.dispatchEvent(new CustomEvent("change", this.dragstate))
 	},
 
 	_dragstop: function(e){
 		this._drag(e);
 
-		trigger(this, "dragstop", this.dragstate);
-		this.dragstate.picker.stopTracking();
+		this.dragstate.picker.dragstop(this.dragstate);
+
+		this.dispatchEvent(new CustomEvent("dragstop", this.dragstate));
+		//this.dragstate.picker.stopTracking();
 
 		this.$el.classList.remove(this.options.dragClass);
 
@@ -192,7 +197,7 @@ Area.prototype = {
 	//set pickers reflect their’s real values
 	updatePickers: function(){
 		for (var i = 0; i < this.pickers.length; i++){
-			this.pickers[i].update();
+			//this.pickers[i].update();
 		}
 	},
 
@@ -216,4 +221,5 @@ Area.prototype = {
 		dragstate.clientX = e.clientX;
 		dragstate.clientY = e.clientY;
 	}
-};
+});
+

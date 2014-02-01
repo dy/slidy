@@ -74,5 +74,23 @@
 
 * Seems that there’s nothing in component I can’t implement on a simple DOM-element.
 	* Options move to element attributes
+		+ live-reflection
 	* Events are covered by native methods
 	* $el, factually, have to be bound to real HTML class
+	* Init on existing element is like `var x = new Component($el)`
+
+* ? How to make it↑ native-like: `var el = new Component(); $el.append(el);`
+	*
+
+* ?✔ `var A = function(){}` and `function A(){}` is the same?
+	* It’s the same (fn gets name), but you still can’t spawn new classes (name your functions), due to you have to define method, not fn. Every fn created will be anonymous. You have to do like perl-way metashit: `var $$A = function()`
+
+* ?✔ How to return non-`this` from constructor?
+	* Will be returned any non-primitive value insteadof `this`.
+	* But unfortunately, you can’t name that dynamically created returning class, unless you've hardcoded it’s name.
+
+* I can extend `__proto__` with my own properties, but that will extend all HTML[DOM]Elements instances, which is suitable for Polymer, but not for me.
+* I want my component to be of special-behaviour, but it can be of any native type.
+	* Should I insert component into the prototype chain?
+	Instance ⇒ HTMLElement → Instance ⇒ Component ⇒ HTMLElement
+		* This’d let customize target tag, not to intrude into native behaviour,

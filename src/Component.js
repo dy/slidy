@@ -1,5 +1,9 @@
+/**
+* Controller on the elements
+* Very similar to native elements
+*/
 class Component {
-	static defaultOptions = {
+	static defaults = {
 
 	}
 
@@ -14,6 +18,9 @@ class Component {
 
 	}
 
+
+	//init
+
 	//everything to init DOM
 	create(){
 
@@ -21,11 +28,36 @@ class Component {
 
 
 	//options stuff
+	//TODO: bind options to the element’s attributes, rigidly, through object init (to reflect state through attributes)
 	parseDataset(){
 
 	}
 
 
+	//events utils
+	on(evt, fn) {
+		this.$el.addEventListener(evt, fn)
+	}
+	addEventListener(){
+
+	}
+
+	off(evt, fn){
+		this.$el.removeEventListener(evt, fn);
+	}
+
+	one(evt, fn){
+		this.$el.addEventListener(evt, function(){
+			fn();
+			this.$el.removeEventListener(evt, fn)
+		}.bind(this))
+	}
+
+	trigger(evt, data){
+		//TODO: handle jQuery-way, if there is such
+		//TODO: pass data
+		this.$el.dispatchEvent(new Event(evt, data));
+	}
 
 
 	//basic behaviour

@@ -37,8 +37,9 @@ function Picker(el, area, opts){
 	this.offsetBox = getOffsetBox(this.$el);
 
 	//binder
-	this.change = this.change.bind(this);
+	this.drag = this.drag.bind(this);
 	this.dragstart = this.dragstart.bind(this);
+	this.dragstop = this.dragstop.bind(this);
 }
 
 
@@ -57,15 +58,15 @@ Picker.prototype = {
 
 	//begin observing area
 	startTracking: function(){
-		this.area.addEventListener("dragstart", this.dragstart);
-		this.area.addEventListener("change", this.change);
+		this.area.$el.addEventListener("dragstart", this.dragstart);
+		this.area.$el.addEventListener("change", this.change);
 		this.offsetBox = getOffsetBox(this.$el);
 	},
 
 	//stop observing area
 	stopTracking: function(){
-		this.area.removeEventListener("dragstart", this.dragstart);
-		this.area.removeEventListener("change", this.change);
+		this.area.$el.removeEventListener("dragstart", this.dragstart);
+		this.area.$el.removeEventListener("change", this.change);
 	},
 
 	//
@@ -73,6 +74,7 @@ Picker.prototype = {
 		//get offset coords within thumb
 		this.initOffsetX = this.offsetBox.left - state.x;
 		this.initOffsetY = this.offsetBox.top - state.y;
+		this.offsetBox = getOffsetBox(this.$el);
 
 		//if click is out of thumb - move thumb to that place
 		//if (!isIn(state, this.offsetBox)){
@@ -81,12 +83,16 @@ Picker.prototype = {
 	},
 
 	//change tracker
-	change: function(state){
+	drag: function(state){
 		var x = between(state.x - this.initOffsetX, 0, state.box.width - this.offsetBox.width);
 		var y = between(state.y - this.initOffsetY, 0, state.box.height - this.offsetBox.height);
 
 		trigger(this, "change", [x,y]);
 		this.move(x, y);
+	},
+
+	dragstop: function(){
+
 	},
 
 	//just move picker to the relative coords

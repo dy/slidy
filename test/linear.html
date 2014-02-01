@@ -78,10 +78,10 @@
 	var $picker = document.querySelector(".picker")
 	var $value = document.querySelector(".value")
 
-	var area = new Area($area);
-
-	area.pickers[0].addEventListener("change", function(coords){
-		//TODO: move cross to the value
-		$value.style[cssPrefix + "transform"] = ["translate3d(", coords[0], "px,", coords[1], "px, 0)"].join("");
-	})
+	var area = new Area($area, {
+		onchange: function(coords){
+			//TODO: move cross to the value
+			$value.style[cssPrefix + "transform"] = ["translate3d(", coords[0], "px,", coords[1], "px, 0)"].join("");
+		}
+	});
 </script>
