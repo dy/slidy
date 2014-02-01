@@ -101,7 +101,7 @@ function trigger(that, evt, data){
 	if ($){
 		$(that.$el).trigger(prefixedEvt);
 	} else {
-		that.$el.dispatchEvent(new CustomEvent(prefixedEvt))
+		//that.$el.dispatchEvent(new CustomEvent(prefixedEvt))
 	}
 	if (that.options && that.options[evt]){
 		that.options[evt].call(that, data);
@@ -138,7 +138,7 @@ function recognizeValue(str){
 		return true;
 	} else if (str === "false") {
 		return false;
-	} else if (!Number.isNaN(v = parseFloat(str))) {
+	} else if (!isNaN(v = parseFloat(str))) {
 		return v;
 	} else {
 		return str;

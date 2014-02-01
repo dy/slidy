@@ -5,9 +5,9 @@ function Area(el, opts){
 	//intrude prototype to chain
 	var elProto = $el.__proto__;
 	$el.__proto__ = this;
-
 	//forgot about this, keep in mind self
 	var self = this.$el;
+
 
 	//init options
 	self.options = extend({}, self.options, opts);
@@ -57,7 +57,8 @@ function Area(el, opts){
 
 	self._listenEvents();
 
-	self.dispatchEvent(new CustomEvent("create"));
+	//TODO: make universal trigger: jquery/chrome/ie/etc compatible
+	//self.dispatchEvent(new CustomEvent("create"));
 
 	return self;
 }
@@ -140,8 +141,8 @@ extend(Area.prototype, {
 
 		this.dragstate.picker.dragstart(this.dragstate);
 		//this.dragstate.picker.startTracking();
-		this.dispatchEvent(new CustomEvent("dragstart", this.dragstate))
-		this.dispatchEvent(new CustomEvent("change", this.dragstate))
+		//this.dispatchEvent(new CustomEvent("dragstart", this.dragstate))
+		//this.dispatchEvent(new CustomEvent("change", this.dragstate))
 
 		//bind moving
 		on(document, "selectstart", prevent);
@@ -157,8 +158,8 @@ extend(Area.prototype, {
 		this._captureDragstate(this.dragstate, e);
 
 		this.dragstate.picker.drag(this.dragstate);
-		this.dispatchEvent(new CustomEvent("drag", this.dragstate))
-		this.dispatchEvent(new CustomEvent("change", this.dragstate))
+		//this.dispatchEvent(new CustomEvent("drag", this.dragstate))
+		//this.dispatchEvent(new CustomEvent("change", this.dragstate))
 	},
 
 	_dragstop: function(e){
@@ -166,7 +167,7 @@ extend(Area.prototype, {
 
 		this.dragstate.picker.dragstop(this.dragstate);
 
-		this.dispatchEvent(new CustomEvent("dragstop", this.dragstate));
+		//this.dispatchEvent(new CustomEvent("dragstop", this.dragstate));
 		//this.dragstate.picker.stopTracking();
 
 		this.$el.classList.remove(this.options.dragClass);
