@@ -1,21 +1,12 @@
-# jquery.slide-area
+# slidy
 
 A plugin which makes any element draggable within any other element.
 
+[WIP]
 
+Use as plain HTMLElement.
 
-
-
-##Use
-Make element `<div class="slide-area" data-min="100" data-max="500"></div>` and use exactly as input type="range".
-
-* Bind to `change` event or callback: change(value){ … }
-
-* Pass options as data-attribs
-
-* Pass custom pickers
-
-### Why is it better than dragdealer?
+### Why is it better than ______?
 
 In short, it is faster and smaller.
 In details:
@@ -27,6 +18,3 @@ In details:
 * It has sniper mode
 * It animates through requestAnimFrame
 * Accessibility
-
-### Why is it better than jquery-ui slider
-
