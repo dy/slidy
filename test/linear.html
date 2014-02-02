@@ -67,11 +67,8 @@
 </div>
 
 
-<script src="../src/util.js"></script>
-<script src="../src/Area.js"></script>
-<script src="../src/Picker.js"></script>
-
-<!--<script src="../slidr.min.js"></script>-->
+<script src="../dev/traceur-runtime.js"></script>
+<script src="../dev/slidy.js"></script>
 
 <script>
 	var $area = document.querySelector(".area")
@@ -79,6 +76,9 @@
 	var $value = document.querySelector(".value")
 
 	var area = new Area($area, {
+		oncreate: function(){
+			console.log("fuck happened")
+		},
 		onchange: function(coords){
 			//TODO: move cross to the value
 			$value.style[cssPrefix + "transform"] = ["translate3d(", coords[0], "px,", coords[1], "px, 0)"].join("");

@@ -2,29 +2,68 @@
 * Controller on the elements
 * Very similar to native elements
 */
-class Component {
-	static defaults = {
-
-	}
 
 
+
+
+class HTMLCustomElement extends HTMLElement {
+	/**
+	* Uses hack to extend native HTMLElement: swizzles element’s __proto__
+	* It’s the only place where `this` isn’t actually an element.
+	* All other methods use `this` as element reference
+	*/
 	constructor (el, opts){
-		//NOTE: No need supercall! Weeha!
+		//TODO: get rid of that hack when native `extends HTMLElement` will work
+		if (el instanceof HTMLElement) {
+			this.self = el;
+		} else {
+			if (el){
+				opts = el;
+			}
+			this.self = document.createElement('div');
+		}
 
-		this.$el = el;
-		this.options = extend({}, this.defaultOptions, this.parseDataset(), opts);
+		//make `self` element, forget about `this`
+		var self = this.self;
+
+		//Intrude into el's prototype chain
+		//save original element’s prototype, like HTMLDivElement or whatever
+		this.originalProto = self.__proto__;
+		//make CustomElement as an element’s prototype
+		//`this` loses here, from now on use `self` as `this`
+		self.__proto__ = this.__proto__;
+
+		//set options as element attributes
+		self.setAttributes(opts);
 
 		//TODO: keep track of instances
 
+		//init options
+		//self.options = extend({}, self.options, opts);
+		//var o = self.options;
+
+		//treat element
+		self.classList.add(pluginName);
+
+		self.trigger("create")
+		//console.log(self.getBoundingClientRect())
+		console.log("HTMLCustomElement constructor")
+		return self;
+	}
+
+	setAttributes(opts){
+		for (var key in opts){
+			this.setAttribute(key, opts[key])
+			this[key] = opts[key]
+		}
 	}
 
 
 	//init
-
-	//everything to init DOM
-	create(){
-
+	ok(){
+		console.log("ok")
 	}
+
 
 
 	//options stuff
@@ -38,9 +77,6 @@ class Component {
 	on(evt, fn) {
 		this.$el.addEventListener(evt, fn)
 	}
-	addEventListener(){
-
-	}
 
 	off(evt, fn){
 		this.$el.removeEventListener(evt, fn);
@@ -53,10 +89,15 @@ class Component {
 		}.bind(this))
 	}
 
-	trigger(evt, data){
+	trigger(eName, data){
 		//TODO: handle jQuery-way, if there is such
 		//TODO: pass data
-		this.$el.dispatchEvent(new Event(evt, data));
+		//TODO: ie’s work
+		//TODO: options callbacks
+		//trigger()
+		var event = new CustomEvent(eName, data)
+		if (this['on' + eName]) this['on' + eName].apply(this, event);
+		this.dispatchEvent(event);
 	}
 
 

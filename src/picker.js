@@ -19,7 +19,7 @@ function Picker(el, area, opts){
 	//this.top = Math.round(this.area.center.y);
 
 	//causes update
-	/*Object.defineProperty(this, "value", {
+	Object.defineProperty(this, "value", {
 		get: function(){return value},
 		set: function(vector){
 			value = vector;
@@ -28,7 +28,7 @@ function Picker(el, area, opts){
 		enumerable: true,
 		configurable: true
 	})
-	this.value = o.value*/
+	this.value = o.value
 
 	//the only value that picker keeps - self values
 	this.x = this.options.x;

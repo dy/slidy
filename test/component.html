@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+
+<title>Component tests</title>
+
+<style>
+	*{
+		box-sizing: border-box;
+	}
+	body{
+		font-family: sans-serif;
+	}
+	.page{
+		width: 80%;
+		margin: auto;
+		padding: 20px 0 0;
+	}
+</style>
+
+
+<div id="case-1">Not inited</div>
+
+
+<script src="../dev/traceur-runtime.js"></script>
+<script src="../dev/slidy.js"></script>
+
+<script>
+	//
+	var $case1 = document.getElementById('case-1');
+	$case1.addEventListener("create", function(){
+		console.log("Existing element init successful")
+		this.innerHTML = "Ready"
+	})
+	$case1 = new HTMLCustomElement($case1);
+	$case1.style.color = "red"
+
+	//
+	var $case2 = new HTMLCustomElement({
+		oncreate: function(){
+			console.log("Artifical element init successful")
+			this.innerHTML = "Ready"
+		}
+	});
+	document.body.appendChild($case2);
+	console.log($case2.getBoundingClientRect())
+</script>

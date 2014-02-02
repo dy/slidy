@@ -1,70 +1,66 @@
 /* container class */
-function Area(el, opts){
-	var $el = this.$el = this.self = el || document.createElement('div')
+class Area extends HTMLCustomElement{
 
-	//intrude prototype to chain
-	var elProto = $el.__proto__;
-	$el.__proto__ = this;
-	//forgot about this, keep in mind self
-	var self = this.$el;
+	constructor(el, opts){
+		var self = super(el, opts)
 
+		//update element size
+		//this.captureSize();
 
-	//init options
-	self.options = extend({}, self.options, opts);
-	var o = self.options;
+		//create picker(s)
+		/*this.pickers = [];
+		var children = this.querySelectorAll("[data-picker]"),
+			l = children.length,
+			pNum = 0;
 
-	//treat element
-	self.classList.add(pluginName);
-
-	//update element size
-	self._captureSize();
-
-	//create picker(s)
-	self.pickers = [];
-	var children = self.querySelectorAll("[data-picker]"),
-		l = children.length,
-		pNum = 0;
-
-	//recognize inner elements as pickers
-	if (l > 0){
-		for (var i = 0; i<l; i++){
-			self.addPicker(children.item(i))
+		//recognize inner elements as pickers
+		if (l > 0){
+			for (var i = 0; i<l; i++){
+				this.addPicker(children.item(i))
+			}
 		}
+
+		//TODO: append missing number of pickers
+		var pNum = (o.pickers.length || o.pickers) || 0;
+		for (var i = 0; i < pNum; i++){
+			var el = document.createElement("div"); //TODO
+			this.addPicker(el, o.pickers[i]);
+		}
+
+		//init drag state object
+		this.dragstate = {
+			initX:0,
+			initY:0,
+			x: 0,
+			y: 0,
+			difX: 0,
+			difY: 0,
+			clientX: 0,
+			clientY: 0,
+			box: {},
+			area: this,
+			isCtrl: false,
+			picker: null //current picker to drag
+		};
+
+		this._listenEvents();*/
+
+		//TODO: make universal trigger: jquery/chrome/ie/etc compatible
+		//self.dispatchEvent(new CustomEvent("create"));
+		return self;
 	}
 
-	//TODO: append missing number of pickers
-	/*var pNum = (o.pickers.length || o.pickers) || 0;
-	for (var i = 0; i < pNum; i++){
-		var el = document.createElement("div"); //TODO
-		self.addPicker(el, o.pickers[i]);
-	}*/
 
-	//init drag state object
-	self.dragstate = {
-		initX:0,
-		initY:0,
-		x: 0,
-		y: 0,
-		difX: 0,
-		difY: 0,
-		clientX: 0,
-		clientY: 0,
-		box: {},
-		area: self,
-		isCtrl: false,
-		picker: null //current picker to drag
-	};
+	//keep that’s offsetBox updated
+	captureSize(){
+		this.offsetBox = getOffsetBox(this);
+		this.paddingBox = getPaddingBox(this);
+	}
 
-	self._listenEvents();
-
-	//TODO: make universal trigger: jquery/chrome/ie/etc compatible
-	//self.dispatchEvent(new CustomEvent("create"));
-
-	return self;
 }
 
 
-Area.defaults = {
+/*Area.defaults = {
 	tag: 'div'
 }
 
@@ -222,5 +218,4 @@ extend(Area.prototype, {
 		dragstate.clientX = e.clientX;
 		dragstate.clientY = e.clientY;
 	}
-});
-
+});*/

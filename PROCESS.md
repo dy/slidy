@@ -91,6 +91,8 @@
 
 * I can extend `__proto__` with my own properties, but that will extend all HTML[DOM]Elements instances, which is suitable for Polymer, but not for me.
 * I want my component to be of special-behaviour, but it can be of any native type.
-	* Should I insert component into the prototype chain?
+	* ?✔ Should I insert component into the prototype chain?
 	Instance ⇒ HTMLElement → Instance ⇒ Component ⇒ HTMLElement
-		* This’d let customize target tag, not to intrude into native behaviour,
+		* This’d let customize target tag, not to intrude into native behaviour
+		* ? It works, but there a `this` object remains, which is replaced with native element created, what to do with that?
+	* Situation will change when ES6 `class N extends HTMLElement` wil be supported

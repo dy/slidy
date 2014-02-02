@@ -4,7 +4,7 @@
 //#endexclude
 //#put `var pluginName = {{ pluginName }}`
 
-/*----------------Utils*/
+//----------------Utils
 function extend(a){
 	for (var i = 1, l = arguments.length; i<l; i++){
 		var b = arguments[i];
@@ -95,9 +95,9 @@ function off(el, evt, fn){
 * Broadcasts event: "slidy:evt" → $doc, "slidy:evt" → $el, evt → area.opts
 * target - whether area or picker class
 */
-function trigger(that, evt, data){
+function trigger(that, ename, data){
 	//TODO: pass data to trigger events
-	var prefixedEvt = [pluginName, ":", evt].join('');
+	/*var prefixedEvt = [pluginName, ":", evt].join('');
 	if ($){
 		$(that.$el).trigger(prefixedEvt);
 	} else {
@@ -106,11 +106,28 @@ function trigger(that, evt, data){
 	if (that.options && that.options[evt]){
 		that.options[evt].call(that, data);
 	}
-	if (that.listeners && that.listeners[evt]){
-		for (var i = 0; i < that.listeners[evt].length; i++){
-			that.listeners[evt][i].call(that, data);
-		}
+
+	var event;
+	if(document.createEvent){
+		event = document.createEvent('HTMLEvents');
+		event.initEvent(ename,true,true);
+	}else if(document.createEventObject){// IE < 9
+		event = document.createEventObject();
+		event.eventType = ename;
 	}
+	event.eventName = ename;
+	if(target.dispatchEvent){
+		target.dispatchEvent(event);
+	}else if(target.fireEvent && htmlEvents['on'+eventName]){// IE < 9
+		target.fireEvent('on'+event.eventType,event);// can trigger only real event (e.g. 'click')
+	}else if(el[eventName]){
+		el[eventName]();
+	}else if(el['on'+eventName]){
+		el['on'+eventName]();
+	}*/
+
+
+
 }
 
 /**
@@ -145,4 +162,4 @@ function recognizeValue(str){
 	}
 }
 
-var cssPrefix = detectCSSPrefix();
+//var cssPrefix = detectCSSPrefix();
