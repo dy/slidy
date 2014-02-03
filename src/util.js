@@ -162,4 +162,4 @@ function recognizeValue(str){
 	}
 }
 
-//var cssPrefix = detectCSSPrefix();
+var cssPrefix = detectCSSPrefix();

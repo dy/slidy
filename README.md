@@ -1,6 +1,7 @@
 # slidy
 
 A plugin which makes any element draggable within any other element.
+Built on ES6.
 
 [WIP]
 
