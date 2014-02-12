@@ -15,3 +15,5 @@
 	* reversive transfer, mapping & placing fn's
 
 * Prevent double-load
+
+* Implement typer’s draggable

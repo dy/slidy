@@ -1,0 +1,31 @@
+<!doctype html>
+
+<style>
+	body{
+		font-family: sans-serif;
+		padding: 40px;
+	}
+	* {
+		box-sizing: border-box;
+	}
+	.slidy{
+		background: #345;
+		width: 200px;
+		height: 240px;
+		cursor: move;
+		color: white;
+		padding: 20px 30px;
+	}
+</style>
+
+
+<div class="slidy" draggable>Drag me!</div>
+<div class="area" id="area-1"></div>
+<div class="slidy" draggable within="area-1">Drag me!</div>
+
+<script src="../dev/traceur-runtime.js"></script>
+<script src="../dev/slidy.js"></script>
+<script>
+	var $draggable = document.querySelector("[draggable]")
+	$draggable = new Draggable($draggable);
+</script>

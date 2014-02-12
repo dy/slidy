@@ -5,7 +5,7 @@ NOTE: experimental class architecture:
 - any option can be comma-separated list, cause picker may change matrix, not one value
 - that way, every function working with value should handle array on input, not the single value
 */
-class Picker extends HTMLCustomElement{
+class Picker extends Component{
 	constructor(el, area, opts){
 		var self = super(el, opts);
 
@@ -193,4 +193,9 @@ class Picker extends HTMLCustomElement{
 			}
 		}
 	}
+}
+
+
+Picker.defaults = {
+	special: true
 }

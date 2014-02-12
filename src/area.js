@@ -1,5 +1,26 @@
 /* container class */
-class Area extends HTMLCustomElement{
+class Area extends Component{
+
+	static get defaults(){
+		return {
+			//pickers: 1, //could be custom pickers passed, each with it’s own settings
+
+			//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier
+			readonly: false, //no events
+			sniperSpeed: 0.25, //sniper key slowing down amt
+
+			//classes
+			dragClass: "dragging",
+
+			//callbacks
+			oncreate: null,
+			ondragstart: null,
+			ondrag: null,
+			ondragstop: null,
+			ondestroy: null,
+			onchange: null //picker callback
+		}
+	}
 
 	constructor(el, opts){
 		var self = super(el, opts)
@@ -45,30 +66,10 @@ class Area extends HTMLCustomElement{
 
 		self._listenEvents();
 
-		self.options = {
-			//pickers: 1, //could be custom pickers passed, each with it’s own settings
-
-			//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier
-			readonly: false, //no events
-			sniperSpeed: 0.25, //sniper key slowing down amt
-
-			//classes
-			dragClass: "dragging",
-
-			//callbacks
-			create: null,
-			dragstart: null,
-			drag: null,
-			dragstop: null,
-			destroy: null,
-			change: null //picker callback
-		}
-
 		//TODO: make universal trigger: jquery/chrome/ie/etc compatible
 		//self.dispatchEvent(new CustomEvent("create"));
 		return self;
 	}
-
 
 	//keep that’s offsetBox updated
 	captureSize(){
@@ -83,8 +84,7 @@ class Area extends HTMLCustomElement{
 	}
 
 	_listenEvents(){
-		var o = this.options,
-			self = this;
+		var o = this.options;
 
 		//bind cb’s to this
 		this._dragstart = this._dragstart.bind(this);
@@ -208,41 +208,4 @@ class Area extends HTMLCustomElement{
 		dragstate.clientX = e.clientX;
 		dragstate.clientY = e.clientY;
 	}
-
-
-
-
 }
-
-
-/*Area.defaults = {
-	tag: 'div'
-}
-
-
-Area.prototype = Object.create(HTMLElement.prototype);
-
-extend(Area.prototype, {
-	options: {
-		//pickers: 1, //could be custom pickers passed, each with it’s own settings
-
-		//shape: "", //triangle, circular, SVG-shape in basic case; 2d/1d is different classifier
-		readonly: false, //no events
-		sniperSpeed: 0.25, //sniper key slowing down amt
-
-		//classes
-		dragClass: "dragging",
-
-		//callbacks
-		create: null,
-		dragstart: null,
-		drag: null,
-		dragstop: null,
-		destroy: null,
-		change: null //picker callback
-	},
-
-
-
-
-});*/

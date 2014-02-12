@@ -12,6 +12,7 @@ var autoprefixer = require('gulp-autoprefixer'),
 	notify = require('gulp-notify'),
 	cache = require('gulp-cache'),
 	livereload = require('gulp-livereload');
+var es6transpiler = require('gulp-es6-transpiler');
 
 global.path = require('path');
 
@@ -22,12 +23,21 @@ var path = {
 	all: 'src/*.js',
 	src: ['src/util.js',
 			'src/Component.js',
+			'src/Draggable.js',
 			'src/Area.js',
 			'src/Picker.js'
 	],
-	dest: 'dist/',
+	dest: 'dist',
 	dev: 'dev/slidy.js'
 };
+
+
+gulp.task('es6', function () {
+	gulp.src('src/Draggable.js')
+		.pipe(es6transpiler())
+		.pipe(gulp.dest(path.dest));
+});
+
 
 
 //dev task, launches traceur

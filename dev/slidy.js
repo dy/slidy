@@ -58,26 +58,25 @@ function getPaddingBox($el) {
   box.right = ~~style.paddingRight.slice(0, - 2);
   return box;
 }
-function on(el, evt, fn) {
+function on(el, evt, delegate, fn) {
   if ($) {
-    $(el).on(evt, fn);
-  } else {
+    $(el).on.apply(el, arguments);
+  } else if (arguments.length === 3) {
+    el.addEventListener(evt, delegate);
+  } else if (arguments.length === 4 && !delegate) {
     el.addEventListener(evt, fn);
+  } else {
+    el.addEventListener(evt, function(e) {}.bind(el));
   }
 }
 function off(el, evt, fn) {
   if ($) {
-    $(el).off(evt, fn);
-  } else {
+    $(el).off.apply(el, arguments);
+  } else if (arguments.length === 3) {
     el.removeEventListener(evt, fn);
   }
 }
 function trigger(that, ename, data) {}
-function addEventListenerTo(that, evt, fn) {
-  if (!that.listeners) that.listeners = [];
-  if (!that.listeners[evt]) that.listeners[evt] = [];
-  if (that.listeners[evt].indexOf(fn) < 0) that.listeners[evt].push(fn);
-}
 function between(a, min, max) {
   return Math.max(Math.min(a, max), min);
 }
@@ -96,26 +95,108 @@ function recognizeValue(str) {
   }
 }
 var cssPrefix = detectCSSPrefix();
-var HTMLCustomElement = function HTMLCustomElement(el, opts) {
+function observeData(target, data) {
+  var listeners = {},
+      propRe = /\{\{\s([a-zA-Z_$][a-zA-Z_$0-9]*)\s\}\}/;
+  for (var i = 0; i < target.attributes.length; i++) {
+    var attrValue = target.attributes[i].value;
+    var propIdx = undefined;
+    while ((propIdx = attrValue.indexOf("{{")) >= 0) {
+      var closeIdx = attrValue.indexOf("}}");
+      var propName = attrValue.slice(propIdx + 2, closeIdx).trim();
+      target.attributes[i].value = [target.attributes[i].value.slice(0, propIdx), data[propName], target.attributes[i].value.slice(closeIdx, attrValue.length - 1)].join('');
+      if (!listeners[propName]) listeners[propName] = [];
+      listeners[propName].push({
+        target: target.attributes[i],
+        template: attrValue,
+        data: {}
+      });
+    }
+  }
+  var children = target.childNodes,
+      l = children.length;
+  for (var i = 0; i < l; i++) {
+    var child = children(i);
+    if (child.nodeType === 1) {
+      if (propRe.test(child.texContent)) {
+        listeners.push({
+          target: child,
+          template: target.texContent
+        });
+      }
+    }
+  }
+  for (var prop in listeners) {
+    var listener = listeners[prop];
+    document.addEventListener(prop + "Changed", function(e) {
+      var value = e.target.value;
+      for (var i = 0; i < target.attributes.length; i++) {
+        var attrName = target.attributes[i].name.replace();
+        var attrValue = target.attributes[i].value.replace();
+        if (re.test(attrName)) {}
+      }
+    });
+  }
+}
+function findPropertyToInsert(str) {
+  str.indexOf();
+}
+function Component() {}
+var Component = function Component(el, opts) {
   "use strict";
+  var self;
   if (el instanceof HTMLElement) {
-    this.self = el;
+    self = el;
   } else {
     if (el) {
       opts = el;
     }
-    this.self = document.createElement('div');
+    self = document.createElement('div');
   }
-  var self = this.self;
-  this.originalProto = self.__proto__;
-  self.__proto__ = this.__proto__;
-  self.setAttributes(opts);
+  var originalProto = self.__proto__;
+  self.__proto__ = this.constructor.prototype;
+  self.initOptions(opts);
+  self.initStates.apply(self);
+  self.state = 'default';
   self.classList.add(pluginName);
   self.trigger("create");
-  console.log("HTMLCustomElement constructor");
   return self;
 };
-($traceurRuntime.createClass)(HTMLCustomElement, {
+($traceurRuntime.createClass)(Component, {
+  disable: function() {
+    "use strict";
+    this.disabled = true;
+  },
+  enable: function() {
+    "use strict";
+    this.disabled = false;
+  },
+  set disabled(val) {
+    "use strict";
+    if (val) {
+      this.setAttribute("disabled", true);
+      this.disabled = true;
+    } else {
+      this.removeAttribute("disabled");
+      this.disabled = false;
+    }
+  },
+  get disabled() {
+    "use strict";
+    return this.disabled;
+  },
+  preventDefault: function(e) {
+    "use strict";
+    e.preventDefault();
+  },
+  initOptions: function(externalOptions) {
+    "use strict";
+    var staticName = this.constructor.name;
+    var defaults = this.constructor.defaults;
+    for (var key in defaults) {
+      this.setAttribute(key, defaults[key]);
+    }
+  },
   setAttributes: function(opts) {
     "use strict";
     for (var key in opts) {
@@ -123,26 +204,102 @@ var HTMLCustomElement = function HTMLCustomElement(el, opts) {
       this[key] = opts[key];
     }
   },
-  ok: function() {
+  getAttributes: function() {
     "use strict";
-    console.log("ok");
+    var result = {};
+    for (var key in this.defaults) {
+      result[key] = this[key];
+    }
+    return result;
   },
-  parseDataset: function() {
+  get state() {
     "use strict";
+    return this._state;
   },
-  on: function(evt, fn) {
+  set state(newStateName) {
     "use strict";
-    this.$el.addEventListener(evt, fn);
+    var oldState = this.states[this._state];
+    var newState = this.states[newStateName] || this.states['default'];
+    if (!newState) throw new Error("Not existing state `" + newStateName + "`");
+    console.log("Change state from `" + this._state + "` to `" + newStateName + "`");
+    if (oldState) {
+      oldState.after && oldState.after.fn.call(this);
+      this.trigger("after" + this._state[0].toUpperCase() + this._state.slice(1) + "State");
+      this.trigger("afterState");
+      for (var evt in oldState) {
+        var stateEvt = oldState[evt];
+        off(stateEvt.src, stateEvt.evt, stateEvt.fn);
+      }
+    }
+    newState.before && newState.before.fn.call(this);
+    this.trigger("before" + newStateName[0].toUpperCase() + newStateName.slice(1) + "State");
+    this.trigger("beforeState");
+    for (var evt in newState) {
+      var stateEvt = newState[evt];
+      on(stateEvt.src, stateEvt.evt, stateEvt.delegate, stateEvt.fn);
+    }
+    this._state = newStateName;
   },
-  off: function(evt, fn) {
+  initStates: function(states) {
     "use strict";
-    this.$el.removeEventListener(evt, fn);
+    var protoStates = this.constructor.prototype.states;
+    this.states = {};
+    for (var stateName in protoStates) {
+      var protoState = protoStates[stateName],
+          instanceState = {};
+      for (var evtId in protoState) {
+        var evt = undefined,
+            src = undefined,
+            delegate = undefined,
+            fn = undefined;
+        var evtParams = evtId.split(" "),
+            fnRef = protoState[evtId];
+        if (evtParams[0] === 'document') {
+          src = document;
+          evtParams = evtParams.slice(1);
+        } else if (evtParams[0] === 'window') {
+          src = window;
+          evtParams = evtParams.slice(1);
+        } else {
+          src = this;
+        }
+        evt = evtParams[0];
+        delegate = evtParams.slice(1).join('');
+        if (typeof fnRef === "function") fn = fnRef.bind(this); else if (typeof fnRef === "string") fn = function() {
+          this._state = fnRef;
+        }.bind(this);
+        if (fn && evt) {
+          instanceState[evt] = {
+            evt: evt,
+            src: src,
+            delegate: delegate,
+            fn: fn
+          };
+        }
+      }
+      this.states[stateName] = instanceState;
+    }
   },
-  one: function(evt, fn) {
+  addOnceListener: function(evt, fn) {
     "use strict";
-    this.$el.addEventListener(evt, function() {
-      fn();
-      this.$el.removeEventListener(evt, fn);
+    this.addEventListener(evt, function() {
+      fn.apply(this);
+      this.removeEventListener(evt, fn);
+    }.bind(this));
+  },
+  delegateListener: function(evt, delegate, fn) {
+    "use strict";
+    if (typeof delegate === 'string') {
+      delegate = this.querySelectorAll(delegate);
+    } else if (delegate instanceof Element) {
+      delegate = [delegate];
+    } else if (delegate instanceof NodeList || delegate instanceof Array) {} else {
+      delegate = [this];
+    }
+    this.addEventListener(evt, function(e) {
+      if (delegate.indexOf(e.currentTarget) >= 0) {
+        fn.call(this, e);
+      }
     }.bind(this));
   },
   trigger: function(eName, data) {
@@ -153,11 +310,74 @@ var HTMLCustomElement = function HTMLCustomElement(el, opts) {
   },
   enable: function() {
     "use strict";
+    this.disabled = false;
+    this.trigger('disable');
   },
   disable: function() {
     "use strict";
+    this.disabled = true;
+    this.trigger('enable');
   }
-}, {}, HTMLElement);
+}, {get defaults() {
+    "use strict";
+    return {disabledClass: 1};
+  }}, HTMLElement);
+var Draggable = function Draggable(el, opts) {
+  "use strict";
+  return $traceurRuntime.superCall(this, $Draggable.prototype, "constructor", [el, opts]);
+};
+var $Draggable = Draggable;
+($traceurRuntime.createClass)(Draggable, {
+  startDrag: function(e) {
+    "use strict";
+    console.log("startDrag");
+    this.dragstate = {
+      x: e.clientX - this.offsetLeft,
+      y: e.clientY - this.offsetTop,
+      clientX: e.clientX,
+      clientY: e.clientY
+    };
+    this.trigger('dragstart');
+    this.state = "drag";
+  },
+  drag: function(e) {
+    "use strict";
+    console.log("drag");
+    this.trigger('drag');
+  },
+  stopDrag: function(e) {
+    "use strict";
+    console.log("stopDrag");
+    this.trigger('dragstop');
+    this.state = "default";
+  }
+}, {}, Component);
+Draggable.prototype.states = {
+  'default': {
+    before: null,
+    after: null,
+    'mousedown': Draggable.prototype.startDrag
+  },
+  drag: {
+    before: null,
+    after: null,
+    'document selectstart': Draggable.prototype.preventDefault,
+    'document mousemove': Draggable.prototype.drag,
+    'document mouseup': Draggable.prototype.stopDrag,
+    'document mouseleave': Draggable.prototype.stopDrag
+  },
+  scroll: {},
+  tech: {},
+  out: {}
+};
+Draggable.defaults = {
+  treshold: 10,
+  autoscroll: false,
+  within: null,
+  group: null,
+  ghost: false,
+  translate: true
+};
 var Area = function Area(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Area.prototype, "constructor", [el, opts]);
@@ -190,17 +410,6 @@ var Area = function Area(el, opts) {
     picker: null
   };
   self._listenEvents();
-  self.options = {
-    readonly: false,
-    sniperSpeed: 0.25,
-    dragClass: "dragging",
-    create: null,
-    dragstart: null,
-    drag: null,
-    dragstop: null,
-    destroy: null,
-    change: null
-  };
   return self;
 };
 var $Area = Area;
@@ -216,8 +425,7 @@ var $Area = Area;
   },
   _listenEvents: function() {
     "use strict";
-    var o = this.options,
-        self = this;
+    var o = this.options;
     this._dragstart = this._dragstart.bind(this);
     this._drag = this._drag.bind(this);
     this._dragstop = this._dragstop.bind(this);
@@ -305,7 +513,20 @@ var $Area = Area;
     dragstate.clientX = e.clientX;
     dragstate.clientY = e.clientY;
   }
-}, {}, HTMLCustomElement);
+}, {get defaults() {
+    "use strict";
+    return {
+      readonly: false,
+      sniperSpeed: 0.25,
+      dragClass: "dragging",
+      oncreate: null,
+      ondragstart: null,
+      ondrag: null,
+      ondragstop: null,
+      ondestroy: null,
+      onchange: null
+    };
+  }}, Component);
 var Picker = function Picker(el, area, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Picker.prototype, "constructor", [el, opts]);
@@ -430,6 +651,7 @@ var $Picker = Picker;
       }
     }
   }
-}, {}, HTMLCustomElement);
+}, {}, Component);
+Picker.defaults = {special: true};
 
 //# sourceMappingURL=slidy.map

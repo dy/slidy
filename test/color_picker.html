@@ -1,0 +1,34 @@
+<!doctype html>
+
+<style>
+	body{
+		font-family: sans-serif;
+	}
+</style>
+
+<body style="background: hsla({{ hue }}, {{ saturation }}, {{ lightness }}, {{ alpha }})" data-bind>
+
+	<input id="range-ex" min=0 type="range" name="a" value="123" max=200 placeholder="ddd">
+
+	<h1>Simple three-component picker</h1>
+
+
+	<div id="saturation" slidy min="0" max="100" value="50" snap name="saturation"><div>
+
+	<div id="hue-lightness" slidy min="0,0" max="360,100" value="0,50" repeat="x" snap="both" name="hue,lightness"></div>
+
+	<div id="alpha" slidy min="0" max="1" value="1" name="alpha"></div>
+
+</body>
+
+<!-- component -->
+<script src="../slidy.min.js"></script>
+
+<script>
+	var $input = document.getElementById('range-ex');
+	$input.onchange = function(e){
+		console.log(e)
+	}
+
+
+</script>

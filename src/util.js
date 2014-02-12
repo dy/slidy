@@ -77,20 +77,36 @@ function getPaddingBox($el){
 /**
 * Simple event methods
 */
-function on(el, evt, fn){
+//Binds
+function on(el, evt, delegate, fn){
+	//TODO: fix on method
+
 	if ($){
-		$(el).on(evt, fn);
-	} else {
+		//delegate to jquery
+		$(el).on.apply(el, arguments);
+	} else if (arguments.length === 3){
+		//listen element
+		el.addEventListener(evt, delegate)
+	} else if (arguments.length === 4 && !delegate) {
 		el.addEventListener(evt, fn)
+	} else {
+		//delegate listening
+		el.addEventListener(evt, function(e){
+			//TODO: if e.currentTarget is in the delegatees list - pass event
+		}.bind(el))
 	}
 }
 function off(el, evt, fn){
+	//console.log("off", arguments)
 	if ($){
-		$(el).off(evt, fn);
-	} else {
+		//delegate to jquery
+		$(el).off.apply(el, arguments);
+	} else if (arguments.length === 3){
+		//listen element
 		el.removeEventListener(evt, fn)
 	}
 }
+
 /**
 * Broadcasts event: "slidy:evt" → $doc, "slidy:evt" → $el, evt → area.opts
 * target - whether area or picker class
@@ -125,21 +141,7 @@ function trigger(that, ename, data){
 	}else if(el['on'+eventName]){
 		el['on'+eventName]();
 	}*/
-
-
-
 }
-
-/**
-* Versatile event listener
-*/
-function addEventListenerTo(that, evt, fn){
-	if (!that.listeners) that.listeners = [];
-	if (!that.listeners[evt]) that.listeners[evt] = [];
-	if (that.listeners[evt].indexOf(fn) < 0) that.listeners[evt].push(fn);
-
-}
-
 
 function between(a, min, max){
 	return Math.max(Math.min(a,max),min);
@@ -163,3 +165,89 @@ function recognizeValue(str){
 }
 
 var cssPrefix = detectCSSPrefix();
+
+
+
+
+//bind element’s representation to component data
+function observeData(target, data){
+	//keyed by param name listeners
+	var listeners = {},
+		propRe = /\{\{\s([a-zA-Z_$][a-zA-Z_$0-9]*)\s\}\}/;
+
+	//TODO: catch every property met, replace with default value
+
+	//TODO: gather attributes
+	for (var i = 0; i < target.attributes.length; i++){
+		var attrValue = target.attributes[i].value;
+		var propIdx = undefined;
+
+		//grasp every value met
+		while ((propIdx = attrValue.indexOf("{{")) >= 0){
+			var closeIdx = attrValue.indexOf("}}");
+			var propName = attrValue.slice(propIdx + 2, closeIdx).trim();
+
+			//set default value
+			target.attributes[i].value = [
+				target.attributes[i].value.slice(0, propIdx),
+				data[propName],
+				target.attributes[i].value.slice(closeIdx, attrValue.length - 1)
+			].join('');
+
+			if (!listeners[propName]) listeners[propName] = [];
+			listeners[propName].push({
+				//object where to make substitution
+				target: target.attributes[i],
+				//template which to use as basis for substisution
+				template: attrValue,
+				data: {
+					//TODO: save all harvested properties here
+				}
+			})
+		}
+	}
+
+	//TODO: gather text children
+	var children = target.childNodes,
+		l = children.length;
+
+	for (var i = 0; i < l; i++){
+		var child = children(i);
+		if (child.nodeType === 1){
+			if (propRe.test(child.texContent)){
+				//split text node in place of property
+				listeners.push({
+					target: child,
+					template: target.texContent
+				})
+			}
+		}
+	}
+
+	//TODO: track elements children
+
+	//TODO: listen to the source change
+	for (var prop in listeners){
+		var listener = listeners[prop];
+		document.addEventListener(prop + "Changed", function(e){
+			var value = e.target.value;
+			//NOTE: once data-names've been replaced with values, you can’t no more track them
+			for (var i = 0; i < target.attributes.length; i++){
+				var attrName = target.attributes[i].name.replace();
+				var attrValue = target.attributes[i].value.replace();
+				if (re.test(attrName)){
+
+				}
+			}
+			//update attrs
+			//update content
+		})
+	}
+
+	//TODO: bind slider’s named properties to the document’s scope (publish them)
+}
+
+//finds the index of next one property
+function findPropertyToInsert(str){
+	str.indexOf()
+}

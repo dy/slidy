@@ -77,9 +77,10 @@
 
 	var area = new Area($area, {
 		oncreate: function(){
-			console.log("fuck happened")
+			//console.log("fuck happened")
 		},
 		onchange: function(coords){
+			console.log(coords)
 			//TODO: move cross to the value
 			$value.style[cssPrefix + "transform"] = ["translate3d(", coords[0], "px,", coords[1], "px, 0)"].join("");
 		}

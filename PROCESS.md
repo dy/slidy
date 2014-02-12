@@ -14,6 +14,7 @@
 * slidy
 	+ cute
 	+ real word
+	+ behaviour
 	+ in accordance with sticky
 * slidie, stickie
 	+ nouns
@@ -96,3 +97,12 @@
 		* This’d let customize target tag, not to intrude into native behaviour
 		* ? It works, but there a `this` object remains, which is replaced with native element created, what to do with that?
 	* Situation will change when ES6 `class N extends HTMLElement` wil be supported
+
+	* Main trouble of having component options as first-level citizens is that they can interfere with native options. The same trouble with inner methods: you should keep their naming different from the native methods and functions.
+		* ? How do web-components deal with that, as well as with private directives?
+		* Also, how not to intrude to native lifecycle with custom events?
+			* use data-prefix and keep options in data-prefixed attributes?
+
+* Use behaviours instead of components: element is draggable, not the area - it is not. It just limits area where to drag, which is by fact draggable option.
+
+* Slidy behaviour (or component) should automatically create pickers inside it, based on attrs
