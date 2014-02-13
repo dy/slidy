@@ -21,23 +21,15 @@ global.path = require('path');
 
 var path = {
 	all: 'src/*.js',
-	src: ['src/util.js',
+	src: [	'src/util.js',
 			'src/Component.js',
 			'src/Draggable.js',
 			'src/Area.js',
-			'src/Picker.js',
-			'src/autostart.js'
+			'src/Picker.js'
 	],
 	dest: 'dist',
 	dev: 'dev/slidy.js'
 };
-
-
-gulp.task('es6', function () {
-	gulp.src('src/Draggable.js')
-		.pipe(es6transpiler())
-		.pipe(gulp.dest(path.dest));
-});
 
 
 

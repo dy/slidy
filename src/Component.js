@@ -19,8 +19,12 @@ class Component extends HTMLElement {
 	* All other methods use `this` as element reference
 	*/
 	constructor (el, opts){
-		//TODO: ensure element existence
-		//TODO: extend options passed, read data-attributes
+		//ensure element created
+		//ensure DOM extensibility
+		//read options (el/passed)
+		//hook up events
+		//bind API methods
+		//init instance states
 
 		//Substitute `this` with DOM element
 		//TODO: get rid of that hack when native `extends HTMLElement` will work

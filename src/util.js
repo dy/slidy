@@ -1,6 +1,5 @@
-
 //#exclude
-	var pluginName = "slidy", $
+var pluginName = "slidy", $
 //#endexclude
 //#put `var pluginName = {{ pluginName }}`
 
@@ -15,46 +14,8 @@ function extend(a){
 	return a;
 }
 
-//stupid prefix detector
-function detectCSSPrefix(){
-	var puppet = document.documentElement;
-	var style = document.defaultView.getComputedStyle(puppet, "");
-	if (style.transform) return "";
-	if (style["-webkit-transform"]) return "-webkit-";
-	if (style["-moz-transform"]) return "-moz-";
-	if (style["-o-transform"]) return "-o-";
-	if (style["-khtml-transform"]) return "-khtml-";
-	return "";
-}
-
-//simple math limiter
-function limit(v, min, max){
-	return Math.max(min, Math.min(max, v));
-}
-
-//attr parser
-function parseDataAttributes(el, multiple) {
-	var data = {}, v;
-	for (var prop in el.dataset){
-		var v;
-		if (multiple) {
-			v = el.dataset[prop].split(",");
-			for (var i = v.length; i--;){
-				v[i] = recognizeValue(v[i].trim());
-				if (v[i] === "") v[i] = null;
-			}
-		} else {
-			v = recognizeValue(el.dataset[prop]);
-			if (v === "") v[i] = true;
-		}
-
-		data[prop] = v;
-	}
-	return data;
-}
-
-//
-function getOffsetBox($el){
+//return element position relative to the viewport
+function offsetBox($el){
 	var box = $el.getBoundingClientRect();
 	box.height= $el.offsetHeight; //this.el.clientHeight;
 	box.width= $el.offsetWidth; //this.el.clientWidth;
@@ -62,9 +23,9 @@ function getOffsetBox($el){
 	return box;
 }
 
-function getPaddingBox($el){
-	var box = {},
-		style = getComputedStyle($el);
+//return paddings
+function paddingBox($el){
+	var box = {}, style = getComputedStyle($el);
 
 	box.top = ~~style.paddingTop.slice(0,-2)
 	box.left = ~~style.paddingLeft.slice(0,-2)
@@ -79,8 +40,6 @@ function getPaddingBox($el){
 */
 //Binds
 function on(el, evt, delegate, fn){
-	//TODO: fix on method
-
 	if ($){
 		//delegate to jquery
 		$(el).on.apply(el, arguments);
@@ -111,6 +70,7 @@ function off(el, evt, fn){
 * Broadcasts event: "slidy:evt" → $doc, "slidy:evt" → $el, evt → area.opts
 * target - whether area or picker class
 */
+//TODO
 function trigger(that, ename, data){
 	//TODO: pass data to trigger events
 	/*var prefixedEvt = [pluginName, ":", evt].join('');
@@ -143,14 +103,34 @@ function trigger(that, ename, data){
 	}*/
 }
 
+//math limiter
 function between(a, min, max){
 	return Math.max(Math.min(a,max),min);
 }
 
-function prevent(e){
-	e.preventDefault();
+//TODO
+//attr parser
+function data(el) {
+	var data = {}, v;
+	for (var prop in el.dataset){
+		var v;
+		if (multiple) {
+			v = el.dataset[prop].split(",");
+			for (var i = v.length; i--;){
+				v[i] = recognizeValue(v[i].trim());
+				if (v[i] === "") v[i] = null;
+			}
+		} else {
+			v = recognizeValue(el.dataset[prop]);
+			if (v === "") v[i] = true;
+		}
+
+		data[prop] = v;
+	}
+	return data;
 }
 
+//TODO
 //returns value from string with correct type
 function recognizeValue(str){
 	if (str === "true") {
@@ -164,11 +144,23 @@ function recognizeValue(str){
 	}
 }
 
+
+//stupid prefix detector
+function detectCSSPrefix(){
+	var puppet = document.documentElement;
+	var style = document.defaultView.getComputedStyle(puppet, "");
+	if (style.transform) return "";
+	if (style["-webkit-transform"]) return "-webkit-";
+	if (style["-moz-transform"]) return "-moz-";
+	if (style["-o-transform"]) return "-o-";
+	if (style["-khtml-transform"]) return "-khtml-";
+	return "";
+}
 var cssPrefix = detectCSSPrefix();
 
 
 
-
+//TODO
 //bind element’s representation to component data
 function observeData(target, data){
 	//keyed by param name listeners

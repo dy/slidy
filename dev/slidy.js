@@ -10,46 +10,14 @@ function extend(a) {
   }
   return a;
 }
-function detectCSSPrefix() {
-  var puppet = document.documentElement;
-  var style = document.defaultView.getComputedStyle(puppet, "");
-  if (style.transform) return "";
-  if (style["-webkit-transform"]) return "-webkit-";
-  if (style["-moz-transform"]) return "-moz-";
-  if (style["-o-transform"]) return "-o-";
-  if (style["-khtml-transform"]) return "-khtml-";
-  return "";
-}
-function limit(v, min, max) {
-  return Math.max(min, Math.min(max, v));
-}
-function parseDataAttributes(el, multiple) {
-  var data = {},
-      v;
-  for (var prop in el.dataset) {
-    var v;
-    if (multiple) {
-      v = el.dataset[prop].split(",");
-      for (var i = v.length; i--;) {
-        v[i] = recognizeValue(v[i].trim());
-        if (v[i] === "") v[i] = null;
-      }
-    } else {
-      v = recognizeValue(el.dataset[prop]);
-      if (v === "") v[i] = true;
-    }
-    data[prop] = v;
-  }
-  return data;
-}
-function getOffsetBox($el) {
+function offsetBox($el) {
   var box = $el.getBoundingClientRect();
   box.height = $el.offsetHeight;
   box.width = $el.offsetWidth;
   box.center = [box.width * 0.5, box.height * 0.5];
   return box;
 }
-function getPaddingBox($el) {
+function paddingBox($el) {
   var box = {},
       style = getComputedStyle($el);
   box.top = ~~style.paddingTop.slice(0, - 2);
@@ -80,8 +48,24 @@ function trigger(that, ename, data) {}
 function between(a, min, max) {
   return Math.max(Math.min(a, max), min);
 }
-function prevent(e) {
-  e.preventDefault();
+function data(el) {
+  var data = {},
+      v;
+  for (var prop in el.dataset) {
+    var v;
+    if (multiple) {
+      v = el.dataset[prop].split(",");
+      for (var i = v.length; i--;) {
+        v[i] = recognizeValue(v[i].trim());
+        if (v[i] === "") v[i] = null;
+      }
+    } else {
+      v = recognizeValue(el.dataset[prop]);
+      if (v === "") v[i] = true;
+    }
+    data[prop] = v;
+  }
+  return data;
 }
 function recognizeValue(str) {
   if (str === "true") {
@@ -93,6 +77,16 @@ function recognizeValue(str) {
   } else {
     return str;
   }
+}
+function detectCSSPrefix() {
+  var puppet = document.documentElement;
+  var style = document.defaultView.getComputedStyle(puppet, "");
+  if (style.transform) return "";
+  if (style["-webkit-transform"]) return "-webkit-";
+  if (style["-moz-transform"]) return "-moz-";
+  if (style["-o-transform"]) return "-o-";
+  if (style["-khtml-transform"]) return "-khtml-";
+  return "";
 }
 var cssPrefix = detectCSSPrefix();
 function observeData(target, data) {
@@ -341,17 +335,20 @@ document.addEventListener("DOMContentLoaded", function() {
 var Draggable = function Draggable(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Draggable.prototype, "constructor", [el, opts]);
+  self._x = 0;
+  self._y = 0;
+  return self;
 };
 var $Draggable = Draggable;
 ($traceurRuntime.createClass)(Draggable, {
   startDrag: function(e) {
     "use strict";
-    console.log("startDrag");
+    var offsets = offsetBox(this);
     this.dragstate = {
-      x: e.clientX - this.offsetLeft,
-      y: e.clientY - this.offsetTop,
       clientX: e.clientX,
-      clientY: e.clientY
+      clientY: e.clientY,
+      offsetX: e.offsetX,
+      offsetY: e.offsetY
     };
     this.trigger('dragstart');
     this.state = "drag";
@@ -359,15 +356,15 @@ var $Draggable = Draggable;
   drag: function(e) {
     "use strict";
     console.log("drag");
-    this.dragstate.isCtrl = e.ctrlKey;
-    this.dragstate.difX = e.clientX - this.dragstate.clientX;
-    this.dragstate.difY = e.clientY - this.dragstate.clientY;
+    var d = this.dragstate;
+    var difX = e.clientX - d.clientX;
+    var difY = e.clientY - d.clientY;
+    d.isCtrl = e.ctrlKey;
     if (e.ctrlKey) {}
-    this.dragstate.x += this.dragstate.difX;
-    this.dragstate.y += this.dragstate.difY;
-    this.dragstate.clientX = e.clientX;
-    this.dragstate.clientY = e.clientY;
-    this.move(this.dragstate.x, this.dragstate.y);
+    d.clientX = e.clientX;
+    d.clientY = e.clientY;
+    this.x += difX;
+    this.y += difY;
     this.trigger('drag');
   },
   stopDrag: function(e) {
@@ -377,9 +374,23 @@ var $Draggable = Draggable;
     delete this.dragstate;
     this.state = "default";
   },
-  move: function(x, y) {
+  get x() {
     "use strict";
-    this.style[cssPrefix + "transform"] = ["translate3d(", x, "px,", y, "px, 0)"].join("");
+    return this._x;
+  },
+  set x(x) {
+    "use strict";
+    this._x = x;
+    this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
+  },
+  get y() {
+    "use strict";
+    return this._y;
+  },
+  set y(y) {
+    "use strict";
+    this._y = y;
+    this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
   }
 }, {}, Component);
 Draggable.prototype.states = {

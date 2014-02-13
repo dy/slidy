@@ -1,24 +1,20 @@
-//
 class Draggable extends Component {
 	constructor(el, opts){
-		//ensure element created
-		//ensure DOM extensibility
-		//read options (el/passed)
-		//hook up events
-		//bind API methods
-		//init instance states
 		var self = super(el, opts);
+		self._x = 0;
+		self._y = 0;
+		return self;
 	}
 
 	//-------------------API (verbs)
 	startDrag(e){
-		console.log("startDrag")
 		//init dragstate
+		var offsets = offsetBox(this);
 		this.dragstate = {
-			x: e.clientX - this.offsetLeft,
-			y: e.clientY - this.offsetTop,
 			clientX: e.clientX,
-			clientY: e.clientY
+			clientY: e.clientY,
+			offsetX: e.offsetX,
+			offsetY: e.offsetY
 		};
 		this.trigger('dragstart')
 
@@ -27,21 +23,22 @@ class Draggable extends Component {
 
 	drag(e) {
 		console.log("drag")
+		var d = this.dragstate;
+
+		var difX = e.clientX - d.clientX;
+		var difY = e.clientY - d.clientY;
 
 		//capture dragstate
-		this.dragstate.isCtrl = e.ctrlKey;
-		this.dragstate.difX = e.clientX - this.dragstate.clientX;
-		this.dragstate.difY = e.clientY - this.dragstate.clientY;
+		d.isCtrl = e.ctrlKey;
 		if (e.ctrlKey) {
-			//this.dragstate.difX *= this.options.sniperSpeed;
-			//this.dragstate.difY *= this.options.sniperSpeed;
+			//d.difX *= this.options.sniperSpeed;
+			//d.difY *= this.options.sniperSpeed;
 		}
-		this.dragstate.x += this.dragstate.difX;
-		this.dragstate.y += this.dragstate.difY;
-		this.dragstate.clientX = e.clientX;
-		this.dragstate.clientY = e.clientY;
+		d.clientX = e.clientX;
+		d.clientY = e.clientY;
 
-		this.move(this.dragstate.x, this.dragstate.y)
+		this.x += difX;
+		this.y += difY;
 
 		this.trigger('drag');
 	}
@@ -55,15 +52,25 @@ class Draggable extends Component {
 		this.state = "default"
 	}
 
-	move(x, y){
-		this.style[cssPrefix + "transform"] = ["translate3d(", x, "px,", y, "px, 0)"].join("");
+	get x(){
+		return this._x
+	}
+	set x(x){
+		this._x = x;
+		this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
+	}
+	get y(){
+		return this._y
+	}
+	set y(y){
+		this._y = y;
+		this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
 	}
 }
 
 
 //--------------------------States
 //every state is a set of events to bind to API
-//TODO: how to refer functions to real `this`?
 Draggable.prototype.states = {
 	'default': {
 		before: null,
