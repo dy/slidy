@@ -6,52 +6,12 @@
 //TODO: add document-level listener pluginName:event
 //TODO: think how should it work within components group, like active tab
 
-function Component(){
-
-}
 class Component extends HTMLElement {
-
-	static get defaults(){
-		return {
-			disabledClass: 1
-		}
-	}
-
 
 	//TODO: state criterias (visible/hidden) (active/inactive) (disabled/enabled) ...
 	//TODO: state callbacks & declarative behaviour
 	//TODO: adding states, declaratively
 	//TODO: changing states through methods
-
-
-	/**
-	* Common component behaviour - enabled/disabled
-	*/
-	disable(){
-		this.disabled = true;
-	}
-	enable(){
-		this.disabled = false;
-	}
-	set disabled(val){
-		if (val) {
-			this.setAttribute("disabled", true);
-			this.disabled = true;
-		} else {
-			this.removeAttribute("disabled")
-			this.disabled = false;
-		}
-	}
-	get disabled(){
-		return this.disabled;
-	}
-
-	/**
-	* Utils
-	*/
-	preventDefault(e){
-		e.preventDefault()
-	}
 
 	/**
 	* Uses hack to extend native HTMLElement: swizzles element’s __proto__
@@ -80,9 +40,12 @@ class Component extends HTMLElement {
 		//`this` loses here
 		self.__proto__ = this.constructor.prototype;
 
-		//TODO: keep track of instances
-
+		//init options
 		self.initOptions(opts);
+
+		//keep track of instances;
+		self._id = this.constructor.instances.length;
+		this.constructor.instances.push(self);
 
 		//init state
 		self.initStates.apply(self);
@@ -96,7 +59,6 @@ class Component extends HTMLElement {
 		//console.log("HTMLCustomElement constructor")
 		return self;
 	}
-
 
 
 	//--------------Options
@@ -257,6 +219,37 @@ class Component extends HTMLElement {
 	}
 
 
+
+	/**
+	* Common component behaviour - enabled/disabled
+	*/
+	disable(){
+		this.disabled = true;
+	}
+	enable(){
+		this.disabled = false;
+	}
+	set disabled(val){
+		if (val) {
+			this.setAttribute("disabled", true);
+			this.disabled = true;
+		} else {
+			this.removeAttribute("disabled")
+			this.disabled = false;
+		}
+	}
+	get disabled(){
+		return this.disabled;
+	}
+
+	/**
+	* Utils
+	*/
+	preventDefault(e){
+		e.preventDefault()
+	}
+
+
 	//----------------------Events
 	//as jquery one does
 	addOnceListener(evt, fn){
@@ -311,4 +304,36 @@ class Component extends HTMLElement {
 	}
 
 
+
+	//-------------------------Autolaunch
+	//register descedant, if it should be auto-inited
+	static registerComponent(component){
+		if (Component.registry[component.name]) throw new Error("Component `" + Component.name + "` does already exist");
+
+		//save to registry
+		Component.registry[component.name] = component;
+
+		//init static methods
+		component.instances = [];
+	}
+
 }
+
+//Keyed by name set of components
+Component.registry = {}
+
+//Autolaunch registered components when document is ready
+document.addEventListener("DOMContentLoaded", function(){
+	for (var name in Component.registry){
+		var Descendant = Component.registry[name];
+		var lname = name.toLowerCase(),
+			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+
+		//init all elements in DOM
+		var targets = document.querySelectorAll(selector);
+		for (var i = 0; i < targets.length; i++){
+			new Descendant(targets[i]);
+		}
+	}
+})
+//init every element [classname], [data-classname] or .classname

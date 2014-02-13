@@ -25,7 +25,8 @@ var path = {
 			'src/Component.js',
 			'src/Draggable.js',
 			'src/Area.js',
-			'src/Picker.js'
+			'src/Picker.js',
+			'src/autostart.js'
 	],
 	dest: 'dist',
 	dev: 'dev/slidy.js'

@@ -3,29 +3,50 @@
 <style>
 	body{
 		font-family: sans-serif;
-		padding: 40px;
+		padding: 20px 40px;
 	}
 	* {
 		box-sizing: border-box;
 	}
-	.slidy{
+	[draggable]{
 		background: #345;
 		width: 200px;
-		height: 240px;
+		height: 200px;
 		cursor: move;
 		color: white;
-		padding: 20px 30px;
+		padding: 40px 30px;
+		text-align: center;
+	}
+
+	.case{
+		position: relative;
+		padding:20px 20px 20px;
+		background: #f3f3f3;
+	}
+	.case-code-label{
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		color: #889;
+		border-bottom: 1px dashed #bbc;
+		cursor: pointer;
+	}
+	.case-code-label:hover{
+		color: #445;
+		border-bottom: 1px dashed #99a;
 	}
 </style>
 
 
-<div class="slidy" draggable>Drag me!</div>
-<div class="area" id="area-1"></div>
-<div class="slidy" draggable within="area-1">Drag me!</div>
+<h1>Draggable tests</h1>
+
+<article class="case">
+	<h2>Simple draggable</h2>
+	<div draggable>Drag me</div>
+
+	<label for="simple-case-code" class="case-code-label">code</label>
+	<div class="case-code" id="simple-case-code" hidden></div>
+</article>
 
 <script src="../dev/traceur-runtime.js"></script>
 <script src="../dev/slidy.js"></script>
-<script>
-	var $draggable = document.querySelector("[draggable]")
-	$draggable = new Draggable($draggable);
-</script>

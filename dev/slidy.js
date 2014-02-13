@@ -141,7 +141,6 @@ function observeData(target, data) {
 function findPropertyToInsert(str) {
   str.indexOf();
 }
-function Component() {}
 var Component = function Component(el, opts) {
   "use strict";
   var self;
@@ -156,39 +155,16 @@ var Component = function Component(el, opts) {
   var originalProto = self.__proto__;
   self.__proto__ = this.constructor.prototype;
   self.initOptions(opts);
+  self._id = this.constructor.instances.length;
+  this.constructor.instances.push(self);
   self.initStates.apply(self);
   self.state = 'default';
   self.classList.add(pluginName);
   self.trigger("create");
   return self;
 };
+var $Component = Component;
 ($traceurRuntime.createClass)(Component, {
-  disable: function() {
-    "use strict";
-    this.disabled = true;
-  },
-  enable: function() {
-    "use strict";
-    this.disabled = false;
-  },
-  set disabled(val) {
-    "use strict";
-    if (val) {
-      this.setAttribute("disabled", true);
-      this.disabled = true;
-    } else {
-      this.removeAttribute("disabled");
-      this.disabled = false;
-    }
-  },
-  get disabled() {
-    "use strict";
-    return this.disabled;
-  },
-  preventDefault: function(e) {
-    "use strict";
-    e.preventDefault();
-  },
   initOptions: function(externalOptions) {
     "use strict";
     var staticName = this.constructor.name;
@@ -280,6 +256,32 @@ var Component = function Component(el, opts) {
       this.states[stateName] = instanceState;
     }
   },
+  disable: function() {
+    "use strict";
+    this.disabled = true;
+  },
+  enable: function() {
+    "use strict";
+    this.disabled = false;
+  },
+  set disabled(val) {
+    "use strict";
+    if (val) {
+      this.setAttribute("disabled", true);
+      this.disabled = true;
+    } else {
+      this.removeAttribute("disabled");
+      this.disabled = false;
+    }
+  },
+  get disabled() {
+    "use strict";
+    return this.disabled;
+  },
+  preventDefault: function(e) {
+    "use strict";
+    e.preventDefault();
+  },
   addOnceListener: function(evt, fn) {
     "use strict";
     this.addEventListener(evt, function() {
@@ -318,13 +320,27 @@ var Component = function Component(el, opts) {
     this.disabled = true;
     this.trigger('enable');
   }
-}, {get defaults() {
+}, {registerComponent: function(component) {
     "use strict";
-    return {disabledClass: 1};
+    if ($Component.registry[component.name]) throw new Error("Component `" + $Component.name + "` does already exist");
+    $Component.registry[component.name] = component;
+    component.instances = [];
   }}, HTMLElement);
+Component.registry = {};
+document.addEventListener("DOMContentLoaded", function() {
+  for (var name in Component.registry) {
+    var Descendant = Component.registry[name];
+    var lname = name.toLowerCase(),
+        selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+    var targets = document.querySelectorAll(selector);
+    for (var i = 0; i < targets.length; i++) {
+      new Descendant(targets[i]);
+    }
+  }
+});
 var Draggable = function Draggable(el, opts) {
   "use strict";
-  return $traceurRuntime.superCall(this, $Draggable.prototype, "constructor", [el, opts]);
+  var self = $traceurRuntime.superCall(this, $Draggable.prototype, "constructor", [el, opts]);
 };
 var $Draggable = Draggable;
 ($traceurRuntime.createClass)(Draggable, {
@@ -343,13 +359,27 @@ var $Draggable = Draggable;
   drag: function(e) {
     "use strict";
     console.log("drag");
+    this.dragstate.isCtrl = e.ctrlKey;
+    this.dragstate.difX = e.clientX - this.dragstate.clientX;
+    this.dragstate.difY = e.clientY - this.dragstate.clientY;
+    if (e.ctrlKey) {}
+    this.dragstate.x += this.dragstate.difX;
+    this.dragstate.y += this.dragstate.difY;
+    this.dragstate.clientX = e.clientX;
+    this.dragstate.clientY = e.clientY;
+    this.move(this.dragstate.x, this.dragstate.y);
     this.trigger('drag');
   },
   stopDrag: function(e) {
     "use strict";
     console.log("stopDrag");
     this.trigger('dragstop');
+    delete this.dragstate;
     this.state = "default";
+  },
+  move: function(x, y) {
+    "use strict";
+    this.style[cssPrefix + "transform"] = ["translate3d(", x, "px,", y, "px, 0)"].join("");
   }
 }, {}, Component);
 Draggable.prototype.states = {
@@ -378,6 +408,7 @@ Draggable.defaults = {
   ghost: false,
   translate: true
 };
+Component.registerComponent(Draggable);
 var Area = function Area(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Area.prototype, "constructor", [el, opts]);

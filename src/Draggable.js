@@ -7,7 +7,7 @@ class Draggable extends Component {
 		//hook up events
 		//bind API methods
 		//init instance states
-		return super(el, opts)
+		var self = super(el, opts);
 	}
 
 	//-------------------API (verbs)
@@ -27,6 +27,22 @@ class Draggable extends Component {
 
 	drag(e) {
 		console.log("drag")
+
+		//capture dragstate
+		this.dragstate.isCtrl = e.ctrlKey;
+		this.dragstate.difX = e.clientX - this.dragstate.clientX;
+		this.dragstate.difY = e.clientY - this.dragstate.clientY;
+		if (e.ctrlKey) {
+			//this.dragstate.difX *= this.options.sniperSpeed;
+			//this.dragstate.difY *= this.options.sniperSpeed;
+		}
+		this.dragstate.x += this.dragstate.difX;
+		this.dragstate.y += this.dragstate.difY;
+		this.dragstate.clientX = e.clientX;
+		this.dragstate.clientY = e.clientY;
+
+		this.move(this.dragstate.x, this.dragstate.y)
+
 		this.trigger('drag');
 	}
 
@@ -34,7 +50,13 @@ class Draggable extends Component {
 		console.log("stopDrag")
 		this.trigger('dragstop');
 
+		delete this.dragstate;
+
 		this.state = "default"
+	}
+
+	move(x, y){
+		this.style[cssPrefix + "transform"] = ["translate3d(", x, "px,", y, "px, 0)"].join("");
 	}
 }
 
@@ -85,3 +107,5 @@ Draggable.defaults = {
 
 	translate: true
 }
+
+Component.registerComponent(Draggable)

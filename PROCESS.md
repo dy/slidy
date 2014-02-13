@@ -106,3 +106,5 @@
 * Use behaviours instead of components: element is draggable, not the area - it is not. It just limits area where to drag, which is by fact draggable option.
 
 * Slidy behaviour (or component) should automatically create pickers inside it, based on attrs
+
+* Draggable should be easy to switch to native drag.
