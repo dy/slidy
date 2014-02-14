@@ -45,7 +45,7 @@ class Component extends HTMLElement {
 		self.__proto__ = this.constructor.prototype;
 
 		//init options
-		self.initOptions(opts);
+		self.initOptions.call(self, opts);
 
 		//keep track of instances;
 		self._id = this.constructor.instances.length;
@@ -69,17 +69,31 @@ class Component extends HTMLElement {
 	//TODO: hook up getters and setters for options, to reflect instantly element-write
 	//TODO: hook up attributeChanged listeners, to reflect values of attributes
 	//TODO: keep callbacks
-	initOptions(externalOptions){
-		//TODO
-		//For every options from defaults
-		//create setter and getter on attributes
-		var staticName = this.constructor.name;
-		var defaults = this.constructor.defaults;
+	initOptions(extOpts){
+		//read dataset attributes
 
-		//place every default to element
-		for (var key in defaults) {
-			this.setAttribute(key, defaults[key]);
+		//for every instance option create attribute reflection
+		for (var key in extOpts){
+			this[key] = extOpts[key];
 		}
+
+		//register observers for data-attributes
+		this._observer = new MutationObserver(function(mutations) {
+			for (var i = 0; i < mutations.length; i++){
+				var mutation = mutations[i];
+				if (mutation.type === "attributes"){
+					var attr = mutation.attributeName;
+					//if option attr changed - upd self value
+					if (this.constructor.defaults[attr]){
+						this["_" + attr] = parseAttr(this.getAttribute(attr));
+					}
+				}
+			}
+		}.bind(this));
+		this._observeConfig = {
+			attributes: true
+		}
+		this._observer.observe(this, this._observeConfig);
 	}
 
 	/**
@@ -87,7 +101,6 @@ class Component extends HTMLElement {
 	*/
 	setAttributes(opts){
 		for (var key in opts){
-			this.setAttribute(key, opts[key])
 			this[key] = opts[key]
 		}
 	}
@@ -229,9 +242,11 @@ class Component extends HTMLElement {
 	*/
 	disable(){
 		this.disabled = true;
+		_observer.disconnect();
 	}
 	enable(){
 		this.disabled = false;
+		_observer.observe(this, this._observeConfig)
 	}
 	set disabled(val){
 		if (val) {
@@ -310,15 +325,50 @@ class Component extends HTMLElement {
 
 
 	//-------------------------Autolaunch
-	//register descedant, if it should be auto-inited
-	static registerComponent(component){
-		if (Component.registry[component.name]) throw new Error("Component `" + Component.name + "` does already exist");
+	//register descedant, make it autoload, call additional init (custom feature-detection etc)
+	static registerComponent(constructor, cb){
+		//check whether component exists
+		if (Component.registry[constructor.name]) throw new Error("Component `" + Component.name + "` does already exist");
 
 		//save to registry
-		Component.registry[component.name] = component;
+		Component.registry[constructor.name] = constructor;
 
-		//init static methods
-		component.instances = [];
+		//keep track of instances
+		constructor.instances = [];
+		constructor.preinit = cb;
+
+		//init default options as prototype getters/setters with trigger
+		var propsDescriptor = {};
+		for (var key in constructor.defaults){
+			//make defaults - prototypical properties
+			constructor.prototype["_" + key] = constructor.defaults[key];
+
+			//make instance getter/setters
+			var get = (function(key){
+				return function(){
+					return this['_' + key]
+				}
+			})(key)
+
+			var set = (function(key){
+				return function(value){
+					this['_' + key ] = value;
+					this.setAttribute(key, value);
+					this.trigger("optionChanged")
+					this.trigger(value + "Changed")
+				}
+			})(key)
+
+			propsDescriptor[key] = {
+				//do not delete default properties
+				configurable: false,
+				//do not enumerate non-instance properties
+				enumerable: false,
+				get: get,
+				set: set
+			}
+		}
+		Object.defineProperties(constructor.prototype, propsDescriptor);
 	}
 
 }
@@ -330,6 +380,10 @@ Component.registry = {}
 document.addEventListener("DOMContentLoaded", function(){
 	for (var name in Component.registry){
 		var Descendant = Component.registry[name];
+
+		//make callbacks, if any
+		Descendant.preinit && Descendant.preinit.apply(Descendant);
+
 		var lname = name.toLowerCase(),
 			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
 

@@ -1,4 +1,5 @@
 var pluginName = "slidy",
+    jQuery,
     $;
 function extend(a) {
   for (var i = 1,
@@ -10,6 +11,9 @@ function extend(a) {
   }
   return a;
 }
+$ = $ || function(s) {
+  return document.querySelector(s);
+};
 function offsetBox($el) {
   var box = $el.getBoundingClientRect();
   box.height = $el.offsetHeight;
@@ -27,8 +31,8 @@ function paddingBox($el) {
   return box;
 }
 function on(el, evt, delegate, fn) {
-  if ($) {
-    $(el).on.apply(el, arguments);
+  if (jQuery) {
+    jQuery(el).on.apply(el, arguments);
   } else if (arguments.length === 3) {
     el.addEventListener(evt, delegate);
   } else if (arguments.length === 4 && !delegate) {
@@ -38,8 +42,8 @@ function on(el, evt, delegate, fn) {
   }
 }
 function off(el, evt, fn) {
-  if ($) {
-    $(el).off.apply(el, arguments);
+  if (jQuery) {
+    jQuery(el).off.apply(el, arguments);
   } else if (arguments.length === 3) {
     el.removeEventListener(evt, fn);
   }
@@ -67,7 +71,7 @@ function data(el) {
   }
   return data;
 }
-function recognizeValue(str) {
+function parseAttr(str) {
   if (str === "true") {
     return true;
   } else if (str === "false") {
@@ -148,7 +152,7 @@ var Component = function Component(el, opts) {
   }
   var originalProto = self.__proto__;
   self.__proto__ = this.constructor.prototype;
-  self.initOptions(opts);
+  self.initOptions.call(self, opts);
   self._id = this.constructor.instances.length;
   this.constructor.instances.push(self);
   self.initStates.apply(self);
@@ -159,18 +163,28 @@ var Component = function Component(el, opts) {
 };
 var $Component = Component;
 ($traceurRuntime.createClass)(Component, {
-  initOptions: function(externalOptions) {
+  initOptions: function(extOpts) {
     "use strict";
-    var staticName = this.constructor.name;
-    var defaults = this.constructor.defaults;
-    for (var key in defaults) {
-      this.setAttribute(key, defaults[key]);
+    for (var key in extOpts) {
+      this[key] = extOpts[key];
     }
+    this._observer = new MutationObserver(function(mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        var mutation = mutations[i];
+        if (mutation.type === "attributes") {
+          var attr = mutation.attributeName;
+          if (this.constructor.defaults[attr]) {
+            this["_" + attr] = parseAttr(this.getAttribute(attr));
+          }
+        }
+      }
+    }.bind(this));
+    this._observeConfig = {attributes: true};
+    this._observer.observe(this, this._observeConfig);
   },
   setAttributes: function(opts) {
     "use strict";
     for (var key in opts) {
-      this.setAttribute(key, opts[key]);
       this[key] = opts[key];
     }
   },
@@ -253,10 +267,12 @@ var $Component = Component;
   disable: function() {
     "use strict";
     this.disabled = true;
+    _observer.disconnect();
   },
   enable: function() {
     "use strict";
     this.disabled = false;
+    _observer.observe(this, this._observeConfig);
   },
   set disabled(val) {
     "use strict";
@@ -314,16 +330,42 @@ var $Component = Component;
     this.disabled = true;
     this.trigger('enable');
   }
-}, {registerComponent: function(component) {
+}, {registerComponent: function(constructor, cb) {
     "use strict";
-    if ($Component.registry[component.name]) throw new Error("Component `" + $Component.name + "` does already exist");
-    $Component.registry[component.name] = component;
-    component.instances = [];
+    if ($Component.registry[constructor.name]) throw new Error("Component `" + $Component.name + "` does already exist");
+    $Component.registry[constructor.name] = constructor;
+    constructor.instances = [];
+    constructor.preinit = cb;
+    var propsDescriptor = {};
+    for (var key in constructor.defaults) {
+      constructor.prototype["_" + key] = constructor.defaults[key];
+      var get = (function(key) {
+        return function() {
+          return this['_' + key];
+        };
+      })(key);
+      var set = (function(key) {
+        return function(value) {
+          this['_' + key] = value;
+          this.setAttribute(key, value);
+          this.trigger("optionChanged");
+          this.trigger(value + "Changed");
+        };
+      })(key);
+      propsDescriptor[key] = {
+        configurable: false,
+        enumerable: false,
+        get: get,
+        set: set
+      };
+    }
+    Object.defineProperties(constructor.prototype, propsDescriptor);
   }}, HTMLElement);
 Component.registry = {};
 document.addEventListener("DOMContentLoaded", function() {
   for (var name in Component.registry) {
     var Descendant = Component.registry[name];
+    Descendant.preinit && Descendant.preinit.apply(Descendant);
     var lname = name.toLowerCase(),
         selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
     var targets = document.querySelectorAll(selector);
@@ -337,6 +379,12 @@ var Draggable = function Draggable(el, opts) {
   var self = $traceurRuntime.superCall(this, $Draggable.prototype, "constructor", [el, opts]);
   self._x = 0;
   self._y = 0;
+  self.style[cssPrefix + "user-select"] = "none";
+  self.style[cssPrefix + "user-drag"] = "none";
+  if (self.native) {
+    self.state = "native";
+  }
+  console.dir(self);
   return self;
 };
 var $Draggable = Draggable;
@@ -350,7 +398,6 @@ var $Draggable = Draggable;
       offsetX: e.offsetX,
       offsetY: e.offsetY
     };
-    this.trigger('dragstart');
     this.state = "drag";
   },
   drag: function(e) {
@@ -365,12 +412,10 @@ var $Draggable = Draggable;
     d.clientY = e.clientY;
     this.x += difX;
     this.y += difY;
-    this.trigger('drag');
   },
   stopDrag: function(e) {
     "use strict";
     console.log("stopDrag");
-    this.trigger('dragstop');
     delete this.dragstate;
     this.state = "default";
   },
@@ -409,17 +454,32 @@ Draggable.prototype.states = {
   },
   scroll: {},
   tech: {},
-  out: {}
+  out: {},
+  native: {
+    before: function() {
+      this.style[cssPrefix + "user-drag"] = "element";
+    },
+    after: function() {
+      this.style[cssPrefix + "user-drag"] = "none";
+    },
+    'dragstart': null,
+    'dragend': null
+  }
 };
 Draggable.defaults = {
   treshold: 10,
   autoscroll: false,
-  within: null,
+  within: document,
   group: null,
   ghost: false,
-  translate: true
+  translate: true,
+  sniper: false,
+  native: false
 };
-Component.registerComponent(Draggable);
+Component.registerComponent(Draggable, function() {
+  var div = document.createElement("div");
+  this.isNativeSupported = ('draggable'in div) || ('ondragstart'in div && 'ondrop'in div);
+});
 var Area = function Area(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Area.prototype, "constructor", [el, opts]);
@@ -566,7 +626,11 @@ var $Area = Area;
       ondrag: null,
       ondragstop: null,
       ondestroy: null,
-      onchange: null
+      onchange: null,
+      min: 0,
+      max: 100,
+      value: 50,
+      step: 1
     };
   }}, Component);
 var Picker = function Picker(el, area, opts) {

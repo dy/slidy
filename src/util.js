@@ -1,5 +1,5 @@
 //#exclude
-var pluginName = "slidy", $
+var pluginName = "slidy", jQuery, $
 //#endexclude
 //#put `var pluginName = {{ pluginName }}`
 
@@ -12,6 +12,10 @@ function extend(a){
 		}
 	}
 	return a;
+}
+
+$ = $ || function(s){
+	return document.querySelector(s);
 }
 
 //return element position relative to the viewport
@@ -40,9 +44,9 @@ function paddingBox($el){
 */
 //Binds
 function on(el, evt, delegate, fn){
-	if ($){
+	if (jQuery){
 		//delegate to jquery
-		$(el).on.apply(el, arguments);
+		jQuery(el).on.apply(el, arguments);
 	} else if (arguments.length === 3){
 		//listen element
 		el.addEventListener(evt, delegate)
@@ -57,9 +61,9 @@ function on(el, evt, delegate, fn){
 }
 function off(el, evt, fn){
 	//console.log("off", arguments)
-	if ($){
+	if (jQuery){
 		//delegate to jquery
-		$(el).off.apply(el, arguments);
+		jQuery(el).off.apply(el, arguments);
 	} else if (arguments.length === 3){
 		//listen element
 		el.removeEventListener(evt, fn)
@@ -108,6 +112,7 @@ function between(a, min, max){
 	return Math.max(Math.min(a,max),min);
 }
 
+
 //TODO
 //attr parser
 function data(el) {
@@ -130,9 +135,8 @@ function data(el) {
 	return data;
 }
 
-//TODO
 //returns value from string with correct type
-function recognizeValue(str){
+function parseAttr(str){
 	if (str === "true") {
 		return true;
 	} else if (str === "false") {

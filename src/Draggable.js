@@ -1,8 +1,22 @@
 class Draggable extends Component {
 	constructor(el, opts){
 		var self = super(el, opts);
+
+		//init position
+		//TODO: detect initial transformation
 		self._x = 0;
 		self._y = 0;
+
+		//handle CSSs
+		self.style[cssPrefix + "user-select"] = "none";
+		self.style[cssPrefix + "user-drag"] = "none";
+
+		if (self.native) {
+			self.state = "native";
+		}
+
+		console.dir(self)
+
 		return self;
 	}
 
@@ -16,7 +30,7 @@ class Draggable extends Component {
 			offsetX: e.offsetX,
 			offsetY: e.offsetY
 		};
-		this.trigger('dragstart')
+		//this.trigger('dragstart')
 
 		this.state = "drag";
 	}
@@ -40,12 +54,12 @@ class Draggable extends Component {
 		this.x += difX;
 		this.y += difY;
 
-		this.trigger('drag');
+		//this.trigger('drag');
 	}
 
 	stopDrag(e){
 		console.log("stopDrag")
-		this.trigger('dragstop');
+		//this.trigger('dragstop');
 
 		delete this.dragstate;
 
@@ -72,6 +86,7 @@ class Draggable extends Component {
 //--------------------------States
 //every state is a set of events to bind to API
 Draggable.prototype.states = {
+	//non-native drag
 	'default': {
 		before: null,
 		after: null,
@@ -98,21 +113,49 @@ Draggable.prototype.states = {
 	},
 	out: {
 
+	},
+
+	//native drag
+	native: {
+		before: function(){
+			this.style[cssPrefix + "user-drag"] = "element";
+		},
+		after: function(){
+			this.style[cssPrefix + "user-drag"] = "none";
+		},
+		'dragstart': null,
+		'dragend': null
 	}
 }
 
+//Should it be of the prototype or static?
+//Prototype: + call by `this.defaults` +
 Draggable.defaults = {
 	treshold: 10,
 
 	autoscroll: false,
 
-	within: null,
+	//null is no restrictions
+	within: document,
 
 	group: null,
 
 	ghost: false,
 
-	translate: true
+	translate: true,
+
+	sniper: false,
+
+	//use native drag
+	//Careful: you can’t use other options and change image dynamically
+	native: false
 }
 
-Component.registerComponent(Draggable)
+//TODO: implement default change method
+
+//Bind autoload & feature detection
+Component.registerComponent(Draggable, function(){
+	//detect native drag
+	var div = document.createElement("div")
+	this.isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
+})

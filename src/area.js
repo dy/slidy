@@ -18,7 +18,14 @@ class Area extends Component{
 			ondrag: null,
 			ondragstop: null,
 			ondestroy: null,
-			onchange: null //picker callback
+			onchange: null, //picker callback
+
+
+			//HTML5 settings
+			min: 0,
+			max: 100,
+			value: 50,
+			step: 1
 		}
 	}
 
