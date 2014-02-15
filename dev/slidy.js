@@ -12,16 +12,23 @@ function extend(a) {
   return a;
 }
 $ = $ || function(s) {
-  return document.querySelector(s);
+  if (typeof s === "string") return document.querySelector(s);
+  return s;
 };
-function offsetBox($el) {
-  var box = $el.getBoundingClientRect();
-  box.height = $el.offsetHeight;
-  box.width = $el.offsetWidth;
-  box.center = [box.width * 0.5, box.height * 0.5];
-  return box;
+function offsets(el) {
+  var c = {},
+      rect = el.getBoundingClientRect();
+  c.top = rect.top + (window.pageYOffset || document.documentElement.scrollTop);
+  c.left = rect.left + (window.pageXOffset || document.documentElement.scrollLeft);
+  c.width = el.offsetWidth;
+  c.height = el.offsetHeight;
+  c.bottom = c.top + c.height;
+  c.right = c.left + c.width;
+  c.fromRight = document.width - rect.right;
+  c.fromBottom = (window.innerHeight + (window.pageYOffset || document.documentElement.scrollTop) - rect.bottom);
+  return c;
 }
-function paddingBox($el) {
+function paddings($el) {
   var box = {},
       style = getComputedStyle($el);
   box.top = ~~style.paddingTop.slice(0, - 2);
@@ -52,27 +59,8 @@ function trigger(that, ename, data) {}
 function between(a, min, max) {
   return Math.max(Math.min(a, max), min);
 }
-function data(el) {
-  var data = {},
-      v;
-  for (var prop in el.dataset) {
-    var v;
-    if (multiple) {
-      v = el.dataset[prop].split(",");
-      for (var i = v.length; i--;) {
-        v[i] = recognizeValue(v[i].trim());
-        if (v[i] === "") v[i] = null;
-      }
-    } else {
-      v = recognizeValue(el.dataset[prop]);
-      if (v === "") v[i] = true;
-    }
-    data[prop] = v;
-  }
-  return data;
-}
 function parseAttr(str) {
-  if (str === "true") {
+  if (str === "true" || str === "") {
     return true;
   } else if (str === "false") {
     return false;
@@ -81,6 +69,20 @@ function parseAttr(str) {
   } else {
     return str;
   }
+}
+var defaultAttrs = {
+  'class': true,
+  'id': true,
+  'style': true
+};
+function parseAttributes(el) {
+  var attrs = el.attributes,
+      data = {};
+  for (var i = 0; i < attrs.length; i++) {
+    var attr = attrs[i];
+    if (!defaultAttrs[attr.name]) data[attr.name] = parseAttr(attr.value);
+  }
+  return data;
 }
 function detectCSSPrefix() {
   var puppet = document.documentElement;
@@ -165,6 +167,7 @@ var $Component = Component;
 ($traceurRuntime.createClass)(Component, {
   initOptions: function(extOpts) {
     "use strict";
+    extOpts = extend(parseAttributes(this), extOpts);
     for (var key in extOpts) {
       this[key] = extOpts[key];
     }
@@ -205,7 +208,6 @@ var $Component = Component;
     var oldState = this.states[this._state];
     var newState = this.states[newStateName] || this.states['default'];
     if (!newState) throw new Error("Not existing state `" + newStateName + "`");
-    console.log("Change state from `" + this._state + "` to `" + newStateName + "`");
     if (oldState) {
       oldState.after && oldState.after.fn.call(this);
       this.trigger("after" + this._state[0].toUpperCase() + this._state.slice(1) + "State");
@@ -226,39 +228,45 @@ var $Component = Component;
   },
   initStates: function(states) {
     "use strict";
-    var protoStates = this.constructor.prototype.states;
+    var protoStates = this.constructor.states;
     this.states = {};
     for (var stateName in protoStates) {
       var protoState = protoStates[stateName],
           instanceState = {};
       for (var evtId in protoState) {
-        var evt = undefined,
-            src = undefined,
-            delegate = undefined,
+        var fnRef = protoState[evtId],
             fn = undefined;
-        var evtParams = evtId.split(" "),
-            fnRef = protoState[evtId];
-        if (evtParams[0] === 'document') {
-          src = document;
-          evtParams = evtParams.slice(1);
-        } else if (evtParams[0] === 'window') {
-          src = window;
-          evtParams = evtParams.slice(1);
-        } else {
-          src = this;
+        if (typeof fnRef === "function") {
+          fn = fnRef.bind(this);
+        } else if (typeof fnRef === "string" && this[fnRef]) {
+          fn = this[fnRef].bind(this);
         }
-        evt = evtParams[0];
-        delegate = evtParams.slice(1).join('');
-        if (typeof fnRef === "function") fn = fnRef.bind(this); else if (typeof fnRef === "string") fn = function() {
-          this._state = fnRef;
-        }.bind(this);
-        if (fn && evt) {
-          instanceState[evt] = {
-            evt: evt,
-            src: src,
-            delegate: delegate,
-            fn: fn
-          };
+        var evtDirectives = evtId.split(',');
+        for (var i = 0; i < evtDirectives.length; i++) {
+          var evtDirective = evtDirectives[i].trim();
+          var evt = undefined,
+              src = undefined,
+              delegate = undefined;
+          var evtParams = evtDirective.split(" ");
+          if (evtParams[0] === 'document') {
+            src = document;
+            evtParams = evtParams.slice(1);
+          } else if (evtParams[0] === 'window') {
+            src = window;
+            evtParams = evtParams.slice(1);
+          } else {
+            src = this;
+          }
+          evt = evtParams[0];
+          delegate = evtParams.slice(1).join('');
+          if (fn && evt) {
+            instanceState[evt] = {
+              evt: evt,
+              src: src,
+              delegate: delegate,
+              fn: fn
+            };
+          }
         }
       }
       this.states[stateName] = instanceState;
@@ -330,7 +338,7 @@ var $Component = Component;
     this.disabled = true;
     this.trigger('enable');
   }
-}, {registerComponent: function(constructor, cb) {
+}, {register: function(constructor, cb) {
     "use strict";
     if ($Component.registry[constructor.name]) throw new Error("Component `" + $Component.name + "` does already exist");
     $Component.registry[constructor.name] = constructor;
@@ -381,43 +389,50 @@ var Draggable = function Draggable(el, opts) {
   self._y = 0;
   self.style[cssPrefix + "user-select"] = "none";
   self.style[cssPrefix + "user-drag"] = "none";
+  if (self.within) {
+    self.$restrictWithin = $(self.within);
+  }
+  var limOffsets = offsets(self.$restrictWithin),
+      selfOffsets = offsets(self);
+  self.limits = {
+    top: limOffsets.top - selfOffsets.top,
+    bottom: limOffsets.bottom - selfOffsets.bottom,
+    left: limOffsets.left - selfOffsets.left,
+    right: limOffsets.right - selfOffsets.right
+  };
   if (self.native) {
     self.state = "native";
   }
-  console.dir(self);
+  this.dropEffect = this.dropEffect.bind(this);
   return self;
 };
 var $Draggable = Draggable;
 ($traceurRuntime.createClass)(Draggable, {
   startDrag: function(e) {
     "use strict";
-    var offsets = offsetBox(this);
     this.dragstate = {
       clientX: e.clientX,
       clientY: e.clientY,
       offsetX: e.offsetX,
       offsetY: e.offsetY
     };
-    this.state = "drag";
+    console.log(this.dragstate);
   },
   drag: function(e) {
     "use strict";
-    console.log("drag");
     var d = this.dragstate;
     var difX = e.clientX - d.clientX;
     var difY = e.clientY - d.clientY;
     d.isCtrl = e.ctrlKey;
-    if (e.ctrlKey) {}
+    if (e.ctrlKey && this.sniper) {}
     d.clientX = e.clientX;
     d.clientY = e.clientY;
-    this.x += difX;
-    this.y += difY;
+    this.x = between(this.x + difX, this.limits.left, this.limits.right);
+    this.y = between(this.y + difY, this.limits.top, this.limits.bottom);
   },
   stopDrag: function(e) {
     "use strict";
-    console.log("stopDrag");
     delete this.dragstate;
-    this.state = "default";
   },
   get x() {
     "use strict";
@@ -436,21 +451,34 @@ var $Draggable = Draggable;
     "use strict";
     this._y = y;
     this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
+  },
+  dropEffect: function(e) {
+    "use strict";
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    return false;
   }
 }, {}, Component);
-Draggable.prototype.states = {
+Draggable.states = {
   'default': {
     before: null,
     after: null,
-    'mousedown': Draggable.prototype.startDrag
+    mousedown: function(e) {
+      this.startDrag(e);
+      this.trigger('dragstart');
+      this.state = "drag";
+    }
   },
   drag: {
-    before: null,
-    after: null,
-    'document selectstart': Draggable.prototype.preventDefault,
-    'document mousemove': Draggable.prototype.drag,
-    'document mouseup': Draggable.prototype.stopDrag,
-    'document mouseleave': Draggable.prototype.stopDrag
+    'document selectstart': 'preventDefault',
+    'document mousemove': function(e) {
+      this.drag(e);
+      this.trigger('drag');
+    },
+    'document mouseup, document mouseleave': function(e) {
+      this.stopDrag(e);
+      this.state = "default";
+    }
   },
   scroll: {},
   tech: {},
@@ -458,28 +486,47 @@ Draggable.prototype.states = {
   native: {
     before: function() {
       this.style[cssPrefix + "user-drag"] = "element";
+      this.style.cursor = "pointer!important";
+      on(this.$restrictWithin, 'dragover', this.dropEffect);
     },
     after: function() {
       this.style[cssPrefix + "user-drag"] = "none";
+      off(this.$restrictWithin, 'dragover', this.dropEffect);
     },
-    'dragstart': null,
-    'dragend': null
+    dragstart: function(e) {
+      this.startDrag(e);
+      e.dataTransfer.effectAllowed = 'all';
+      this.$dragImageStub = document.createElement('div');
+      this.parentNode.insertBefore(this.$dragImageStub, this);
+      e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
+    },
+    dragend: function(e) {
+      this.stopDrag(e);
+      this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
+      delete this.$dragImageStub;
+    },
+    drag: function(e) {
+      if (this.native && e.x === 0 && e.y === 0) return;
+      this.drag(e);
+    },
+    dragover: 'dropEffect'
   }
 };
 Draggable.defaults = {
   treshold: 10,
   autoscroll: false,
-  within: document,
+  within: document.body,
   group: null,
   ghost: false,
   translate: true,
   sniper: false,
-  native: false
+  native: (function() {
+    var div = document.createElement("div");
+    var isNativeSupported = ('draggable'in div) || ('ondragstart'in div && 'ondrop'in div);
+    return isNativeSupported;
+  })()
 };
-Component.registerComponent(Draggable, function() {
-  var div = document.createElement("div");
-  this.isNativeSupported = ('draggable'in div) || ('ondragstart'in div && 'ondrop'in div);
-});
+Component.register(Draggable);
 var Area = function Area(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Area.prototype, "constructor", [el, opts]);

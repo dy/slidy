@@ -3,7 +3,6 @@ class Draggable extends Component {
 		var self = super(el, opts);
 
 		//init position
-		//TODO: detect initial transformation
 		self._x = 0;
 		self._y = 0;
 
@@ -11,11 +10,26 @@ class Draggable extends Component {
 		self.style[cssPrefix + "user-select"] = "none";
 		self.style[cssPrefix + "user-drag"] = "none";
 
+		//set restricting area
+		if (self.within){
+			self.$restrictWithin = $(self.within)
+		}
+
+		//set limits
+		var limOffsets = offsets(self.$restrictWithin),
+			selfOffsets = offsets(self);
+		self.limits = {
+			top: limOffsets.top - selfOffsets.top,
+			bottom: limOffsets.bottom - selfOffsets.bottom,
+			left: limOffsets.left - selfOffsets.left,
+			right: limOffsets.right - selfOffsets.right,
+		}
+
+		//go native
 		if (self.native) {
 			self.state = "native";
 		}
-
-		console.dir(self)
+		this.dropEffect = this.dropEffect.bind(this)
 
 		return self;
 	}
@@ -23,20 +37,18 @@ class Draggable extends Component {
 	//-------------------API (verbs)
 	startDrag(e){
 		//init dragstate
-		var offsets = offsetBox(this);
 		this.dragstate = {
 			clientX: e.clientX,
 			clientY: e.clientY,
 			offsetX: e.offsetX,
 			offsetY: e.offsetY
 		};
-		//this.trigger('dragstart')
-
-		this.state = "drag";
+		console.log(this.dragstate)
 	}
 
 	drag(e) {
-		console.log("drag")
+		//console.log("drag", e)
+
 		var d = this.dragstate;
 
 		var difX = e.clientX - d.clientX;
@@ -44,26 +56,26 @@ class Draggable extends Component {
 
 		//capture dragstate
 		d.isCtrl = e.ctrlKey;
-		if (e.ctrlKey) {
+		if (e.ctrlKey && this.sniper) {
 			//d.difX *= this.options.sniperSpeed;
 			//d.difY *= this.options.sniperSpeed;
 		}
 		d.clientX = e.clientX;
 		d.clientY = e.clientY;
 
-		this.x += difX;
-		this.y += difY;
-
-		//this.trigger('drag');
+		//this.x += difX;
+		//this.y += difY;
+		this.x = between(this.x + difX,
+						this.limits.left,
+						this.limits.right);
+		this.y = between(this.y + difY,
+						this.limits.top,
+						this.limits.bottom);
 	}
 
 	stopDrag(e){
-		console.log("stopDrag")
-		//this.trigger('dragstop');
-
+		//console.log("stopDrag")
 		delete this.dragstate;
-
-		this.state = "default"
 	}
 
 	get x(){
@@ -80,30 +92,39 @@ class Draggable extends Component {
 		this._y = y;
 		this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
 	}
+
+	dropEffect(e){
+		e.preventDefault()
+		e.dataTransfer.dropEffect = "move"
+		return false;
+	}
 }
 
 
 //--------------------------States
 //every state is a set of events to bind to API
-Draggable.prototype.states = {
+Draggable.states = {
 	//non-native drag
 	'default': {
 		before: null,
 		after: null,
 
-		'mousedown': Draggable.prototype.startDrag
+		mousedown: function(e){
+			this.startDrag(e);
+			this.trigger('dragstart')
+			this.state = "drag";
+		}
 	},
 	drag: {
-		//transition events
-		before: null,
-		after: null,
-
-		//TODO: how to bind fns to instance?
-		//the only way to do that is on the instance  itself
-		'document selectstart': Draggable.prototype.preventDefault,
-		'document mousemove': Draggable.prototype.drag,
-		'document mouseup': Draggable.prototype.stopDrag,
-		'document mouseleave': Draggable.prototype.stopDrag
+		'document selectstart': 'preventDefault',
+		'document mousemove': function(e){
+			this.drag(e)
+			this.trigger('drag')
+		},
+		'document mouseup, document mouseleave': function(e){
+			this.stopDrag(e);
+			this.state = "default"
+		}
 	},
 	scroll: {
 
@@ -118,13 +139,40 @@ Draggable.prototype.states = {
 	//native drag
 	native: {
 		before: function(){
+			//hang proper styles
 			this.style[cssPrefix + "user-drag"] = "element";
+			this.style.cursor = "pointer!important";
+
+			//make restricting area allowable to drop
+			on(this.$restrictWithin, 'dragover', this.dropEffect)
 		},
 		after: function(){
 			this.style[cssPrefix + "user-drag"] = "none";
+			off(this.$restrictWithin, 'dragover', this.dropEffect)
 		},
-		'dragstart': null,
-		'dragend': null
+
+		dragstart:  function(e){
+			this.startDrag(e);
+			e.dataTransfer.effectAllowed = 'all';
+
+			//hook drag image stub (native image is invisible)
+			this.$dragImageStub = document.createElement('div');
+			this.parentNode.insertBefore(this.$dragImageStub, this);
+			e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
+		},
+		dragend:  function(e){
+			this.stopDrag(e);
+
+			//remove drag image stub
+			this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
+			delete this.$dragImageStub;
+		},
+		drag:  function(e){
+			//ignore final native drag event
+			if (this.native && e.x === 0 && e.y === 0) return;
+			this.drag(e)
+		},
+		dragover: 'dropEffect',
 	}
 }
 
@@ -136,7 +184,7 @@ Draggable.defaults = {
 	autoscroll: false,
 
 	//null is no restrictions
-	within: document,
+	within: document.body,
 
 	group: null,
 
@@ -146,16 +194,18 @@ Draggable.defaults = {
 
 	sniper: false,
 
-	//use native drag
-	//Careful: you can’t use other options and change image dynamically
-	native: false
+	//detect whether to use native drag
+	//NOTE: you can’t change drag cursor, though native drag is faster
+	//NOTE: bedides, cursor is glitching if drag started on the edge
+	//TODO: make ghost insteadof moving self
+	native: (function(){
+		var div = document.createElement("div")
+		var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
+		return isNativeSupported
+	})()
 }
 
 //TODO: implement default change method
 
 //Bind autoload & feature detection
-Component.registerComponent(Draggable, function(){
-	//detect native drag
-	var div = document.createElement("div")
-	this.isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
-})
+Component.register(Draggable)

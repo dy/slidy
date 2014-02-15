@@ -19,3 +19,4 @@ In details:
 * It has sniper mode
 * It animates through requestAnimFrame
 * Accessibility
+* No memory-leaks not in native nor default mode (proof)

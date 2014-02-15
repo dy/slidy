@@ -71,6 +71,7 @@ class Component extends HTMLElement {
 	//TODO: keep callbacks
 	initOptions(extOpts){
 		//read dataset attributes
+		extOpts = extend(parseAttributes(this), extOpts);
 
 		//for every instance option create attribute reflection
 		for (var key in extOpts){
@@ -126,7 +127,7 @@ class Component extends HTMLElement {
 		var newState = this.states[newStateName] || this.states['default'];
 		if (!newState) throw new Error("Not existing state `" + newStateName + "`");
 
-		console.log("Change state from `" + this._state + "` to `" + newStateName + "`")
+		//console.log("Change state from `" + this._state + "` to `" + newStateName + "`")
 
 		//handle exit
 		if (oldState) {
@@ -175,7 +176,7 @@ class Component extends HTMLElement {
 	* { state: { event: [src, delegate, fn], event: [src, delegate, fn], ... } }
 	*/
 	initStates(states){
-		var protoStates = this.constructor.prototype.states;
+		var protoStates = this.constructor.states;
 		this.states = {};
 
 		for (var stateName in protoStates){
@@ -188,43 +189,48 @@ class Component extends HTMLElement {
 			//`on('[document|window]? super:event .something > .which > is > #listening', fn)`
 			//console.log("bind state", stateName , protoState)
 			for (var evtId in protoState){
-				var evt = undefined, src = undefined, delegate = undefined, fn = undefined;
-
-				var evtParams = evtId.split(" "),
-					fnRef = protoState[evtId];
-
-				//detect source
-				if (evtParams[0] === 'document'){
-					src = document;
-					evtParams = evtParams.slice(1);
-				} else if (evtParams[0] === 'window'){
-					src = window
-					evtParams = evtParams.slice(1);
-				} else {
-					src = this;
+				//bind fn
+				var fnRef = protoState[evtId], fn = undefined;
+				if (typeof fnRef === "function"){
+					fn = fnRef.bind(this);
+				} else if (typeof fnRef === "string" && this[fnRef]){
+					fn = this[fnRef].bind(this);
+					//console.log(evt, fnRef, fn)
 				}
 
-				//detect evt name
-				evt = evtParams[0];
+				var evtDirectives = evtId.split(',');
+				for (var i = 0; i < evtDirectives.length; i++){
+					var evtDirective = evtDirectives[i].trim();
+					var evt = undefined, src = undefined, delegate = undefined;
 
-				//is there delegatees?
-				delegate = evtParams.slice(1).join('');
+					var evtParams = evtDirective.split(" ");
 
-				//bind fn
-				if (typeof fnRef === "function")
-					fn = fnRef.bind(this);
-				else if (typeof fnRef === "string")
-					fn = function(){ this._state = fnRef }.bind(this);
-				//console.log(evt, fnRef, fn)
+					//detect source
+					if (evtParams[0] === 'document'){
+						src = document;
+						evtParams = evtParams.slice(1);
+					} else if (evtParams[0] === 'window'){
+						src = window
+						evtParams = evtParams.slice(1);
+					} else {
+						src = this;
+					}
 
-				//collect class instance state
-				if (fn && evt){
-					instanceState[evt] = {
-						evt: evt,
-						src: src,
-						delegate: delegate,
-						fn: fn
-					};
+					//detect evt name
+					evt = evtParams[0];
+
+					//is there delegatees?
+					delegate = evtParams.slice(1).join('');
+
+					//collect class instance state
+					if (fn && evt){
+						instanceState[evt] = {
+							evt: evt,
+							src: src,
+							delegate: delegate,
+							fn: fn
+						};
+					}
 				}
 			}
 			//console.log("state", instanceState)
@@ -326,7 +332,7 @@ class Component extends HTMLElement {
 
 	//-------------------------Autolaunch
 	//register descedant, make it autoload, call additional init (custom feature-detection etc)
-	static registerComponent(constructor, cb){
+	static register(constructor, cb){
 		//check whether component exists
 		if (Component.registry[constructor.name]) throw new Error("Component `" + Component.name + "` does already exist");
 

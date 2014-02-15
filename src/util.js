@@ -14,21 +14,29 @@ function extend(a){
 	return a;
 }
 
+//Simple DOMs
 $ = $ || function(s){
-	return document.querySelector(s);
+	if (typeof s === "string") return document.querySelector(s);
+	return s;
 }
 
-//return element position relative to the viewport
-function offsetBox($el){
-	var box = $el.getBoundingClientRect();
-	box.height= $el.offsetHeight; //this.el.clientHeight;
-	box.width= $el.offsetWidth; //this.el.clientWidth;
-	box.center= [box.width * 0.5, box.height * 0.5];
-	return box;
+//return absolute offsets
+function offsets(el){
+	var c = {},
+		rect = el.getBoundingClientRect();
+	c.top = rect.top + (window.pageYOffset || document.documentElement.scrollTop);
+	c.left = rect.left + (window.pageXOffset || document.documentElement.scrollLeft);
+	c.width = el.offsetWidth;
+	c.height = el.offsetHeight;
+	c.bottom = c.top + c.height;
+	c.right = c.left + c.width;
+	c.fromRight = document.width - rect.right;
+	c.fromBottom = (window.innerHeight + (window.pageYOffset || document.documentElement.scrollTop) - rect.bottom)
+	return c;
 }
 
 //return paddings
-function paddingBox($el){
+function paddings($el){
 	var box = {}, style = getComputedStyle($el);
 
 	box.top = ~~style.paddingTop.slice(0,-2)
@@ -112,32 +120,9 @@ function between(a, min, max){
 	return Math.max(Math.min(a,max),min);
 }
 
-
-//TODO
-//attr parser
-function data(el) {
-	var data = {}, v;
-	for (var prop in el.dataset){
-		var v;
-		if (multiple) {
-			v = el.dataset[prop].split(",");
-			for (var i = v.length; i--;){
-				v[i] = recognizeValue(v[i].trim());
-				if (v[i] === "") v[i] = null;
-			}
-		} else {
-			v = recognizeValue(el.dataset[prop]);
-			if (v === "") v[i] = true;
-		}
-
-		data[prop] = v;
-	}
-	return data;
-}
-
 //returns value from string with correct type
 function parseAttr(str){
-	if (str === "true") {
+	if (str === "true" || str === "") {
 		return true;
 	} else if (str === "false") {
 		return false;
@@ -148,6 +133,19 @@ function parseAttr(str){
 	}
 }
 
+//returns data object representing attributes read
+var defaultAttrs = {'class': true, 'id': true, 'style': true};
+function parseAttributes(el){
+	var attrs = el.attributes,
+		data = {};
+
+	for (var i = 0; i < attrs.length; i++){
+		var attr = attrs[i]
+		if (!defaultAttrs[attr.name]) data[attr.name] = parseAttr(attr.value)
+	}
+
+	return data;
+}
 
 //stupid prefix detector
 function detectCSSPrefix(){

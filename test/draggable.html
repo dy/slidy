@@ -4,15 +4,15 @@
 	body{
 		font-family: sans-serif;
 		padding: 20px 40px;
+		margin: 0;
 	}
 	* {
 		box-sizing: border-box;
 	}
 	[draggable]{
-		background: #345;
+		background: rgba(80,90,100,.5);
 		width: 200px;
 		height: 200px;
-		cursor: move;
 		color: white;
 		padding: 40px 30px;
 		text-align: center;
@@ -22,6 +22,8 @@
 		position: relative;
 		padding:20px 20px 20px;
 		background: #f3f3f3;
+		min-height: 300px;
+		margin-bottom: 20px;
 	}
 	.case-code-label{
 		position: absolute;
@@ -40,9 +42,9 @@
 
 <h1>Draggable tests</h1>
 
-<article class="case">
+<article class="case" id="simple-case">
 	<h2>Simple draggable</h2>
-	<div draggable>Drag me</div>
+	<div draggable within=".case" native="false">Drag me</div>
 
 	<label for="simple-case-code" class="case-code-label">code</label>
 	<div class="case-code" id="simple-case-code" hidden></div>
