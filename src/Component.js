@@ -57,7 +57,7 @@ class Component extends HTMLElement {
 		//treat element
 		self.classList.add(this.constructor.lname);
 
-		self.trigger("create")
+		self.fire("create")
 		//console.log(self.getBoundingClientRect())
 		//console.log("HTMLCustomElement constructor")
 		return self;
@@ -132,8 +132,8 @@ class Component extends HTMLElement {
 		if (oldState) {
 			//trigger exit
 			oldState.after && oldState.after.fn.call(this);
-			this.trigger("after" + this._state[0].toUpperCase() + this._state.slice(1) + "State");
-			this.trigger("afterState");
+			this.fire("after" + this._state[0].toUpperCase() + this._state.slice(1) + "State");
+			this.fire("afterState");
 
 			//unbind old state events
 			for(var evt in oldState){
@@ -149,8 +149,8 @@ class Component extends HTMLElement {
 		//handle enter
 		//trigger enter
 		newState.before && newState.before.fn.call(this);
-		this.trigger("before" + newStateName[0].toUpperCase() + newStateName.slice(1) + "State");
-		this.trigger("beforeState");
+		this.fire("before" + newStateName[0].toUpperCase() + newStateName.slice(1) + "State");
+		this.fire("beforeState");
 
 		//bind new state events
 		for(var evt in newState){
@@ -303,28 +303,20 @@ class Component extends HTMLElement {
 	}
 
 	//broadcaster
-	trigger(eName, data){
-		//TODO: handle jQuery-way, if there is such
-		//TODO: pass data
-		//TODO: ie’s work
-		//TODO: options callbacks
-		//TODO: call document specific call
-		//trigger()
-		var event = new CustomEvent(eName, data)
-		if (this['on' + eName]) this['on' + eName].apply(this, event);
-		this.dispatchEvent(event);
+	fire(eName, data){
+		fire(this, eName, data);
 	}
 
 
 	//------------------------------Behaviour
 	enable (){
 		this.disabled = false;
-		this.trigger('disable');
+		this.fire('disable');
 	}
 
 	disable (){
 		this.disabled = true;
-		this.trigger('enable')
+		this.fire('enable')
 	}
 
 
@@ -349,6 +341,9 @@ Component.register = function(constructor){
 	//init default options as prototype getters/setters with trigger
 	var propsDescriptor = {};
 	for (var key in constructor.defaults){
+		//ignore already defined setter/getter
+		if (Object.getOwnPropertyDescriptor(constructor.prototype,key)) continue;
+
 		//make defaults - prototypical properties
 		constructor.prototype["_" + key] = constructor.defaults[key];
 
@@ -362,9 +357,9 @@ Component.register = function(constructor){
 		var set = (function(key){
 			return function(value){
 				this['_' + key ] = value;
-				this.setAttribute(key, value);
-				this.trigger("optionChanged")
-				this.trigger(value + "Changed")
+				this.setAttribute(key, stringify(value));
+				this.fire("optionChanged")
+				this.fire(value + "Changed")
 			}
 		})(key)
 
@@ -377,6 +372,7 @@ Component.register = function(constructor){
 			set: set
 		}
 	}
+	//console.log(propsDescriptor)
 	Object.defineProperties(constructor.prototype, propsDescriptor);
 }
 

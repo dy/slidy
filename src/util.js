@@ -83,37 +83,19 @@ function off(el, evt, fn){
 * Broadcasts event: "slidy:evt" → $doc, "slidy:evt" → $el, evt → area.opts
 * target - whether area or picker class
 */
-//TODO
-function trigger(that, ename, data){
-	//TODO: pass data to trigger events
-	/*var prefixedEvt = [pluginName, ":", evt].join('');
-	if ($){
-		$(that.$el).trigger(prefixedEvt);
+function fire(el, eName, data){
+	//TODO: handle jQuery-way, if there is such
+	//TODO: pass data
+	//TODO: ie’s work
+	//TODO: options callbacks
+	//TODO: call document specific call
+	var event = new CustomEvent(eName, {detail: data})
+	if (this['on' + eName]) this['on' + eName].apply(this, data);
+	if (jQuery){
+		$(el).trigger(event, data);
 	} else {
-		//that.$el.dispatchEvent(new CustomEvent(prefixedEvt))
+		el.dispatchEvent(event)
 	}
-	if (that.options && that.options[evt]){
-		that.options[evt].call(that, data);
-	}
-
-	var event;
-	if(document.createEvent){
-		event = document.createEvent('HTMLEvents');
-		event.initEvent(ename,true,true);
-	}else if(document.createEventObject){// IE < 9
-		event = document.createEventObject();
-		event.eventType = ename;
-	}
-	event.eventName = ename;
-	if(target.dispatchEvent){
-		target.dispatchEvent(event);
-	}else if(target.fireEvent && htmlEvents['on'+eventName]){// IE < 9
-		target.fireEvent('on'+event.eventType,event);// can trigger only real event (e.g. 'click')
-	}else if(el[eventName]){
-		el[eventName]();
-	}else if(el['on'+eventName]){
-		el['on'+eventName]();
-	}*/
 }
 
 //math limiter
@@ -158,12 +140,67 @@ function parseAttributes(el){
 
 	for (var i = 0; i < attrs.length; i++){
 		var attr = attrs[i]
-		if (!defaultAttrs[attr.name]) {
+		if (attr.name.slice(0,2) === "on") {
+			//declared evt - create anonymous fn
+			data[attr.name] = new Function(attr.value);
+		} else if (!defaultAttrs[attr.name]) {
 			data[attr.name] = (attr.value.indexOf(',') < 0 ? parseAttr(attr.value) : parseMultiAttr(attr.value));
 		}
 	}
 
 	return data;
+}
+
+//stringify any element passed, useful for attribute setting
+function stringify(el){
+	if (typeof el === "function"){
+		//return function body
+		var src = el.toString();
+		el.slice(src.indexOf("{") + 1, src.lastIndexOf("}"));
+	} else if (el instanceof HTMLElement){
+		//return id/name/proper selector
+		return selector(el)
+	} else if (el instanceof Array){
+		//return comma-separated array
+		return el.join(",")
+	} else if (el instanceof Object){
+		//serialize json
+		return el.toString();
+	} else {
+		return el.toString();
+	}
+}
+
+//returns unique selector for an element
+//stolen from https://github.com/rishihahs/domtalk/blob/master/index.js
+function selector(element) {
+	// Top level elements are body and ones with an id
+	if (element === document.documentElement) {
+		return ':root';
+	} else if (element.tagName && element.tagName.toUpperCase() === 'BODY') {
+		return 'body';
+	} else if (element.id) {
+		return '#' + element.id;
+	}
+
+	var parent = element.parentNode;
+	var parentLoc = selector(parent);
+
+	// See which index we are in parent. Array#indexOf could also be used here
+	var children = parent.childNodes;
+	var index = 0;
+	for (var i = 0; i < children.length; i++) {
+		// nodeType is 1 if ELEMENT_NODE
+		if (children[i].nodeType === 1) {
+			if (children[i] === element) {
+				break;
+			}
+
+			index++;
+		}
+	}
+
+	return parentLoc + ' *:nth-child(' + (index + 1) + ')';
 }
 
 //stupid prefix detector

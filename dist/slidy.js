@@ -56,7 +56,15 @@ function off(el, evt, fn) {
     el.removeEventListener(evt, fn);
   }
 }
-function trigger(that, ename, data) {}
+function fire(el, eName, data) {
+  var event = new CustomEvent(eName, {detail: data});
+  if (this['on' + eName]) this['on' + eName].apply(this, data);
+  if (jQuery) {
+    $(el).trigger(event, data);
+  } else {
+    el.dispatchEvent(event);
+  }
+}
 function between(a, min, max) {
   return Math.max(Math.min(a, max), min);
 }
@@ -93,11 +101,49 @@ function parseAttributes(el) {
       data = {};
   for (var i = 0; i < attrs.length; i++) {
     var attr = attrs[i];
-    if (!defaultAttrs[attr.name]) {
+    if (attr.name.slice(0, 2) === "on") {
+      data[attr.name] = new Function(attr.value);
+    } else if (!defaultAttrs[attr.name]) {
       data[attr.name] = (attr.value.indexOf(',') < 0 ? parseAttr(attr.value): parseMultiAttr(attr.value));
     }
   }
   return data;
+}
+function stringify(el) {
+  if (typeof el === "function") {
+    var src = el.toString();
+    el.slice(src.indexOf("{") + 1, src.lastIndexOf("}"));
+  } else if (el instanceof HTMLElement) {
+    return selector(el);
+  } else if (el instanceof Array) {
+    return el.join(",");
+  } else if (el instanceof Object) {
+    return el.toString();
+  } else {
+    return el.toString();
+  }
+}
+function selector(element) {
+  if (element === document.documentElement) {
+    return ':root';
+  } else if (element.tagName && element.tagName.toUpperCase() === 'BODY') {
+    return 'body';
+  } else if (element.id) {
+    return '#' + element.id;
+  }
+  var parent = element.parentNode;
+  var parentLoc = selector(parent);
+  var children = parent.childNodes;
+  var index = 0;
+  for (var i = 0; i < children.length; i++) {
+    if (children[i].nodeType === 1) {
+      if (children[i] === element) {
+        break;
+      }
+      index++;
+    }
+  }
+  return parentLoc + ' *:nth-child(' + (index + 1) + ')';
 }
 function detectCSSPrefix() {
   var puppet = document.documentElement;
@@ -175,7 +221,7 @@ var Component = function Component(el, opts) {
   self.initStates.apply(self);
   self.state = 'default';
   self.classList.add(this.constructor.lname);
-  self.trigger("create");
+  self.fire("create");
   return self;
 };
 ($traceurRuntime.createClass)(Component, {
@@ -224,16 +270,16 @@ var Component = function Component(el, opts) {
     if (!newState) throw new Error("Not existing state `" + newStateName + "`");
     if (oldState) {
       oldState.after && oldState.after.fn.call(this);
-      this.trigger("after" + this._state[0].toUpperCase() + this._state.slice(1) + "State");
-      this.trigger("afterState");
+      this.fire("after" + this._state[0].toUpperCase() + this._state.slice(1) + "State");
+      this.fire("afterState");
       for (var evt in oldState) {
         var stateEvt = oldState[evt];
         off(stateEvt.src, stateEvt.evt, stateEvt.fn);
       }
     }
     newState.before && newState.before.fn.call(this);
-    this.trigger("before" + newStateName[0].toUpperCase() + newStateName.slice(1) + "State");
-    this.trigger("beforeState");
+    this.fire("before" + newStateName[0].toUpperCase() + newStateName.slice(1) + "State");
+    this.fire("beforeState");
     for (var evt in newState) {
       var stateEvt = newState[evt];
       on(stateEvt.src, stateEvt.evt, stateEvt.delegate, stateEvt.fn);
@@ -336,21 +382,19 @@ var Component = function Component(el, opts) {
       }
     }.bind(this));
   },
-  trigger: function(eName, data) {
+  fire: function(eName, data) {
     "use strict";
-    var event = new CustomEvent(eName, data);
-    if (this['on' + eName]) this['on' + eName].apply(this, event);
-    this.dispatchEvent(event);
+    fire(this, eName, data);
   },
   enable: function() {
     "use strict";
     this.disabled = false;
-    this.trigger('disable');
+    this.fire('disable');
   },
   disable: function() {
     "use strict";
     this.disabled = true;
-    this.trigger('enable');
+    this.fire('enable');
   }
 }, {}, HTMLElement);
 Component.register = function(constructor) {
@@ -360,6 +404,7 @@ Component.register = function(constructor) {
   constructor.lname = constructor.name.toLowerCase();
   var propsDescriptor = {};
   for (var key in constructor.defaults) {
+    if (Object.getOwnPropertyDescriptor(constructor.prototype, key)) continue;
     constructor.prototype["_" + key] = constructor.defaults[key];
     var get = (function(key) {
       return function() {
@@ -369,9 +414,9 @@ Component.register = function(constructor) {
     var set = (function(key) {
       return function(value) {
         this['_' + key] = value;
-        this.setAttribute(key, value);
-        this.trigger("optionChanged");
-        this.trigger(value + "Changed");
+        this.setAttribute(key, stringify(value));
+        this.fire("optionChanged");
+        this.fire(value + "Changed");
       };
     })(key);
     propsDescriptor[key] = {
@@ -494,7 +539,7 @@ Draggable.states = {
     after: null,
     mousedown: function(e) {
       this.startDrag(e);
-      this.trigger('dragstart');
+      this.fire('dragstart');
       this.state = "drag";
     }
   },
@@ -502,7 +547,7 @@ Draggable.states = {
     'document selectstart': 'preventDefault',
     'document mousemove': function(e) {
       this.drag(e);
-      this.trigger('drag');
+      this.fire('drag');
     },
     'document mouseup, document mouseleave': function(e) {
       this.stopDrag(e);
@@ -535,7 +580,7 @@ Draggable.states = {
       delete this.$dragImageStub;
     },
     drag: function(e) {
-      if (this.native && e.x === 0 && e.y === 0) return;
+      if (e.x === 0 && e.y === 0) return;
       this.drag(e);
     },
     dragover: 'dropEffect'
@@ -561,16 +606,27 @@ Component.register(Draggable);
 var Slidy = function Slidy(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Slidy.prototype, "constructor", [el, opts]);
-  self.dimensions = self._value.length;
   if (self.vertical) self.horizontal = false;
-  self.appendChild(new Draggable({
+  var picker = new Draggable({
     within: self,
-    axis: self.horizontal && !self.vertical ? 'x': (self.vertical && !self.horizontal ? 'y': false)
-  }));
+    axis: self.horizontal && !self.vertical ? 'x': (self.vertical && !self.horizontal ? 'y': false),
+    ondrag: function(e) {
+      var d = e.currentTarget.dragstate;
+    }
+  });
+  self.appendChild(picker);
   return self;
 };
 var $Slidy = Slidy;
-($traceurRuntime.createClass)(Slidy, {}, {}, Component);
+($traceurRuntime.createClass)(Slidy, {
+  get value() {
+    "use strict";
+    return 123;
+  },
+  set value(newValue) {
+    "use strict";
+  }
+}, {}, Component);
 Slidy.states = {default: {}};
 Slidy.defaults = {
   value: 50,
@@ -583,7 +639,12 @@ Slidy.defaults = {
   snap: false,
   keyboard: true,
   readonly: false,
-  thumbClass: 'draggable'
+  thumbClass: 'draggable',
+  onchange: null,
+  oncreate: null,
+  onslide: null,
+  onstart: null,
+  onstop: null
 };
 Component.register(Slidy);
 

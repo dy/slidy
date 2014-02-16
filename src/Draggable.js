@@ -141,7 +141,7 @@ Draggable.states = {
 
 		mousedown: function(e){
 			this.startDrag(e);
-			this.trigger('dragstart')
+			this.fire('dragstart')
 			this.state = "drag";
 		}
 	},
@@ -149,7 +149,7 @@ Draggable.states = {
 		'document selectstart': 'preventDefault',
 		'document mousemove': function(e){
 			this.drag(e)
-			this.trigger('drag')
+			this.fire('drag')
 		},
 		'document mouseup, document mouseleave': function(e){
 			this.stopDrag(e);
@@ -199,8 +199,9 @@ Draggable.states = {
 		},
 		drag:  function(e){
 			//ignore final native drag event
-			if (this.native && e.x === 0 && e.y === 0) return;
-			this.drag(e)
+			if (e.x === 0 && e.y === 0) return;
+			this.drag(e);
+			//this.ondrag && this.ondrag.call(this);
 		},
 		dragover: 'dropEffect',
 	}

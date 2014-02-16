@@ -6,19 +6,41 @@ class Slidy extends Component{
 		var self = super(el, opts);
 
 		//detect how many dimensions needed
-		self.dimensions = self._value.length;
+		//self.dimensions = self._value.length;
 
 		//solve h/v question
 		if (self.vertical) self.horizontal = false;
 
 		//ensure picker with enough dimensions
 		//TODO: take into account restrictwithin paddings
-		self.appendChild(new Draggable({
+		var picker = new Draggable({
 			within: self,
-			axis: self.horizontal && !self.vertical ? 'x' : (self.vertical && !self.horizontal ? 'y' : false)
-		}))
+			axis: self.horizontal && !self.vertical ? 'x' : (self.vertical && !self.horizontal ? 'y' : false),
+			ondrag: function(e){
+				//console.log("drag observed", e.target.dragstate);
+				var d = e.currentTarget.dragstate;
+
+				//calc value based on dragstate
+				//this._value =
+
+				//trigger onchange
+			}
+		})
+
+		//new Datasource(picker);
+
+		self.appendChild(picker);
 
 		return self;
+	}
+
+	//redefine getters/setters
+	get value(){
+		return 123
+	}
+
+	set value(newValue){
+		//move picker to the proper position
 	}
 }
 
@@ -65,14 +87,14 @@ Slidy.defaults = {
 	readonly: false,
 
 	//TODO: consider this
-	thumbClass: 'draggable'
+	thumbClass: 'draggable',
 
 	//Callbacks
-	//change,
-	//create,
-	//slide,
-	//start,
-	//stop
+	onchange: null,
+	oncreate: null,
+	onslide: null,
+	onstart: null,
+	onstop: null
 
 }
 

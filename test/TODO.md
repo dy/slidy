@@ -10,6 +10,10 @@
 	* Options with defaults
 	* Triggering
 	*
+* jQuery interferences:
+	* Event firing
+	* Event observing
+	* Element creating
 
 ## Draggable tests
 * Within `Element`
