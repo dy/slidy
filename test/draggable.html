@@ -16,14 +16,16 @@
 		color: white;
 		padding: 40px 30px;
 		text-align: center;
+		position: relative;
 	}
 
 	.case{
-		position: relative;
+		/*position: relative;*/
 		padding:20px 20px 20px;
 		background: #f3f3f3;
 		min-height: 300px;
 		margin-bottom: 20px;
+		margin-top: 50px;
 	}
 	.case-code-label{
 		position: absolute;
@@ -44,12 +46,12 @@
 
 <article class="case" id="simple-case">
 	<h2>Simple draggable</h2>
-	<div draggable within=".case">Drag me</div>
+	<div draggable>Drag me</div>
 
 	<label for="simple-case-code" class="case-code-label">code</label>
 	<div class="case-code" id="simple-case-code" hidden></div>
 </article>
 
 
-<script src="../dev/traceur-runtime.js"></script>
-<script src="../dev/slidy.js"></script>
+<script src="../dist/traceur-runtime.js"></script>
+<script src="../dist/slidy.js"></script>

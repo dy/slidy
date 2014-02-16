@@ -5,7 +5,6 @@
 
 //TODO: add document-level listener pluginName:event
 //TODO: think how should it work within components group, like active tab
-
 class Component extends HTMLElement {
 
 	//TODO: state criterias (visible/hidden) (active/inactive) (disabled/enabled) ...
@@ -56,7 +55,7 @@ class Component extends HTMLElement {
 		self.state = 'default';
 
 		//treat element
-		self.classList.add(pluginName);
+		self.classList.add(this.constructor.lname);
 
 		self.trigger("create")
 		//console.log(self.getBoundingClientRect())
@@ -345,6 +344,7 @@ Component.register = function(constructor){
 
 	//keep track of instances
 	constructor.instances = [];
+	constructor.lname = constructor.name.toLowerCase();
 
 	//init default options as prototype getters/setters with trigger
 	var propsDescriptor = {};
@@ -388,7 +388,7 @@ document.addEventListener("DOMContentLoaded", function(){
 	for (var name in Component.registry){
 		var Descendant = Component.registry[name];
 
-		var lname = name.toLowerCase(),
+		var lname = Descendant.lname,
 			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
 
 		//init all elements in DOM

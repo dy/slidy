@@ -108,3 +108,5 @@
 * Slidy behaviour (or component) should automatically create pickers inside it, based on attrs
 
 * Draggable should be easy to switch to native drag.
+
+* Draggable shouldn’t be autocalled within Slidy by `.draggable, [draggable]` etc

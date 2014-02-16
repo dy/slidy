@@ -13,6 +13,8 @@ var autoprefixer = require('gulp-autoprefixer'),
 	cache = require('gulp-cache'),
 	livereload = require('gulp-livereload');
 var es6transpiler = require('gulp-es6-transpiler');
+var closureCompiler = require('gulp-closure-compiler');
+var typescript = require('gulp-typescript');
 
 global.path = require('path');
 
@@ -24,11 +26,12 @@ var path = {
 	src: [	'src/util.js',
 			'src/Component.js',
 			'src/Draggable.js',
-			'src/Area.js',
-			'src/Picker.js'
+			'src/Slidy.js',
+			//'src/Area.js',
+			//'src/Picker.js'
 	],
 	dest: 'dist',
-	dev: 'dev/slidy.js'
+	destFile: 'dist/slidy.js'
 };
 
 
@@ -36,22 +39,33 @@ var path = {
 //dev task, launches traceur
 //very harsh and difficult to maintain
 gulp.task('dev', function () {
-	//console.log('traceur --out ' + path.dev + ' ' + path.src.join(' ') + ' --sourcemap')
-	gulp.src(path.all)
+	gulp.src(path.src)
 		//.pipe(concat('slidy.js'))
+		/*.pipe(uglify({
+			mangle: false,
+			preserceComments: true,
+			compress: false,
+			outSourceMap: true
+		}))*/
 		//.pipe(traceur({
 		//	sourceMap: true
 		//}))
+		/*.pipe(closureCompiler({
+			formatting: "PRETTY_PRINT",
+			language_in: "ECMASCRIPT5",
+			create_source_map: "slidy.map"
+		}))*/
+		//.pipe(typescript())
 
 		//wrong multifile pipe
 		.pipe(exec('traceur --out <%= options.dest %> <%= options.src %> --sourcemap',
 			{
 				src: path.src.join(' '),
-				dest: path.dev
+				dest: path.destFile
 			}))
+		//.pipe(gulp.dest(path.dest))
 		.on('error', gutil.beep);
 
-		//.pipe(gulp.dest('dist'));
 
 		//TODO: `*.js` doesn’t work
 		/*exec('traceur --sourcemap --out ' + path.dest + ' \"src/*.js\"',

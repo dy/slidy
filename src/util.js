@@ -22,6 +22,7 @@ $ = $ || function(s){
 
 //return absolute offsets
 function offsets(el){
+	if (!el) throw new Error("No element passed");
 	var c = {},
 		rect = el.getBoundingClientRect();
 	c.top = rect.top + window.scrollY;
@@ -140,6 +141,15 @@ function parseAttr(str){
 	}
 }
 
+function parseMultiAttr(str){
+	var parts = str.split(',');
+	var result = [];
+	for (var i = 0; i < parts.length; i++){
+		result.push(parseAttr(parts[i]))
+	}
+	return result
+}
+
 //returns data object representing attributes read
 var defaultAttrs = {'class': true, 'id': true, 'style': true};
 function parseAttributes(el){
@@ -148,7 +158,9 @@ function parseAttributes(el){
 
 	for (var i = 0; i < attrs.length; i++){
 		var attr = attrs[i]
-		if (!defaultAttrs[attr.name]) data[attr.name] = parseAttr(attr.value)
+		if (!defaultAttrs[attr.name]) {
+			data[attr.name] = (attr.value.indexOf(',') < 0 ? parseAttr(attr.value) : parseMultiAttr(attr.value));
+		}
 	}
 
 	return data;

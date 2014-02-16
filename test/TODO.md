@@ -10,3 +10,14 @@
 	* Options with defaults
 	* Triggering
 	*
+
+## Draggable tests
+* Within `Element`
+* Within `Selector`
+* Within `null`
+* Within `document`
+	* declarative
+	* imperative
+* Within `window`
+	* declarative
+	* imperative

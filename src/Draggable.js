@@ -1,7 +1,5 @@
-function Draggable (){ return super.apply(this, arguments) };
-
-Draggable.prototype = {
-	constructor: function(el, opts){
+class Draggable extends Component {
+	constructor(el, opts){
 		var self = super(el, opts);
 
 		//init position
@@ -14,34 +12,42 @@ Draggable.prototype = {
 
 		//set restricting area
 		if (self.within){
-			self.$restrictWithin = $(self.within)
+			if (self.within instanceof Element){
+				self.$restrictWithin = self.within
+			} else if (typeof self.within === "string"){
+				self.$restrictWithin = $(self.within)
+			} else {
+				self.$restrictWithin = null
+			}
+			//TODO: catch shitty elements (non-elements)
 		}
-
-		//set limits
-		var limOffsets = offsets(self.$restrictWithin),
-			selfOffsets = offsets(self);
-		self.limits = {
-			top: limOffsets.top - selfOffsets.top,
-			bottom: limOffsets.bottom - selfOffsets.bottom,
-			left: limOffsets.left - selfOffsets.left,
-			right: limOffsets.right - selfOffsets.right,
-		}
-
-		//save relative coord system offsets
-		self.oX = selfOffsets.left;
-		self.oY = selfOffsets.top;
 
 		//go native
 		if (self.native) {
 			self.state = "native";
 		}
-		this.dropEffect = this.dropEffect.bind(this)
 
 		return self;
 	}
 
 	//-------------------API (verbs)
 	startDrag(e){
+		//set limits
+		//it is here because not always element is in DOM when constructor inits
+		var limOffsets = offsets(this.$restrictWithin),
+			selfOffsets = offsets(this);
+		//TODO: you have to insert the element somewhere before calculating limits
+		this.limits = {
+			top: limOffsets.top - selfOffsets.top + this.y,
+			bottom: limOffsets.bottom - selfOffsets.bottom + this.y,
+			left: limOffsets.left - selfOffsets.left + this.x,
+			right: limOffsets.right - selfOffsets.right + this.x,
+		}
+
+		//save relative coord system offsets
+		this.oX = selfOffsets.left - this.x;
+		this.oY = selfOffsets.top - this.y;
+
 		//init dragstate
 		this.dragstate = {
 			//viewport offset
@@ -77,19 +83,28 @@ Draggable.prototype = {
 		d.x = e.clientX + window.scrollX - this.oX;
 		d.y = e.clientY + window.scrollY - this.oY;
 
-		//specific movement function
-		//takes into accont mouse coords, self coords, limits and displacement within
-		this.x = round(between(d.x - d.offsetX,
-						this.limits.left,
-						this.limits.right), this.precision);
-		this.y = round(between(d.y - d.offsetY,
-						this.limits.top,
-						this.limits.bottom), this.precision);
+		this.move(d);
 	}
 
 	stopDrag(e){
 		//console.log("stopDrag")
 		delete this.dragstate;
+	}
+
+	//specific movement function based on dragstate passed
+	//takes into accont mouse coords, self coords, axis limits and displacement within
+	move(d){
+		if (!this.axis || this.axis === "x"){
+			this.x = round(between(d.x - d.offsetX,
+						this.limits.left,
+						this.limits.right), this.precision);
+		}
+
+		if (!this.axis || this.axis === "y" ){
+			this.y = round(between(d.y - d.offsetY,
+						this.limits.top,
+						this.limits.bottom), this.precision);
+		}
 	}
 
 	//relative coords
@@ -211,6 +226,9 @@ Draggable.defaults = {
 	precision: 1,
 
 	sniper: false,
+
+	//jquery-exactly axis fn: false, x, y
+	axis: false,
 
 	//detect whether to use native drag
 	//NOTE: you can’t change drag cursor, though native drag is faster
