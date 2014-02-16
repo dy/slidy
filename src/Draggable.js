@@ -1,5 +1,7 @@
-class Draggable extends Component {
-	constructor(el, opts){
+function Draggable (){ return super.apply(this, arguments) };
+
+Draggable.prototype = {
+	constructor: function(el, opts){
 		var self = super(el, opts);
 
 		//init position
@@ -25,6 +27,10 @@ class Draggable extends Component {
 			right: limOffsets.right - selfOffsets.right,
 		}
 
+		//save relative coord system offsets
+		self.oX = selfOffsets.left;
+		self.oY = selfOffsets.top;
+
 		//go native
 		if (self.native) {
 			self.state = "native";
@@ -38,12 +44,18 @@ class Draggable extends Component {
 	startDrag(e){
 		//init dragstate
 		this.dragstate = {
+			//viewport offset
 			clientX: e.clientX,
 			clientY: e.clientY,
+
+			//offset within self
 			offsetX: e.offsetX,
-			offsetY: e.offsetY
+			offsetY: e.offsetY,
+
+			//relative coords
+			x: e.clientX + window.scrollX - this.oX,
+			y: e.clientY + window.scrollY - this.oY
 		};
-		console.log(this.dragstate)
 	}
 
 	drag(e) {
@@ -51,8 +63,8 @@ class Draggable extends Component {
 
 		var d = this.dragstate;
 
-		var difX = e.clientX - d.clientX;
-		var difY = e.clientY - d.clientY;
+		//var difX = e.clientX - d.clientX;
+		//var difY = e.clientY - d.clientY;
 
 		//capture dragstate
 		d.isCtrl = e.ctrlKey;
@@ -62,15 +74,17 @@ class Draggable extends Component {
 		}
 		d.clientX = e.clientX;
 		d.clientY = e.clientY;
+		d.x = e.clientX + window.scrollX - this.oX;
+		d.y = e.clientY + window.scrollY - this.oY;
 
-		//this.x += difX;
-		//this.y += difY;
-		this.x = between(this.x + difX,
+		//specific movement function
+		//takes into accont mouse coords, self coords, limits and displacement within
+		this.x = round(between(d.x - d.offsetX,
 						this.limits.left,
-						this.limits.right);
-		this.y = between(this.y + difY,
+						this.limits.right), this.precision);
+		this.y = round(between(d.y - d.offsetY,
 						this.limits.top,
-						this.limits.bottom);
+						this.limits.bottom), this.precision);
 	}
 
 	stopDrag(e){
@@ -78,6 +92,7 @@ class Draggable extends Component {
 		delete this.dragstate;
 	}
 
+	//relative coords
 	get x(){
 		return this._x
 	}
@@ -192,6 +207,9 @@ Draggable.defaults = {
 
 	translate: true,
 
+	//to what extent round position
+	precision: 1,
+
 	sniper: false,
 
 	//detect whether to use native drag
@@ -208,4 +226,4 @@ Draggable.defaults = {
 //TODO: implement default change method
 
 //Bind autoload & feature detection
-Component.register(Draggable)
+Component.register(Draggable);

@@ -329,54 +329,55 @@ class Component extends HTMLElement {
 	}
 
 
+}
 
-	//-------------------------Autolaunch
-	//register descedant, make it autoload, call additional init (custom feature-detection etc)
-	static register(constructor, cb){
-		//check whether component exists
-		if (Component.registry[constructor.name]) throw new Error("Component `" + Component.name + "` does already exist");
+/**
+* Component registerer.
+* Creates component based of constructor passed: inits it’s prototype, etc
+* register descedant, make it autoload, call additional init (custom feature-detection etc)
+*/
+Component.register = function(constructor){
+	//check whether component exists
+	if (Component.registry[constructor.name]) throw new Error("Component `" + Component.name + "` does already exist");
 
-		//save to registry
-		Component.registry[constructor.name] = constructor;
+	//save to registry
+	Component.registry[constructor.name] = constructor;
 
-		//keep track of instances
-		constructor.instances = [];
-		constructor.preinit = cb;
+	//keep track of instances
+	constructor.instances = [];
 
-		//init default options as prototype getters/setters with trigger
-		var propsDescriptor = {};
-		for (var key in constructor.defaults){
-			//make defaults - prototypical properties
-			constructor.prototype["_" + key] = constructor.defaults[key];
+	//init default options as prototype getters/setters with trigger
+	var propsDescriptor = {};
+	for (var key in constructor.defaults){
+		//make defaults - prototypical properties
+		constructor.prototype["_" + key] = constructor.defaults[key];
 
-			//make instance getter/setters
-			var get = (function(key){
-				return function(){
-					return this['_' + key]
-				}
-			})(key)
-
-			var set = (function(key){
-				return function(value){
-					this['_' + key ] = value;
-					this.setAttribute(key, value);
-					this.trigger("optionChanged")
-					this.trigger(value + "Changed")
-				}
-			})(key)
-
-			propsDescriptor[key] = {
-				//do not delete default properties
-				configurable: false,
-				//do not enumerate non-instance properties
-				enumerable: false,
-				get: get,
-				set: set
+		//make instance getter/setters
+		var get = (function(key){
+			return function(){
+				return this['_' + key]
 			}
-		}
-		Object.defineProperties(constructor.prototype, propsDescriptor);
-	}
+		})(key)
 
+		var set = (function(key){
+			return function(value){
+				this['_' + key ] = value;
+				this.setAttribute(key, value);
+				this.trigger("optionChanged")
+				this.trigger(value + "Changed")
+			}
+		})(key)
+
+		propsDescriptor[key] = {
+			//do not delete default properties
+			configurable: false,
+			//do not enumerate non-instance properties
+			enumerable: false,
+			get: get,
+			set: set
+		}
+	}
+	Object.defineProperties(constructor.prototype, propsDescriptor);
 }
 
 //Keyed by name set of components
@@ -386,9 +387,6 @@ Component.registry = {}
 document.addEventListener("DOMContentLoaded", function(){
 	for (var name in Component.registry){
 		var Descendant = Component.registry[name];
-
-		//make callbacks, if any
-		Descendant.preinit && Descendant.preinit.apply(Descendant);
 
 		var lname = name.toLowerCase(),
 			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");

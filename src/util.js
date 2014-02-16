@@ -24,14 +24,14 @@ $ = $ || function(s){
 function offsets(el){
 	var c = {},
 		rect = el.getBoundingClientRect();
-	c.top = rect.top + (window.pageYOffset || document.documentElement.scrollTop);
-	c.left = rect.left + (window.pageXOffset || document.documentElement.scrollLeft);
+	c.top = rect.top + window.scrollY;
+	c.left = rect.left + window.scrollX;
 	c.width = el.offsetWidth;
 	c.height = el.offsetHeight;
 	c.bottom = c.top + c.height;
 	c.right = c.left + c.width;
 	c.fromRight = document.width - rect.right;
-	c.fromBottom = (window.innerHeight + (window.pageYOffset || document.documentElement.scrollTop) - rect.bottom)
+	c.fromBottom = (window.innerHeight + window.scrollY - rect.bottom)
 	return c;
 }
 
@@ -118,6 +118,13 @@ function trigger(that, ename, data){
 //math limiter
 function between(a, min, max){
 	return Math.max(Math.min(a,max),min);
+}
+
+//math precision round
+function round(value, precision){
+	if (precision === 0) return value;
+
+	return Math.round(value / precision) * precision
 }
 
 //returns value from string with correct type
