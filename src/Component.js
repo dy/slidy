@@ -85,6 +85,7 @@ class Component extends HTMLElement {
 					var attr = mutation.attributeName;
 					//if option attr changed - upd self value
 					if (this.constructor.defaults[attr]){
+						//TODO: catch attribute removal
 						this["_" + attr] = parseAttr(this.getAttribute(attr));
 					}
 				}
@@ -357,7 +358,12 @@ Component.register = function(constructor){
 		var set = (function(key){
 			return function(value){
 				this['_' + key ] = value;
-				this.setAttribute(key, stringify(value));
+				//TODO: hide falsy attributes
+				//if (value === false){
+				//	this.removeAttribute(key);
+				//} else {
+					this.setAttribute(key, stringify(value));
+				//}
 				this.fire("optionChanged")
 				this.fire(value + "Changed")
 			}

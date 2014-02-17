@@ -608,6 +608,11 @@ var Slidy = function Slidy(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Slidy.prototype, "constructor", [el, opts]);
   if (self.vertical) self.horizontal = false;
+  self.dimensions = self._value.length;
+  if (self.dimensions === 2) {
+    self.horizontal = false;
+    self.vertical = false;
+  }
   var picker = new Draggable({
     within: self,
     axis: self.horizontal && !self.vertical ? 'x': (self.vertical && !self.horizontal ? 'y': false),
@@ -619,7 +624,16 @@ var Slidy = function Slidy(el, opts) {
           thumbH = thumb.offsets.height,
           hScope = (lim.right - lim.left),
           vScope = (lim.bottom - lim.top);
-      self._value = (thumb.x - lim.left) / hScope;
+      if (self.dimensions === 2) {
+        var normalValue = [(thumb.x - lim.left) / hScope, (- thumb.y + lim.bottom) / vScope];
+        self._value = [normalValue[0] * (self.max[0] - self.min[0]) + self.min[0], normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]];
+      } else if (self.vertical) {
+        var normalValue = (- thumb.y + lim.top) / vScope;
+        self._value = normalValue * (self.max - self.min) + self.min;
+      } else if (self.horizontal) {
+        var normalValue = (thumb.x - lim.left) / hScope;
+        self._value = normalValue * (self.max - self.min) + self.min;
+      }
       self.fire("change");
     }
   });
@@ -634,6 +648,7 @@ var $Slidy = Slidy;
   },
   set value(newValue) {
     "use strict";
+    this._value = newValue;
   }
 }, {}, Component);
 Slidy.states = {default: {}};

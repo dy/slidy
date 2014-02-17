@@ -5,14 +5,19 @@ class Slidy extends Component{
 	constructor(el, opts){
 		var self = super(el, opts);
 
-		//detect how many dimensions needed
-		//self.dimensions = self._value.length;
-
 		//solve h/v question
 		if (self.vertical) self.horizontal = false;
 
+		//detect how many dimensions needed
+		self.dimensions = self._value.length;
+		if (self.dimensions === 2) {
+			self.horizontal = false;
+			self.vertical = false;
+		}
+
 		//ensure picker with enough dimensions
 		//TODO: take into account restrictwithin paddings
+
 		var picker = new Draggable({
 			within: self,
 			axis: self.horizontal && !self.vertical ? 'x' : (self.vertical && !self.horizontal ? 'y' : false),
@@ -27,9 +32,21 @@ class Slidy extends Component{
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top)
 
-				//TODO: take into account paddings as well
+				//TODO: optimize this part
 				//calc value based on dragstate
-				self._value = (thumb.x - lim.left) / hScope;
+				if (self.dimensions === 2){
+					var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
+					self._value = [
+						normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
+						normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
+					];
+				} else if (self.vertical){
+					var normalValue = (- thumb.y + lim.top) / vScope;
+					self._value = normalValue * (self.max - self.min) + self.min;
+				} else if (self.horizontal){
+					var normalValue = (thumb.x - lim.left) / hScope;
+					self._value = normalValue * (self.max - self.min) + self.min;
+				}
 				//console.clear();
 				//console.log(thumb.x, hScope, self._value)
 
@@ -52,7 +69,8 @@ class Slidy extends Component{
 	}
 
 	set value(newValue){
-		//move picker to the proper position
+		this._value = newValue;
+		//TODO: move picker to the proper position
 	}
 }
 

@@ -21,15 +21,18 @@
 		background: white;
 		position: relative;
 	}
+	#hue-lightness{
+		height: 200px;
+	}
 </style>
 
 <body style="background: hsla({{ hue }}, {{ saturation }}, {{ lightness }}, {{ alpha }})" data-bind>
 
 	<h1>Simple three-component picker</h1>
 
-	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange="console.log(this.value)"></div>
+	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange="console.clear(); console.log(this.value)"></div>
 
-	<div id="hue-lightness" slidy min="0,0" max="360,100" value="0,50" repeat="x" snap="both" name="hue,lightness"></div>
+	<div id="hue-lightness" slidy min="0,0" max="360,100" value="0,50" repeat="x" snap="both" name="hue,lightness" onchange="console.clear(); console.log(this.value)"></div>
 
 	<div id="alpha" slidy vertical min="0" max="1" value="1" name="alpha"></div>
 
