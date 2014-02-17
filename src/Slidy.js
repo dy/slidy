@@ -47,6 +47,17 @@ class Slidy extends Component{
 					var normalValue = (thumb.x - lim.left) / hScope;
 					self._value = normalValue * (self.max - self.min) + self.min;
 				}
+
+				//reflect attr
+				if (!self._reflectAttrTimeout){
+					self.setAttribute("value", stringify(self._value))
+					self._reflectAttrTimeout = setTimeout(function(){
+						clearTimeout(self._reflectAttrTimeout);
+						self._reflectAttrTimeout = null;
+						self.setAttribute("value", stringify(self._value))
+					}, 500);
+				}
+
 				//console.clear();
 				//console.log(thumb.x, hScope, self._value)
 
