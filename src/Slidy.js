@@ -24,22 +24,19 @@ class Slidy extends Component{
 					thumbW = thumb.offsets.width,
 					thumbH = thumb.offsets.height,
 					//scope sizes
-					//TODO: subtract paddings
-					hScope = (lim.right - lim.left) - thumbW,
-					vScope = (lim.bottom - lim.top) - thumbH,
-					//thumb relative center
-					thumbX = d.x - d.offsetX + thumb.offsets.width * .5,
-					thumbY = d.y - d.offsetY + thumb.offsets.height * .5
+					hScope = (lim.right - lim.left),
+					vScope = (lim.bottom - lim.top)
 
 				//TODO: take into account paddings as well
 				//calc value based on dragstate
-				self._value = (thumbX - lim.left) / hScope;
-				console.log(self._value)
+				self._value = (thumb.x - lim.left) / hScope;
+				//console.clear();
+				//console.log(thumb.x, hScope, self._value)
 
 				//trigger onchange
 				self.fire("change")
 			},
-			native: false
+			//native: false
 		})
 
 		//new Datasource(picker);

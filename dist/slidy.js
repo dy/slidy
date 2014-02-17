@@ -617,15 +617,11 @@ var Slidy = function Slidy(el, opts) {
           lim = thumb.limits,
           thumbW = thumb.offsets.width,
           thumbH = thumb.offsets.height,
-          hScope = (lim.right - lim.left) - thumbW,
-          vScope = (lim.bottom - lim.top) - thumbH,
-          thumbX = d.x - d.offsetX + thumb.offsets.width * .5,
-          thumbY = d.y - d.offsetY + thumb.offsets.height * .5;
-      self._value = (thumbX - lim.left) / hScope;
-      console.log(self._value);
+          hScope = (lim.right - lim.left),
+          vScope = (lim.bottom - lim.top);
+      self._value = (thumb.x - lim.left) / hScope;
       self.fire("change");
-    },
-    native: false
+    }
   });
   self.appendChild(picker);
   return self;
