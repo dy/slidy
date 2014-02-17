@@ -404,8 +404,8 @@ Component.register = function(constructor) {
   constructor.lname = constructor.name.toLowerCase();
   var propsDescriptor = {};
   for (var key in constructor.defaults) {
-    if (Object.getOwnPropertyDescriptor(constructor.prototype, key)) continue;
     constructor.prototype["_" + key] = constructor.defaults[key];
+    if (Object.getOwnPropertyDescriptor(constructor.prototype, key)) continue;
     var get = (function(key) {
       return function() {
         return this['_' + key];
@@ -465,16 +465,17 @@ var $Draggable = Draggable;
 ($traceurRuntime.createClass)(Draggable, {
   startDrag: function(e) {
     "use strict";
-    var limOffsets = offsets(this.$restrictWithin),
-        selfOffsets = offsets(this);
+    var limOffsets = offsets(this.$restrictWithin);
+    this.offsets = offsets(this);
+    this.paddings = paddings(this.$restrictWithin);
+    this.oX = this.offsets.left - this.x;
+    this.oY = this.offsets.top - this.y;
     this.limits = {
-      top: limOffsets.top - selfOffsets.top + this.y,
-      bottom: limOffsets.bottom - selfOffsets.bottom + this.y,
-      left: limOffsets.left - selfOffsets.left + this.x,
-      right: limOffsets.right - selfOffsets.right + this.x
+      top: limOffsets.top - this.oY + this.paddings.top,
+      bottom: limOffsets.bottom - this.oY - this.offsets.height - this.paddings.bottom,
+      left: limOffsets.left - this.oX + this.paddings.left,
+      right: limOffsets.right - this.oX - this.offsets.width - this.paddings.right
     };
-    this.oX = selfOffsets.left - this.x;
-    this.oY = selfOffsets.top - this.y;
     this.dragstate = {
       clientX: e.clientX,
       clientY: e.clientY,
@@ -611,8 +612,20 @@ var Slidy = function Slidy(el, opts) {
     within: self,
     axis: self.horizontal && !self.vertical ? 'x': (self.vertical && !self.horizontal ? 'y': false),
     ondrag: function(e) {
-      var d = e.currentTarget.dragstate;
-    }
+      var thumb = e.currentTarget,
+          d = thumb.dragstate,
+          lim = thumb.limits,
+          thumbW = thumb.offsets.width,
+          thumbH = thumb.offsets.height,
+          hScope = (lim.right - lim.left) - thumbW,
+          vScope = (lim.bottom - lim.top) - thumbH,
+          thumbX = d.x - d.offsetX + thumb.offsets.width * .5,
+          thumbY = d.y - d.offsetY + thumb.offsets.height * .5;
+      self._value = (thumbX - lim.left) / hScope;
+      console.log(self._value);
+      self.fire("change");
+    },
+    native: false
   });
   self.appendChild(picker);
   return self;
@@ -621,7 +634,7 @@ var $Slidy = Slidy;
 ($traceurRuntime.createClass)(Slidy, {
   get value() {
     "use strict";
-    return 123;
+    return this._value;
   },
   set value(newValue) {
     "use strict";

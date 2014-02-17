@@ -18,13 +18,28 @@ class Slidy extends Component{
 			axis: self.horizontal && !self.vertical ? 'x' : (self.vertical && !self.horizontal ? 'y' : false),
 			ondrag: function(e){
 				//console.log("drag observed", e.target.dragstate);
-				var d = e.currentTarget.dragstate;
+				var thumb = e.currentTarget,
+					d = thumb.dragstate,
+					lim = thumb.limits,
+					thumbW = thumb.offsets.width,
+					thumbH = thumb.offsets.height,
+					//scope sizes
+					//TODO: subtract paddings
+					hScope = (lim.right - lim.left) - thumbW,
+					vScope = (lim.bottom - lim.top) - thumbH,
+					//thumb relative center
+					thumbX = d.x - d.offsetX + thumb.offsets.width * .5,
+					thumbY = d.y - d.offsetY + thumb.offsets.height * .5
 
+				//TODO: take into account paddings as well
 				//calc value based on dragstate
-				//this._value =
+				self._value = (thumbX - lim.left) / hScope;
+				console.log(self._value)
 
 				//trigger onchange
-			}
+				self.fire("change")
+			},
+			native: false
 		})
 
 		//new Datasource(picker);
@@ -36,7 +51,7 @@ class Slidy extends Component{
 
 	//redefine getters/setters
 	get value(){
-		return 123
+		return this._value;
 	}
 
 	set value(newValue){

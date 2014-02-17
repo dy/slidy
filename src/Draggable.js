@@ -34,19 +34,22 @@ class Draggable extends Component {
 	startDrag(e){
 		//set limits
 		//it is here because not always element is in DOM when constructor inits
-		var limOffsets = offsets(this.$restrictWithin),
-			selfOffsets = offsets(this);
-		//TODO: you have to insert the element somewhere before calculating limits
-		this.limits = {
-			top: limOffsets.top - selfOffsets.top + this.y,
-			bottom: limOffsets.bottom - selfOffsets.bottom + this.y,
-			left: limOffsets.left - selfOffsets.left + this.x,
-			right: limOffsets.right - selfOffsets.right + this.x,
-		}
+		var limOffsets = offsets(this.$restrictWithin);
+
+		this.offsets = offsets(this);
+		this.paddings = paddings(this.$restrictWithin);
 
 		//save relative coord system offsets
-		this.oX = selfOffsets.left - this.x;
-		this.oY = selfOffsets.top - this.y;
+		this.oX = this.offsets.left - this.x;
+		this.oY = this.offsets.top - this.y;
+
+		//element movement relative borders
+		this.limits = {
+			top: limOffsets.top - this.oY + this.paddings.top,
+			bottom: limOffsets.bottom - this.oY - this.offsets.height - this.paddings.bottom,
+			left: limOffsets.left - this.oX + this.paddings.left,
+			right: limOffsets.right - this.oX - this.offsets.width - this.paddings.right,
+		}
 
 		//init dragstate
 		this.dragstate = {

@@ -72,7 +72,7 @@ class Component extends HTMLElement {
 		//read dataset attributes
 		extOpts = extend(parseAttributes(this), extOpts);
 
-		//for every instance option create attribute reflection
+		//for every instance option create attribute reflection (just set value)
 		for (var key in extOpts){
 			this[key] = extOpts[key];
 		}
@@ -341,11 +341,11 @@ Component.register = function(constructor){
 	//init default options as prototype getters/setters with trigger
 	var propsDescriptor = {};
 	for (var key in constructor.defaults){
-		//ignore already defined setter/getter
-		if (Object.getOwnPropertyDescriptor(constructor.prototype,key)) continue;
-
 		//make defaults - prototypical properties
 		constructor.prototype["_" + key] = constructor.defaults[key];
+
+		//ignore already defined setter/getter
+		if (Object.getOwnPropertyDescriptor(constructor.prototype,key)) continue;
 
 		//make instance getter/setters
 		var get = (function(key){
