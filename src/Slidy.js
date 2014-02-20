@@ -9,7 +9,7 @@ class Slidy extends Component{
 		if (self.vertical) self.horizontal = false;
 
 		//detect how many dimensions needed
-		self.dimensions = self._value.length;
+		self.dimensions = self.value.length;
 		if (self.dimensions === 2) {
 			self.horizontal = false;
 			self.vertical = false;
@@ -18,70 +18,58 @@ class Slidy extends Component{
 		//ensure picker with enough dimensions
 		//TODO: take into account restrictwithin paddings
 
+		//ensure picker's position according to the value
+		//self.value = self.value;
+
+		//create enough pickers
 		var picker = new Draggable({
 			within: self,
 			axis: self.horizontal && !self.vertical ? 'x' : (self.vertical && !self.horizontal ? 'y' : false),
-			ondrag: function(e){
-				//console.log("drag observed", e.target.dragstate);
-				var thumb = e.currentTarget,
-					d = thumb.dragstate,
-					lim = thumb.limits,
-					thumbW = thumb.offsets.width,
-					thumbH = thumb.offsets.height,
-					//scope sizes
-					hScope = (lim.right - lim.left),
-					vScope = (lim.bottom - lim.top)
-
-				//TODO: optimize this part
-				//calc value based on dragstate
-				if (self.dimensions === 2){
-					var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
-					self._value = [
-						normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
-						normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
-					];
-				} else if (self.vertical){
-					var normalValue = (- thumb.y + lim.top) / vScope;
-					self._value = normalValue * (self.max - self.min) + self.min;
-				} else if (self.horizontal){
-					var normalValue = (thumb.x - lim.left) / hScope;
-					self._value = normalValue * (self.max - self.min) + self.min;
-				}
-
-				//reflect attr
-				if (!self._reflectAttrTimeout){
-					self.setAttribute("value", stringify(self._value))
-					self._reflectAttrTimeout = setTimeout(function(){
-						clearTimeout(self._reflectAttrTimeout);
-						self._reflectAttrTimeout = null;
-						self.setAttribute("value", stringify(self._value))
-					}, 500);
-				}
-
-				//console.clear();
-				//console.log(thumb.x, hScope, self._value)
-
-				//trigger onchange
-				self.fire("change")
-			},
+			ondrag: self.pickerMoved
 			//native: false
 		})
 
-		//new Datasource(picker);
-
 		self.appendChild(picker);
+
+		//bind data to listen
+		if (self.expose) {
+			//TODO:
+			//new Expose(self);
+		}
 
 		return self;
 	}
 
-	//redefine getters/setters
-	get value(){
-		return this._value;
-	}
+	//picker handler - moves thumb, if needed, fires change event
+	pickerMoved(e){
+		//console.log("drag observed", e.target.dragstate);
+		var thumb = e.currentTarget,
+			d = thumb.dragstate,
+			lim = thumb.limits,
+			thumbW = thumb.offsets.width,
+			thumbH = thumb.offsets.height,
+			//scope sizes
+			hScope = (lim.right - lim.left),
+			vScope = (lim.bottom - lim.top)
 
-	set value(newValue){
-		this._value = newValue;
-		//TODO: move picker to the proper position
+		//TODO: optimize this part
+		//calc value based on dragstate
+		if (this.dimensions === 2){
+			var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
+			this.value = [
+				normalValue[0] * (this.max[0] - this.min[0]) + this.min[0],
+				normalValue[1] * (this.max[1] - this.min[1]) + this.min[1]
+			];
+		} else if (this.vertical){
+			var normalValue = (- thumb.y + lim.top) / vScope;
+			this.value = normalValue * (this.max - this.min) + this.min;
+		} else if (this.horizontal){
+			var normalValue = (thumb.x - lim.left) / hScope;
+			this.value = normalValue * (this.max - this.min) + this.min;
+		}
+
+		//trigger onchange
+		this.fire("change")
 	}
 }
 
@@ -97,6 +85,10 @@ Slidy.defaults = {
 	min: 0,
 	max: 100,
 	step: 1,
+
+	//whether to expose self data to document’s scope
+	//for declarative bindings
+	expose: true,
 
 	//Consider
 

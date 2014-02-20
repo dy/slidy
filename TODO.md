@@ -1,4 +1,3 @@
-* Optimize for memory usage
 
 * Define pickers DOM-way
 	* Avoid classes & dom-attrs declarations = avoid styling problems
@@ -17,3 +16,8 @@
 * Prevent double-load
 
 * Implement typer’s draggable
+
+* Make polymer-compliant:
+    * attributeChanged
+    * registerElement
+    * Behaviour over element

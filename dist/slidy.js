@@ -73,6 +73,7 @@ function round(value, precision) {
   return Math.round(value / precision) * precision;
 }
 function parseAttr(str) {
+  if (str.indexOf(',') >= 0) return parseMultiAttr(str);
   if (str === "true" || str === "") {
     return true;
   } else if (str === "false") {
@@ -104,7 +105,7 @@ function parseAttributes(el) {
     if (attr.name.slice(0, 2) === "on") {
       data[attr.name] = new Function(attr.value);
     } else if (!defaultAttrs[attr.name]) {
-      data[attr.name] = (attr.value.indexOf(',') < 0 ? parseAttr(attr.value): parseMultiAttr(attr.value));
+      data[attr.name] = parseAttr(attr.value);
     }
   }
   return data;
@@ -215,6 +216,7 @@ var Component = function Component(el, opts) {
   }
   var originalProto = self.__proto__;
   self.__proto__ = this.constructor.prototype;
+  self.initAPI.call(self);
   self.initOptions.call(self, opts);
   self._id = this.constructor.instances.length;
   this.constructor.instances.push(self);
@@ -225,6 +227,12 @@ var Component = function Component(el, opts) {
   return self;
 };
 ($traceurRuntime.createClass)(Component, {
+  initAPI: function() {
+    "use strict";
+    for (var meth in this) {
+      if (typeof this[meth] === "function") this[meth] = this[meth].bind(this);
+    }
+  },
   initOptions: function(extOpts) {
     "use strict";
     extOpts = extend(parseAttributes(this), extOpts);
@@ -232,18 +240,23 @@ var Component = function Component(el, opts) {
       this[key] = extOpts[key];
     }
     this._observer = new MutationObserver(function(mutations) {
+      if (this._preventOneAttrChange) {
+        this._preventOneAttrChange = true;
+        return;
+      }
       for (var i = 0; i < mutations.length; i++) {
         var mutation = mutations[i];
         if (mutation.type === "attributes") {
           var attr = mutation.attributeName;
           if (this.constructor.defaults[attr]) {
+            console.log("Attribute externally changed", parseAttr(this.getAttribute(attr)));
             this["_" + attr] = parseAttr(this.getAttribute(attr));
           }
         }
       }
     }.bind(this));
     this._observeConfig = {attributes: true};
-    this._observer.observe(this, this._observeConfig);
+    this.observeAttrChange();
   },
   setAttributes: function(opts) {
     "use strict";
@@ -299,7 +312,7 @@ var Component = function Component(el, opts) {
         if (typeof fnRef === "function") {
           fn = fnRef.bind(this);
         } else if (typeof fnRef === "string" && this[fnRef]) {
-          fn = this[fnRef].bind(this);
+          fn = this[fnRef];
         }
         var evtDirectives = evtId.split(',');
         for (var i = 0; i < evtDirectives.length; i++) {
@@ -335,26 +348,22 @@ var Component = function Component(el, opts) {
   disable: function() {
     "use strict";
     this.disabled = true;
-    _observer.disconnect();
+    this.ignoreAttrChange();
+    this.fire('disable');
   },
   enable: function() {
     "use strict";
     this.disabled = false;
-    _observer.observe(this, this._observeConfig);
+    this.observeAttrChange();
+    this.fire('enable');
   },
-  set disabled(val) {
+  observeAttrChange: function() {
     "use strict";
-    if (val) {
-      this.setAttribute("disabled", true);
-      this.disabled = true;
-    } else {
-      this.removeAttribute("disabled");
-      this.disabled = false;
-    }
+    this._observer.observe(this, this._observeConfig);
   },
-  get disabled() {
+  ignoreAttrChange: function() {
     "use strict";
-    return this.disabled;
+    this._observer.disconnect();
   },
   preventDefault: function(e) {
     "use strict";
@@ -386,15 +395,14 @@ var Component = function Component(el, opts) {
     "use strict";
     fire(this, eName, data);
   },
-  enable: function() {
+  autoinit: function() {
     "use strict";
-    this.disabled = false;
-    this.fire('disable');
-  },
-  disable: function() {
-    "use strict";
-    this.disabled = true;
-    this.fire('enable');
+    var lname = this.constructor.lname,
+        selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+    var targets = document.querySelectorAll(selector);
+    for (var i = 0; i < targets.length; i++) {
+      new this.constructor(targets[i]);
+    }
   }
 }, {}, HTMLElement);
 Component.register = function(constructor) {
@@ -414,6 +422,7 @@ Component.register = function(constructor) {
     var set = (function(key) {
       return function(value) {
         this['_' + key] = value;
+        this._preventOneAttrChange = true;
         this.setAttribute(key, stringify(value));
         this.fire("optionChanged");
         this.fire(value + "Changed");
@@ -427,19 +436,9 @@ Component.register = function(constructor) {
     };
   }
   Object.defineProperties(constructor.prototype, propsDescriptor);
+  constructor.prototype.autoinit();
 };
 Component.registry = {};
-document.addEventListener("DOMContentLoaded", function() {
-  for (var name in Component.registry) {
-    var Descendant = Component.registry[name];
-    var lname = Descendant.lname,
-        selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
-    var targets = document.querySelectorAll(selector);
-    for (var i = 0; i < targets.length; i++) {
-      new Descendant(targets[i]);
-    }
-  }
-});
 var Draggable = function Draggable(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Draggable.prototype, "constructor", [el, opts]);
@@ -608,7 +607,7 @@ var Slidy = function Slidy(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Slidy.prototype, "constructor", [el, opts]);
   if (self.vertical) self.horizontal = false;
-  self.dimensions = self._value.length;
+  self.dimensions = self.value.length;
   if (self.dimensions === 2) {
     self.horizontal = false;
     self.vertical = false;
@@ -616,55 +615,41 @@ var Slidy = function Slidy(el, opts) {
   var picker = new Draggable({
     within: self,
     axis: self.horizontal && !self.vertical ? 'x': (self.vertical && !self.horizontal ? 'y': false),
-    ondrag: function(e) {
-      var thumb = e.currentTarget,
-          d = thumb.dragstate,
-          lim = thumb.limits,
-          thumbW = thumb.offsets.width,
-          thumbH = thumb.offsets.height,
-          hScope = (lim.right - lim.left),
-          vScope = (lim.bottom - lim.top);
-      if (self.dimensions === 2) {
-        var normalValue = [(thumb.x - lim.left) / hScope, (- thumb.y + lim.bottom) / vScope];
-        self._value = [normalValue[0] * (self.max[0] - self.min[0]) + self.min[0], normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]];
-      } else if (self.vertical) {
-        var normalValue = (- thumb.y + lim.top) / vScope;
-        self._value = normalValue * (self.max - self.min) + self.min;
-      } else if (self.horizontal) {
-        var normalValue = (thumb.x - lim.left) / hScope;
-        self._value = normalValue * (self.max - self.min) + self.min;
-      }
-      if (!self._reflectAttrTimeout) {
-        self.setAttribute("value", stringify(self._value));
-        self._reflectAttrTimeout = setTimeout(function() {
-          clearTimeout(self._reflectAttrTimeout);
-          self._reflectAttrTimeout = null;
-          self.setAttribute("value", stringify(self._value));
-        }, 500);
-      }
-      self.fire("change");
-    }
+    ondrag: self.pickerMoved
   });
   self.appendChild(picker);
+  if (self.expose) {}
   return self;
 };
 var $Slidy = Slidy;
-($traceurRuntime.createClass)(Slidy, {
-  get value() {
+($traceurRuntime.createClass)(Slidy, {pickerMoved: function(e) {
     "use strict";
-    return this._value;
-  },
-  set value(newValue) {
-    "use strict";
-    this._value = newValue;
-  }
-}, {}, Component);
+    var thumb = e.currentTarget,
+        d = thumb.dragstate,
+        lim = thumb.limits,
+        thumbW = thumb.offsets.width,
+        thumbH = thumb.offsets.height,
+        hScope = (lim.right - lim.left),
+        vScope = (lim.bottom - lim.top);
+    if (this.dimensions === 2) {
+      var normalValue = [(thumb.x - lim.left) / hScope, (- thumb.y + lim.bottom) / vScope];
+      this.value = [normalValue[0] * (this.max[0] - this.min[0]) + this.min[0], normalValue[1] * (this.max[1] - this.min[1]) + this.min[1]];
+    } else if (this.vertical) {
+      var normalValue = (- thumb.y + lim.top) / vScope;
+      this.value = normalValue * (this.max - this.min) + this.min;
+    } else if (this.horizontal) {
+      var normalValue = (thumb.x - lim.left) / hScope;
+      this.value = normalValue * (this.max - this.min) + this.min;
+    }
+    this.fire("change");
+  }}, {}, Component);
 Slidy.states = {default: {}};
 Slidy.defaults = {
   value: 50,
   min: 0,
   max: 100,
   step: 1,
+  expose: true,
   vertical: false,
   horizontal: true,
   range: true,

@@ -111,7 +111,10 @@ function round(value, precision){
 }
 
 //returns value from string with correct type
+//TODO: write tests for this fn
 function parseAttr(str){
+	if (str.indexOf(',') >= 0) return parseMultiAttr(str);
+
 	if (str === "true" || str === "") {
 		return true;
 	} else if (str === "false") {
@@ -144,7 +147,7 @@ function parseAttributes(el){
 			//declared evt - create anonymous fn
 			data[attr.name] = new Function(attr.value);
 		} else if (!defaultAttrs[attr.name]) {
-			data[attr.name] = (attr.value.indexOf(',') < 0 ? parseAttr(attr.value) : parseMultiAttr(attr.value));
+			data[attr.name] = parseAttr(attr.value)
 		}
 	}
 

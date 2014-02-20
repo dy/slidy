@@ -37,11 +37,15 @@ class Component extends HTMLElement {
 			self = document.createElement('div');
 		}
 
+		//TODO: resolve prototype chain, if there’re more Component-ancestored elements
 		//Intrude into el's prototype chain
 		//save original element’s prototype, like HTMLDivElement or whatever
 		var originalProto = self.__proto__;
 		//`this` loses here
 		self.__proto__ = this.constructor.prototype;
+
+		//init API
+		self.initAPI.call(self)
 
 		//init options
 		self.initOptions.call(self, opts);
@@ -63,6 +67,14 @@ class Component extends HTMLElement {
 		return self;
 	}
 
+	//simply binds methods to instance
+	initAPI(){
+		for (var meth in this){
+			if (typeof this[meth] === "function")
+				this[meth] = this[meth].bind(this);
+		}
+	}
+
 
 	//--------------Options
 	//TODO: hook up getters and setters for options, to reflect instantly element-write
@@ -79,6 +91,11 @@ class Component extends HTMLElement {
 
 		//register observers for data-attributes
 		this._observer = new MutationObserver(function(mutations) {
+			if (this._preventOneAttrChange){
+				this._preventOneAttrChange = true;
+				return //console.log("attr change prevented");
+			}
+
 			for (var i = 0; i < mutations.length; i++){
 				var mutation = mutations[i];
 				if (mutation.type === "attributes"){
@@ -86,7 +103,19 @@ class Component extends HTMLElement {
 					//if option attr changed - upd self value
 					if (this.constructor.defaults[attr]){
 						//TODO: catch attribute removal
+						//TODO: avoid attr self-setup
+						console.log("Attribute externally changed", parseAttr(this.getAttribute(attr)))
 						this["_" + attr] = parseAttr(this.getAttribute(attr));
+
+						//TODO: throttle attr reflection
+						// if (!self._reflectAttrTimeout){
+						// 	self.setAttribute("value", stringify(self._value))
+						// 	self._reflectAttrTimeout = setTimeout(function(){
+						// 		clearTimeout(self._reflectAttrTimeout);
+						// 		self._reflectAttrTimeout = null;
+						// 		self.setAttribute("value", stringify(self._value))
+						// 	}, 500);
+						// }
 					}
 				}
 			}
@@ -94,7 +123,7 @@ class Component extends HTMLElement {
 		this._observeConfig = {
 			attributes: true
 		}
-		this._observer.observe(this, this._observeConfig);
+		this.observeAttrChange();
 	}
 
 	/**
@@ -194,7 +223,8 @@ class Component extends HTMLElement {
 				if (typeof fnRef === "function"){
 					fn = fnRef.bind(this);
 				} else if (typeof fnRef === "string" && this[fnRef]){
-					fn = this[fnRef].bind(this);
+					//NOTE: no need to bind `fn` here because it’s already been bound in `initAPI`
+					fn = this[fnRef]//.bind(this);
 					//console.log(evt, fnRef, fn)
 				}
 
@@ -248,13 +278,25 @@ class Component extends HTMLElement {
 	*/
 	disable(){
 		this.disabled = true;
-		_observer.disconnect();
+		this.ignoreAttrChange();
+		this.fire('disable');
 	}
 	enable(){
 		this.disabled = false;
-		_observer.observe(this, this._observeConfig)
+		this.observeAttrChange();
+		this.fire('enable');
 	}
-	set disabled(val){
+
+	//attributes listeners
+	observeAttrChange(){
+		this._observer.observe(this, this._observeConfig)
+	}
+
+	ignoreAttrChange(){
+		this._observer.disconnect();
+	}
+	//TODO: these guys cause stack overflow because try to set themselves
+	/*set disabled(val){
 		if (val) {
 			this.setAttribute("disabled", true);
 			this.disabled = true;
@@ -265,7 +307,7 @@ class Component extends HTMLElement {
 	}
 	get disabled(){
 		return this.disabled;
-	}
+	}*/
 
 	/**
 	* Utils
@@ -309,18 +351,16 @@ class Component extends HTMLElement {
 	}
 
 
-	//------------------------------Behaviour
-	enable (){
-		this.disabled = false;
-		this.fire('disable');
+	//autoinit found instances in DOM
+	autoinit(){
+		var lname =  this.constructor.lname,
+			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+
+		var targets = document.querySelectorAll(selector);
+		for (var i = 0; i < targets.length; i++){
+			new this.constructor(targets[i]);
+		}
 	}
-
-	disable (){
-		this.disabled = true;
-		this.fire('enable')
-	}
-
-
 }
 
 /**
@@ -342,7 +382,8 @@ Component.register = function(constructor){
 	//init default options as prototype getters/setters with trigger
 	var propsDescriptor = {};
 	for (var key in constructor.defaults){
-		//make defaults - prototypical properties
+		//assign defaults - prototypical properties
+		//NOTE: default values may be of other type than required, like number insteadof array
 		constructor.prototype["_" + key] = constructor.defaults[key];
 
 		//ignore already defined setter/getter
@@ -362,6 +403,9 @@ Component.register = function(constructor){
 				//if (value === false){
 				//	this.removeAttribute(key);
 				//} else {
+					//TODO: how to avoid self attr-observer catch this?
+					//change to state with no event
+					this._preventOneAttrChange = true;
 					this.setAttribute(key, stringify(value));
 				//}
 				this.fire("optionChanged")
@@ -380,13 +424,17 @@ Component.register = function(constructor){
 	}
 	//console.log(propsDescriptor)
 	Object.defineProperties(constructor.prototype, propsDescriptor);
+
+	//Autoinit DOM elements
+	constructor.prototype.autoinit();
 }
 
 //Keyed by name set of components
 Component.registry = {}
 
 //Autolaunch registered components when document is ready
-document.addEventListener("DOMContentLoaded", function(){
+//TODO: probably it is better to init components before Ready - values, at least, should be there beforehead
+/*document.addEventListener("DOMContentLoaded", function(){
 	for (var name in Component.registry){
 		var Descendant = Component.registry[name];
 
@@ -399,5 +447,5 @@ document.addEventListener("DOMContentLoaded", function(){
 			new Descendant(targets[i]);
 		}
 	}
-})
+})*/
 //init every element [classname], [data-classname] or .classname

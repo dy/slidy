@@ -32,7 +32,7 @@
 
 	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange=""></div>
 
-	<div id="hue-lightness" slidy min="0,0" max="360,100" value="0,50" repeat="x" snap="both" name="hue,lightness" onchange="console.clear(); console.log(this.value)"></div>
+	<div id="hue-lightness" slidy min="0,0" max="360,100" value="0,50" repeat="x" snap="both" name="hue,lightness"></div>
 
 	<div id="alpha" slidy vertical min="0" max="1" value="1" name="alpha"></div>
 
@@ -41,3 +41,28 @@
 
 <script src="../dist/traceur-runtime.js"></script>
 <script src="../dist/slidy.js"></script>
+
+<script>
+	var $saturation = document.getElementById("saturation")
+	var $hl = document.getElementById("hue-lightness")
+	var $alpha = document.getElementById("alpha")
+
+	var $body = document.body;
+
+	//events
+	$saturation.addEventListener('change', update)
+	$hl.addEventListener('change', update)
+	$alpha.addEventListener('change', update)
+
+	//update
+	function update(){
+		var c = ['hsla(', $hl.value[0], ",",
+							$saturation.value, "%,",
+							$hl.value[1], "%,", $alpha.value, ")"].join("");
+		//console.clear();
+		//console.log("update", c)
+		$body.style.background = c;
+	}
+
+	update();
+</script>
