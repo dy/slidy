@@ -106,16 +106,6 @@ class Component extends HTMLElement {
 						//TODO: avoid attr self-setup
 						console.log("Attribute externally changed", parseAttr(this.getAttribute(attr)))
 						this["_" + attr] = parseAttr(this.getAttribute(attr));
-
-						//TODO: throttle attr reflection
-						// if (!self._reflectAttrTimeout){
-						// 	self.setAttribute("value", stringify(self._value))
-						// 	self._reflectAttrTimeout = setTimeout(function(){
-						// 		clearTimeout(self._reflectAttrTimeout);
-						// 		self._reflectAttrTimeout = null;
-						// 		self.setAttribute("value", stringify(self._value))
-						// 	}, 500);
-						// }
 					}
 				}
 			}
@@ -295,6 +285,30 @@ class Component extends HTMLElement {
 	ignoreAttrChange(){
 		this._observer.disconnect();
 	}
+
+	//correct attribute setter - reflects value changed with throttling
+	updateAttr(key, value){
+		//TODO: throttle attr reflection
+		if (!this._reflectAttrTimeout){
+			//TODO: move this somewere to the beginning
+			var prefix = Component.safeAttributes ? "data-" : "";
+
+			//hide falsy attributes
+			if (value === false){
+				this.removeAttribute(key);
+			} else {
+				//avoid self attr-observer catch this attr changing
+				this._preventOneAttrChange = true;
+				this.setAttribute(prefix + key, stringify(value));
+			}
+
+			this._reflectAttrTimeout = setTimeout(function(){
+				clearTimeout(this._reflectAttrTimeout);
+				this._reflectAttrTimeout = null;
+
+			}, 500);
+		}
+	}
 	//TODO: these guys cause stack overflow because try to set themselves
 	/*set disabled(val){
 		if (val) {
@@ -324,6 +338,13 @@ class Component extends HTMLElement {
 			fn.apply(this);
 			this.removeEventListener(evt, fn)
 		}.bind(this))
+	}
+
+	//TODO: handle `:delegate` listener event, as x-tags does
+	//listener wrapper, just makes chaining
+	addEventListener(evt, fn){
+		super.addEventListener(evt, fn);
+		return this;
 	}
 
 	//as jquery delegate does
@@ -398,16 +419,11 @@ Component.register = function(constructor){
 
 		var set = (function(key){
 			return function(value){
+				//ignore same value
+				if (this['_' + key ] === value) return;
+
 				this['_' + key ] = value;
-				//TODO: hide falsy attributes
-				//if (value === false){
-				//	this.removeAttribute(key);
-				//} else {
-					//TODO: how to avoid self attr-observer catch this?
-					//change to state with no event
-					this._preventOneAttrChange = true;
-					this.setAttribute(key, stringify(value));
-				//}
+				this.updateAttr(key, value);
 				this.fire("optionChanged")
 				this.fire(value + "Changed")
 			}
@@ -432,6 +448,14 @@ Component.register = function(constructor){
 //Keyed by name set of components
 Component.registry = {}
 
+
+//Component constructor, just to use as a fabric method
+Component.create = function(el, opts){
+	return new this.constructor(el, opts)
+}
+
+
+
 //Autolaunch registered components when document is ready
 //TODO: probably it is better to init components before Ready - values, at least, should be there beforehead
 /*document.addEventListener("DOMContentLoaded", function(){
@@ -449,3 +473,16 @@ Component.registry = {}
 	}
 })*/
 //init every element [classname], [data-classname] or .classname
+
+
+
+//----------Init generic component behaviour
+
+//whether to use data-attributes instead of straight ones, which may be invalid
+Component.safeAttributes = Component.safeAttributes || false;
+
+//whether to init components on
+Component.autoinit = Component.autoinit || true;
+
+//Whether to expose descendant classes to global
+Component.exposeClasses = Component.exposeClasses || true;

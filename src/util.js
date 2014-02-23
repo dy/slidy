@@ -16,7 +16,9 @@ function extend(a){
 
 //Simple DOMs
 $ = $ || function(s){
-	if (typeof s === "string") return document.querySelector(s);
+	if (typeof s === "string") {
+		return document.querySelectorAll(s);
+	}
 	return s;
 }
 
@@ -40,12 +42,29 @@ function offsets(el){
 function paddings($el){
 	var box = {}, style = getComputedStyle($el);
 
-	box.top = ~~style.paddingTop.slice(0,-2)
-	box.left = ~~style.paddingLeft.slice(0,-2)
-	box.bottom = ~~style.paddingBottom.slice(0,-2)
-	box.right = ~~style.paddingRight.slice(0,-2)
+	box.top = parseCssValue(style.paddingTop)
+	box.left = parseCssValue(style.paddingLeft)
+	box.bottom = parseCssValue(style.paddingBottom)
+	box.right = parseCssValue(style.paddingRight)
 
 	return box;
+}
+
+//return margins
+function margins($el){
+	var box = {}, style = getComputedStyle($el);
+
+	box.top = parseCssValue(style.marginTop)
+	box.left = parseCssValue(style.marginLeft)
+	box.bottom = parseCssValue(style.marginBottom)
+	box.right = parseCssValue(style.marginRight)
+
+	return box;
+}
+
+//returns parsed css value
+function parseCssValue(str){
+	return ~~str.slice(0,-2);
 }
 
 /**
@@ -67,6 +86,7 @@ function on(el, evt, delegate, fn){
 			//TODO: if e.currentTarget is in the delegatees list - pass event
 		}.bind(el))
 	}
+	return el;
 }
 function off(el, evt, fn){
 	//console.log("off", arguments)
@@ -77,6 +97,7 @@ function off(el, evt, fn){
 		//listen element
 		el.removeEventListener(evt, fn)
 	}
+	return el;
 }
 
 /**

@@ -13,14 +13,20 @@ class Draggable extends Component {
 		//set restricting area
 		if (self.within){
 			if (self.within instanceof Element){
-				self.$restrictWithin = self.within
+				self.$within = self.within
 			} else if (typeof self.within === "string"){
-				self.$restrictWithin = $(self.within)
+				if (self.within === "parent")
+					self.$within = self.parentNode;
+				else
+					self.$within = $(self.within)[0];
 			} else {
-				self.$restrictWithin = null
+				self.$within = null
 			}
 			//TODO: catch shitty elements (non-elements)
 		}
+
+		//init empty limits
+		self.limits = {};
 
 		//go native
 		if (self.native) {
@@ -32,24 +38,8 @@ class Draggable extends Component {
 
 	//-------------------API (verbs)
 	startDrag(e){
-		//set limits
-		//it is here because not always element is in DOM when constructor inits
-		var limOffsets = offsets(this.$restrictWithin);
-
-		this.offsets = offsets(this);
-		this.paddings = paddings(this.$restrictWithin);
-
-		//save relative coord system offsets
-		this.oX = this.offsets.left - this.x;
-		this.oY = this.offsets.top - this.y;
-
-		//element movement relative borders
-		this.limits = {
-			top: limOffsets.top - this.oY + this.paddings.top,
-			bottom: limOffsets.bottom - this.oY - this.offsets.height - this.paddings.bottom,
-			left: limOffsets.left - this.oX + this.paddings.left,
-			right: limOffsets.right - this.oX - this.offsets.width - this.paddings.right,
-		}
+		//define limits
+		this.getLimits();
 
 		//init dragstate
 		this.dragstate = {
@@ -86,6 +76,7 @@ class Draggable extends Component {
 		d.x = e.clientX + window.scrollX - this.oX;
 		d.y = e.clientY + window.scrollY - this.oY;
 
+		//move according to dragstate
 		this.move(d);
 	}
 
@@ -96,6 +87,7 @@ class Draggable extends Component {
 
 	//specific movement function based on dragstate passed
 	//takes into accont mouse coords, self coords, axis limits and displacement within
+	//TODO: name this more intuitively, because move supposes (x, y)
 	move(d){
 		if (!this.axis || this.axis === "x"){
 			this.x = round(between(d.x - d.offsetX,
@@ -108,6 +100,27 @@ class Draggable extends Component {
 						this.limits.top,
 						this.limits.bottom), this.precision);
 		}
+	}
+
+	//updates limits state
+	getLimits(){
+		//it is here because not always element is in DOM when constructor inits
+		var limOffsets = offsets(this.$within);
+
+		this.offsets = offsets(this);
+		var selfPads = paddings(this.$within);
+
+		//save relative coord system offsets
+		this.oX = this.offsets.left - this.x;
+		this.oY = this.offsets.top - this.y;
+
+		//element movement relative borders
+		//TODO: make limits accesible before appending to the DOM
+		this.limits.top = limOffsets.top - this.oY + selfPads.top;
+		this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom;
+		this.limits.left = limOffsets.left - this.oX + selfPads.left;
+		this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right;
+
 	}
 
 	//relative coords
@@ -126,7 +139,8 @@ class Draggable extends Component {
 		this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
 	}
 
-	dropEffect(e){
+	//native-drag helper
+	setDropEffect(e){
 		e.preventDefault()
 		e.dataTransfer.dropEffect = "move"
 		return false;
@@ -177,11 +191,11 @@ Draggable.states = {
 			this.style.cursor = "pointer!important";
 
 			//make restricting area allowable to drop
-			on(this.$restrictWithin, 'dragover', this.dropEffect)
+			on(this.$within, 'dragover', this.setDropEffect)
 		},
 		after: function(){
 			this.style[cssPrefix + "user-drag"] = "none";
-			off(this.$restrictWithin, 'dragover', this.dropEffect)
+			off(this.$within, 'dragover', this.setDropEffect)
 		},
 
 		dragstart:  function(e){
@@ -206,7 +220,7 @@ Draggable.states = {
 			this.drag(e);
 			//this.ondrag && this.ondrag.call(this);
 		},
-		dragover: 'dropEffect',
+		dragover: 'setDropEffect',
 	}
 }
 
@@ -218,7 +232,11 @@ Draggable.defaults = {
 	autoscroll: false,
 
 	//null is no restrictions
-	within: document.body,
+	within: document.body.parentNode,
+
+	//what area of draggable should not be outside the restriction area
+	//by default it’s whole draggable rect
+	pinArea: null,
 
 	group: null,
 

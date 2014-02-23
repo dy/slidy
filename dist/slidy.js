@@ -12,7 +12,9 @@ function extend(a) {
   return a;
 }
 $ = $ || function(s) {
-  if (typeof s === "string") return document.querySelector(s);
+  if (typeof s === "string") {
+    return document.querySelectorAll(s);
+  }
   return s;
 };
 function offsets(el) {
@@ -32,11 +34,23 @@ function offsets(el) {
 function paddings($el) {
   var box = {},
       style = getComputedStyle($el);
-  box.top = ~~style.paddingTop.slice(0, - 2);
-  box.left = ~~style.paddingLeft.slice(0, - 2);
-  box.bottom = ~~style.paddingBottom.slice(0, - 2);
-  box.right = ~~style.paddingRight.slice(0, - 2);
+  box.top = parseCssValue(style.paddingTop);
+  box.left = parseCssValue(style.paddingLeft);
+  box.bottom = parseCssValue(style.paddingBottom);
+  box.right = parseCssValue(style.paddingRight);
   return box;
+}
+function margins($el) {
+  var box = {},
+      style = getComputedStyle($el);
+  box.top = parseCssValue(style.marginTop);
+  box.left = parseCssValue(style.marginLeft);
+  box.bottom = parseCssValue(style.marginBottom);
+  box.right = parseCssValue(style.marginRight);
+  return box;
+}
+function parseCssValue(str) {
+  return ~~str.slice(0, - 2);
 }
 function on(el, evt, delegate, fn) {
   if (jQuery) {
@@ -48,6 +62,7 @@ function on(el, evt, delegate, fn) {
   } else {
     el.addEventListener(evt, function(e) {}.bind(el));
   }
+  return el;
 }
 function off(el, evt, fn) {
   if (jQuery) {
@@ -55,6 +70,7 @@ function off(el, evt, fn) {
   } else if (arguments.length === 3) {
     el.removeEventListener(evt, fn);
   }
+  return el;
 }
 function fire(el, eName, data) {
   var event = new CustomEvent(eName, {detail: data});
@@ -226,6 +242,7 @@ var Component = function Component(el, opts) {
   self.fire("create");
   return self;
 };
+var $Component = Component;
 ($traceurRuntime.createClass)(Component, {
   initAPI: function() {
     "use strict";
@@ -365,6 +382,22 @@ var Component = function Component(el, opts) {
     "use strict";
     this._observer.disconnect();
   },
+  updateAttr: function(key, value) {
+    "use strict";
+    if (!this._reflectAttrTimeout) {
+      var prefix = $Component.safeAttributes ? "data-": "";
+      if (value === false) {
+        this.removeAttribute(key);
+      } else {
+        this._preventOneAttrChange = true;
+        this.setAttribute(prefix + key, stringify(value));
+      }
+      this._reflectAttrTimeout = setTimeout(function() {
+        clearTimeout(this._reflectAttrTimeout);
+        this._reflectAttrTimeout = null;
+      }, 500);
+    }
+  },
   preventDefault: function(e) {
     "use strict";
     e.preventDefault();
@@ -375,6 +408,11 @@ var Component = function Component(el, opts) {
       fn.apply(this);
       this.removeEventListener(evt, fn);
     }.bind(this));
+  },
+  addEventListener: function(evt, fn) {
+    "use strict";
+    $traceurRuntime.superCall(this, $Component.prototype, "addEventListener", [evt, fn]);
+    return this;
   },
   delegateListener: function(evt, delegate, fn) {
     "use strict";
@@ -421,9 +459,9 @@ Component.register = function(constructor) {
     })(key);
     var set = (function(key) {
       return function(value) {
+        if (this['_' + key] === value) return;
         this['_' + key] = value;
-        this._preventOneAttrChange = true;
-        this.setAttribute(key, stringify(value));
+        this.updateAttr(key, value);
         this.fire("optionChanged");
         this.fire(value + "Changed");
       };
@@ -439,6 +477,12 @@ Component.register = function(constructor) {
   constructor.prototype.autoinit();
 };
 Component.registry = {};
+Component.create = function(el, opts) {
+  return new this.constructor(el, opts);
+};
+Component.safeAttributes = Component.safeAttributes || false;
+Component.autoinit = Component.autoinit || true;
+Component.exposeClasses = Component.exposeClasses || true;
 var Draggable = function Draggable(el, opts) {
   "use strict";
   var self = $traceurRuntime.superCall(this, $Draggable.prototype, "constructor", [el, opts]);
@@ -448,13 +492,14 @@ var Draggable = function Draggable(el, opts) {
   self.style[cssPrefix + "user-drag"] = "none";
   if (self.within) {
     if (self.within instanceof Element) {
-      self.$restrictWithin = self.within;
+      self.$within = self.within;
     } else if (typeof self.within === "string") {
-      self.$restrictWithin = $(self.within);
+      if (self.within === "parent") self.$within = self.parentNode; else self.$within = $(self.within)[0];
     } else {
-      self.$restrictWithin = null;
+      self.$within = null;
     }
   }
+  self.limits = {};
   if (self.native) {
     self.state = "native";
   }
@@ -464,17 +509,7 @@ var $Draggable = Draggable;
 ($traceurRuntime.createClass)(Draggable, {
   startDrag: function(e) {
     "use strict";
-    var limOffsets = offsets(this.$restrictWithin);
-    this.offsets = offsets(this);
-    this.paddings = paddings(this.$restrictWithin);
-    this.oX = this.offsets.left - this.x;
-    this.oY = this.offsets.top - this.y;
-    this.limits = {
-      top: limOffsets.top - this.oY + this.paddings.top,
-      bottom: limOffsets.bottom - this.oY - this.offsets.height - this.paddings.bottom,
-      left: limOffsets.left - this.oX + this.paddings.left,
-      right: limOffsets.right - this.oX - this.offsets.width - this.paddings.right
-    };
+    this.getLimits();
     this.dragstate = {
       clientX: e.clientX,
       clientY: e.clientY,
@@ -508,6 +543,18 @@ var $Draggable = Draggable;
       this.y = round(between(d.y - d.offsetY, this.limits.top, this.limits.bottom), this.precision);
     }
   },
+  getLimits: function() {
+    "use strict";
+    var limOffsets = offsets(this.$within);
+    this.offsets = offsets(this);
+    var selfPads = paddings(this.$within);
+    this.oX = this.offsets.left - this.x;
+    this.oY = this.offsets.top - this.y;
+    this.limits.top = limOffsets.top - this.oY + selfPads.top;
+    this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom;
+    this.limits.left = limOffsets.left - this.oX + selfPads.left;
+    this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right;
+  },
   get x() {
     "use strict";
     return this._x;
@@ -526,7 +573,7 @@ var $Draggable = Draggable;
     this._y = y;
     this.style[cssPrefix + "transform"] = ["translate3d(", this._x, "px,", this._y, "px, 0)"].join("");
   },
-  dropEffect: function(e) {
+  setDropEffect: function(e) {
     "use strict";
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
@@ -561,11 +608,11 @@ Draggable.states = {
     before: function() {
       this.style[cssPrefix + "user-drag"] = "element";
       this.style.cursor = "pointer!important";
-      on(this.$restrictWithin, 'dragover', this.dropEffect);
+      on(this.$within, 'dragover', this.setDropEffect);
     },
     after: function() {
       this.style[cssPrefix + "user-drag"] = "none";
-      off(this.$restrictWithin, 'dragover', this.dropEffect);
+      off(this.$within, 'dragover', this.setDropEffect);
     },
     dragstart: function(e) {
       this.startDrag(e);
@@ -583,13 +630,14 @@ Draggable.states = {
       if (e.x === 0 && e.y === 0) return;
       this.drag(e);
     },
-    dragover: 'dropEffect'
+    dragover: 'setDropEffect'
   }
 };
 Draggable.defaults = {
   treshold: 10,
   autoscroll: false,
-  within: document.body,
+  within: document.body.parentNode,
+  pinArea: null,
   group: null,
   ghost: false,
   translate: true,
@@ -612,17 +660,18 @@ var Slidy = function Slidy(el, opts) {
     self.horizontal = false;
     self.vertical = false;
   }
-  var picker = new Draggable({
+  self.picker = new Draggable({
     within: self,
     axis: self.horizontal && !self.vertical ? 'x': (self.vertical && !self.horizontal ? 'y': false),
-    ondrag: self.pickerMoved
+    ondrag: self.handleDrag
   });
-  self.appendChild(picker);
+  self.appendChild(self.picker);
   if (self.expose) {}
   return self;
 };
 var $Slidy = Slidy;
-($traceurRuntime.createClass)(Slidy, {pickerMoved: function(e) {
+($traceurRuntime.createClass)(Slidy, {
+  handleDrag: function(e) {
     "use strict";
     var thumb = e.currentTarget,
         d = thumb.dragstate,
@@ -637,12 +686,36 @@ var $Slidy = Slidy;
     } else if (this.vertical) {
       var normalValue = (- thumb.y + lim.top) / vScope;
       this.value = normalValue * (this.max - this.min) + this.min;
-    } else if (this.horizontal) {
+    } else {
       var normalValue = (thumb.x - lim.left) / hScope;
       this.value = normalValue * (this.max - this.min) + this.min;
     }
     this.fire("change");
-  }}, {}, Component);
+  },
+  moveToValue: function() {
+    "use strict";
+    var x = 0,
+        y = 0,
+        picker = this.picker,
+        lim = picker.limits,
+        hScope = (lim.right - lim.left),
+        vScope = (lim.bottom - lim.top);
+    if (this.dimensions == 2) {
+      var hRange = this.max[0] - this.min[0],
+          vRange = this.max[1] - this.min[1],
+          ratioX = (this.value[0] - this.min[0]) / hRange,
+          ratioY = (this.value[1] - this.min[1]) / vRange;
+    } else if (this.vertical) {
+      var vRange = this.max - this.min,
+          ratioY = (this.value - this.min) / vRange;
+    } else {
+      var hRange = this.max - this.min,
+          ratioX = (this.value - this.min) / hRange;
+    }
+    this.picker.x = ratioX * hScope;
+    this.picker.y = ratioY * vScope;
+  }
+}, {}, Component);
 Slidy.states = {default: {}};
 Slidy.defaults = {
   value: 50,

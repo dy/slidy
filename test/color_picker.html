@@ -13,7 +13,8 @@
 		min-width: 40px;
 		min-height: 40px;
 		margin-top: 10px;
-		padding: 5px;
+		/*padding: 5px;*/
+		margin-right: 50px;
 	}
 	[slidy] > .draggable{
 		width: 30px;
@@ -24,17 +25,24 @@
 	#hue-lightness{
 		height: 200px;
 	}
+	#alpha{
+		float: right;
+		height: 250px;
+		margin-top: 0;
+		margin-right: 0;
+	}
 </style>
 
 <body style="background: hsla({{ hue }}, {{ saturation }}, {{ lightness }}, {{ alpha }})" data-bind>
 
 	<h1>Simple three-component picker</h1>
 
+	<div id="alpha" slidy vertical min="0" max="1" value="1" name="alpha"></div>
+
 	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange=""></div>
 
 	<div id="hue-lightness" slidy min="0,0" max="360,100" value="0,50" repeat="x" snap="both" name="hue,lightness"></div>
 
-	<div id="alpha" slidy vertical min="0" max="1" value="1" name="alpha"></div>
 
 </body>
 

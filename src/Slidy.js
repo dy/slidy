@@ -22,14 +22,25 @@ class Slidy extends Component{
 		//self.value = self.value;
 
 		//create enough pickers
-		var picker = new Draggable({
+		self.picker = new Draggable({
 			within: self,
 			axis: self.horizontal && !self.vertical ? 'x' : (self.vertical && !self.horizontal ? 'y' : false),
-			ondrag: self.pickerMoved
+			ondrag: self.handleDrag
 			//native: false
 		})
 
-		self.appendChild(picker);
+		//calc initial picker limits
+		//TODO: find out picker height/width
+		// var selfPads = paddings(self);
+		// self.picker.limits.left = selfPads.left;
+		// self.picker.limits.top = selfPads.top;
+		// self.picker.limits.right = self.offsetWidth - selfPads.right;
+		// self.picker.limits.bottom = self.offsetHeight - selfPads.bottom;
+
+		//set initial position according to the value
+		//self.moveToValue.call(self);
+
+		self.appendChild(self.picker);
 
 		//bind data to listen
 		if (self.expose) {
@@ -41,7 +52,7 @@ class Slidy extends Component{
 	}
 
 	//picker handler - moves thumb, if needed, fires change event
-	pickerMoved(e){
+	handleDrag(e){
 		//console.log("drag observed", e.target.dragstate);
 		var thumb = e.currentTarget,
 			d = thumb.dragstate,
@@ -63,13 +74,44 @@ class Slidy extends Component{
 		} else if (this.vertical){
 			var normalValue = (- thumb.y + lim.top) / vScope;
 			this.value = normalValue * (this.max - this.min) + this.min;
-		} else if (this.horizontal){
+		} else {
 			var normalValue = (thumb.x - lim.left) / hScope;
 			this.value = normalValue * (this.max - this.min) + this.min;
 		}
 
 		//trigger onchange
 		this.fire("change")
+	}
+
+	//moves picker to the value
+	//TODO: calc this without picker being added to the DOM
+	moveToValue(){
+		var	//relative coords to move picker to
+			x = 0,
+			y = 0,
+			picker = this.picker,
+			lim = picker.limits,
+			hScope = (lim.right - lim.left),
+			vScope = (lim.bottom - lim.top)
+
+		if (this.dimensions == 2){
+			var hRange = this.max[0] - this.min[0],
+				vRange = this.max[1] - this.min[1],
+				ratioX = (this.value[0] - this.min[0]) / hRange,
+				ratioY = (this.value[1] - this.min[1]) / vRange
+
+		} else if (this.vertical){
+			var vRange = this.max - this.min,
+				ratioY = (this.value - this.min) / vRange;
+
+		} else {
+			var hRange = this.max - this.min,
+				ratioX = (this.value - this.min) / hRange;
+
+		}
+
+		this.picker.x = ratioX * hScope;
+		this.picker.y = ratioY * vScope;
 	}
 }
 

@@ -1,6 +1,10 @@
 <!doctype html>
 
 <style>
+	html, body{
+		width: 100%;
+		overflow-x: hidden;
+	}
 	body{
 		font-family: sans-serif;
 		padding: 20px 40px;
@@ -9,49 +13,132 @@
 	* {
 		box-sizing: border-box;
 	}
+	[hidden]{
+		display: none;
+	}
+
 	[draggable]{
-		background: rgba(80,90,100,.5);
+		background: rgba(120,130,140,1);
 		width: 200px;
 		height: 200px;
 		color: white;
 		padding: 40px 30px;
 		text-align: center;
 		position: relative;
+		cursor: move;
 	}
 
-	.case{
+	article{
 		/*position: relative;*/
 		padding:20px 20px 20px;
 		background: #f3f3f3;
-		min-height: 300px;
+		/*min-height: 300px;*/
 		margin-bottom: 20px;
-		margin-top: 50px;
+		margin-top: 20px;
+		position: relative;
 	}
-	.case-code-label{
+	pre{
+		margin: 0 0 0 50%;
+		height: 100%;
+		margin-top: -20px;
+		padding: 10px;
+		border-left: 1px dotted rgba(10,20,30,.1);
+		color: rgb(120,130,140);
 		position: absolute;
-		top: 10px;
-		right: 10px;
-		color: #889;
-		border-bottom: 1px dashed #bbc;
-		cursor: pointer;
 	}
-	.case-code-label:hover{
-		color: #445;
-		border-bottom: 1px dashed #99a;
+
+	/* Interactions painter layer*/
+	canvas{
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 999;
+		pointer-events: none;
 	}
 </style>
 
+<canvas></canvas>
 
-<h1>Draggable tests</h1>
+<h1>Draggable</h1>
 
-<article class="case" id="simple-case">
-	<h2>Simple draggable</h2>
-	<div draggable>Drag me</div>
+<article id="simple-case" title="Simple case">
+	<pre>
+&lt;div draggable&gt;
+&lt;/div&gt;
+	</pre>
+	<div draggable>Just drag</div>
+</article>
 
-	<label for="simple-case-code" class="case-code-label">code</label>
-	<div class="case-code" id="simple-case-code" hidden></div>
+<article id="within-parent">
+	<pre>
+&lt;div draggable within=&quot;parent&quot;&gt;
+&lt;/div&gt;
+	</pre>
+	<div draggable within="parent">Drag within parent</div>
+</article>
+
+<article id="pin-area">
+	<pre></pre>
+	<div draggable within="parent">Pin area</div>
 </article>
 
 
 <script src="../dist/traceur-runtime.js"></script>
 <script src="../dist/slidy.js"></script>
+
+<script>
+	//------------Canvas visualizers
+	var canvas = document.querySelector("canvas");
+	var ctx = canvas.getContext("2d");
+	canvas.width  = window.innerWidth;
+	canvas.height = document.body.parentNode.offsetHeight;
+
+	var items = $('[draggable]');
+	Array.prototype.forEach.call(items, function (item) {
+		item
+		.addEventListener('dragstart', function(){
+			//canvas.removeAttribute("hidden")
+
+			paintRestrictionArea(this);
+			paintTreshold(this);
+			paintPinRect(this);
+		})
+		.addEventListener('dragend', function(){
+			//canvas.setAttribute("hidden", true)
+
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+		})
+	});
+
+
+
+	//canvas painters
+	function paintRestrictionArea($el){
+		var $within = $el.$within;
+		var pos = offsets($within),
+			pads = paddings($within);
+
+		ctx.strokeStyle = 'rgba(60,60,60,1)';
+		ctx.lineWidth = 1;
+		ctx.setLineDash([7,4]);
+
+		ctx.beginPath();
+		ctx.moveTo(pos.left + pads.left, pos.top + pads.top);
+		ctx.lineTo(pos.right - pads.right, pos.top + pads.top);
+		ctx.lineTo(pos.right - pads.right, pos.bottom - pads.bottom);
+		ctx.lineTo(pos.left + pads.left, pos.bottom - pads.bottom);
+		ctx.lineTo(pos.left + pads.left, pos.top + pads.top);
+		ctx.stroke();
+	}
+
+	function paintTreshold($el){
+		xxx
+	}
+
+	function paintPinRect($el){
+		xxx
+	}
+
+
+
+</script>
