@@ -16,6 +16,25 @@
 	[hidden]{
 		display: none;
 	}
+	h1{
+		display: inline-block;
+	}
+	nav{
+		display: inline-block;
+		line-height: 60px;
+		/*width: 60px;*/
+		float: right;
+		/*background: rgba(120,120,120,.3);*/
+		right: 0;
+		top: 0;
+		z-index: 999;
+		padding: 10px;
+		/*color: white;*/
+		font-size: 13px;
+	}
+	input{
+		margin: 0;
+	}
 
 	[draggable]{
 		background: rgba(120,130,140,1);
@@ -41,10 +60,12 @@
 		margin: 0 0 0 50%;
 		height: 100%;
 		margin-top: -20px;
-		padding: 10px;
+		padding: 20px;
 		border-left: 1px dotted rgba(10,20,30,.1);
 		color: rgb(120,130,140);
 		position: absolute;
+		white-space: pre-wrap;
+		tab-size: 5;
 	}
 
 	/* Interactions painter layer*/
@@ -55,31 +76,56 @@
 		z-index: 999;
 		pointer-events: none;
 	}
+
+	.picker{
+		width: 80px;
+		height: 80px;
+		border-radius: 50px;
+		background: white;
+		font-size: 12px;
+		color: #345;
+		padding: 22px;
+		text-align: center;
+		border: 2px solid #e3e4e5;
+	}
 </style>
 
 <canvas></canvas>
 
 <h1>Draggable</h1>
 
+<nav class="options">
+	<label for="render-helpers">
+		<input type="checkbox" id="render-helpers"/> Render helpers
+	</label>
+</nav>
+
 <article id="simple-case" title="Simple case">
 	<pre>
 &lt;div draggable&gt;
-&lt;/div&gt;
-	</pre>
+&lt;/div&gt;</pre>
 	<div draggable>Just drag</div>
 </article>
 
 <article id="within-parent">
 	<pre>
 &lt;div draggable within=&quot;parent&quot;&gt;
-&lt;/div&gt;
-	</pre>
+&lt;/div&gt;</pre>
 	<div draggable within="parent">Drag within parent</div>
 </article>
 
 <article id="pin-area">
+	<pre>
+&lt;div draggable
+	within=&quot;parent&quot;
+	pin=&quot;[50,50,100,100]&quot;&gt;
+&lt;/div&gt;</pre>
+	<div draggable within="parent" pin="[50,50,100,100]">Pin area</div>
+</article>
+
+<article id="point-picker">
 	<pre></pre>
-	<div draggable within="parent">Pin area</div>
+	<div class="picker" draggable within=".." pin="40,40">Point picker</div>
 </article>
 
 
@@ -94,23 +140,46 @@
 	canvas.height = document.body.parentNode.offsetHeight;
 
 	var items = $('[draggable]');
-	Array.prototype.forEach.call(items, function (item) {
-		item
-		.addEventListener('dragstart', function(){
-			//canvas.removeAttribute("hidden")
+	var $renderCb = document.getElementById('render-helpers')
 
-			paintRestrictionArea(this);
-			paintTreshold(this);
-			paintPinRect(this);
-		})
-		.addEventListener('dragend', function(){
-			//canvas.setAttribute("hidden", true)
+	$renderCb.addEventListener("change", function(e){
+		console.log(e.target.checked)
+		if (e.target.checked === true){
+			setRendering();
+		} else {
+			unsetRendering();
+		}
+	})
+	$renderCb.checked = true;
+	$renderCb.dispatchEvent(new CustomEvent("change"));
 
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
-		})
-	});
+	//turn rendering on
+	function setRendering(){
+		Array.prototype.forEach.call(items, function (item) {
+			item
+			.on('dragstart', renderHelpers)
+			.on('drag', renderHelpers)
+			.on('dragend', clear)
+		});
+	}
 
 
+	//turn rendering off
+	function unsetRendering(){
+		Array.prototype.forEach.call(items, function (item) {
+			item
+			.off('dragstart', renderHelpers)
+			.off('drag', renderHelpers)
+			.off('dragend', clear)
+		});
+	}
+
+	function renderHelpers(){
+		clear();
+		paintRestrictionArea(this);
+		paintPinRect(this);
+		paintTreshold(this);
+	}
 
 	//canvas painters
 	function paintRestrictionArea($el){
@@ -136,7 +205,26 @@
 	}
 
 	function paintPinRect($el){
-		xxx
+		var pin = $el.pin ? $el.pin.slice() : [0,0,$el.offsetWidth, $el.offsetHeight]
+		pin[2] += 1
+		pin[3] += 1
+
+		var pos = offsets($el);
+
+		ctx.strokeStyle = 'rgba(60,250,60,1)';
+		ctx.lineWidth = 10;
+
+		ctx.beginPath();
+		ctx.moveTo(pos.left + pin[0], pos.top + pin[1]);
+		ctx.lineTo(pos.left + pin[2], pos.top + pin[1]);
+		ctx.lineTo(pos.left + pin[2], pos.top + pin[3]);
+		ctx.lineTo(pos.left + pin[0], pos.top + pin[3]);
+		ctx.lineTo(pos.left + pin[0], pos.top + pin[1]);
+		ctx.stroke();
+	}
+
+	function clear(){
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	}
 
 

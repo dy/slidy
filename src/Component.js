@@ -5,6 +5,8 @@
 
 //TODO: add document-level listener pluginName:event
 //TODO: think how should it work within components group, like active tab
+//TODO: private methods (_+...) should be hjidden on instances
+
 class Component extends HTMLElement {
 
 	//TODO: state criterias (visible/hidden) (active/inactive) (disabled/enabled) ...
@@ -293,6 +295,9 @@ class Component extends HTMLElement {
 			//TODO: move this somewere to the beginning
 			var prefix = Component.safeAttributes ? "data-" : "";
 
+			//dashify case
+			key = toDashedCase(key);
+
 			//hide falsy attributes
 			if (value === false){
 				this.removeAttribute(key);
@@ -342,8 +347,12 @@ class Component extends HTMLElement {
 
 	//TODO: handle `:delegate` listener event, as x-tags does
 	//listener wrapper, just makes chaining
-	addEventListener(evt, fn){
+	on(evt, fn){
 		super.addEventListener(evt, fn);
+		return this;
+	}
+	off(evt, fn){
+		super.removeEventListener(evt, fn);
 		return this;
 	}
 

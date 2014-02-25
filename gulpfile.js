@@ -14,7 +14,8 @@ var autoprefixer = require('gulp-autoprefixer'),
 	livereload = require('gulp-livereload');
 var es6transpiler = require('gulp-es6-transpiler');
 var closureCompiler = require('gulp-closure-compiler');
-var typescript = require('gulp-typescript');
+// var typescript = require('gulp-typescript');
+// var ts = require('gulp-ts');
 
 global.path = require('path');
 
@@ -23,12 +24,11 @@ global.path = require('path');
 
 var path = {
 	all: 'src/*.js',
-	src: [	'src/util.js',
+	src: [	//'src/html.d.ts',
+			'src/util.js',
 			'src/Component.js',
 			'src/Draggable.js',
-			'src/Slidy.js',
-			//'src/Area.js',
-			//'src/Picker.js'
+			'src/Slidy.js'
 	],
 	dest: 'dist',
 	destFile: 'dist/slidy.js'
@@ -55,28 +55,28 @@ gulp.task('dev', function () {
 			language_in: "ECMASCRIPT5",
 			create_source_map: "slidy.map"
 		}))*/
-		//.pipe(typescript())
 
-		//wrong multifile pipe
+		//traceur
 		.pipe(exec('traceur --out <%= options.dest %> <%= options.src %> --sourcemap',
 			{
 				src: path.src.join(' '),
 				dest: path.destFile
 			}))
-		//.pipe(gulp.dest(path.dest))
+
+		//typescript
+		// .pipe(exec('tsc --out <%= options.dest %> <%= options.src %> --sourcemap',
+		// 	{
+		// 		src: path.src.join(' '),
+		// 		dest: path.destFile
+		// 	}))
+
+		// .pipe(rename(function(path){
+		// 	path.extname = ".ts"
+		// }))
+		// .pipe(ts())
+		// .pipe(gulp.dest(path.dest))
+
 		.on('error', gutil.beep);
-
-
-		//TODO: `*.js` doesn’t work
-		/*exec('traceur --sourcemap --out ' + path.dest + ' \"src/*.js\"',
-			function (error, stdout, stderr) {
-				console.log('stdout: ' + stdout);
-				console.log('stderr: ' + stderr);
-				if (error !== null) {
-					console.log('exec error: ' + error);
-				}
-			}
-		);*/
 });
 
 //minify task

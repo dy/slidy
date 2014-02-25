@@ -101,6 +101,9 @@ function parseAttr(str) {
   }
 }
 function parseMultiAttr(str) {
+  str = str.trim();
+  if (str[0] === "[") str = str.slice(1);
+  if (str.length > 1 && str[str.length - 1] === "]") str = str.slice(0, - 1);
   var parts = str.split(',');
   var result = [];
   for (var i = 0; i < parts.length; i++) {
@@ -117,14 +120,25 @@ function parseAttributes(el) {
   var attrs = el.attributes,
       data = {};
   for (var i = 0; i < attrs.length; i++) {
-    var attr = attrs[i];
-    if (attr.name.slice(0, 2) === "on") {
-      data[attr.name] = new Function(attr.value);
-    } else if (!defaultAttrs[attr.name]) {
-      data[attr.name] = parseAttr(attr.value);
+    var attr = attrs[i],
+        attrName = toCamelCase(attr.name);
+    if (attrName.slice(0, 2) === "on") {
+      data[attrName] = new Function(attr.value);
+    } else if (!defaultAttrs[attrName]) {
+      data[attrName] = parseAttr(attr.value);
     }
   }
   return data;
+}
+function toCamelCase(str) {
+  return str.replace(/-[a-z]/g, function(match, group, position) {
+    return match[1].toUpperCase();
+  });
+}
+function toDashedCase(str) {
+  return str.replace(/[A-Z]/g, function(match, group, position) {
+    return "-" + match.toLowerCase();
+  });
 }
 function stringify(el) {
   if (typeof el === "function") {
@@ -386,6 +400,7 @@ var $Component = Component;
     "use strict";
     if (!this._reflectAttrTimeout) {
       var prefix = $Component.safeAttributes ? "data-": "";
+      key = toDashedCase(key);
       if (value === false) {
         this.removeAttribute(key);
       } else {
@@ -409,9 +424,14 @@ var $Component = Component;
       this.removeEventListener(evt, fn);
     }.bind(this));
   },
-  addEventListener: function(evt, fn) {
+  on: function(evt, fn) {
     "use strict";
     $traceurRuntime.superCall(this, $Component.prototype, "addEventListener", [evt, fn]);
+    return this;
+  },
+  off: function(evt, fn) {
+    "use strict";
+    $traceurRuntime.superCall(this, $Component.prototype, "removeEventListener", [evt, fn]);
     return this;
   },
   delegateListener: function(evt, delegate, fn) {
@@ -494,7 +514,7 @@ var Draggable = function Draggable(el, opts) {
     if (self.within instanceof Element) {
       self.$within = self.within;
     } else if (typeof self.within === "string") {
-      if (self.within === "parent") self.$within = self.parentNode; else self.$within = $(self.within)[0];
+      if (self.within === "parent") self.$within = self.parentNode; else if (self.within === "..") self.$within = self.parentNode; else if (self.within === "...") self.$within = self.parentNode.parentNode; else if (self.within === "root") self.$within = document.body.parentNode; else self.$within = $(self.within)[0];
     } else {
       self.$within = null;
     }
@@ -509,7 +529,7 @@ var $Draggable = Draggable;
 ($traceurRuntime.createClass)(Draggable, {
   startDrag: function(e) {
     "use strict";
-    this.getLimits();
+    this.updateLimits();
     this.dragstate = {
       clientX: e.clientX,
       clientY: e.clientY,
@@ -543,17 +563,30 @@ var $Draggable = Draggable;
       this.y = round(between(d.y - d.offsetY, this.limits.top, this.limits.bottom), this.precision);
     }
   },
-  getLimits: function() {
+  updateLimits: function() {
     "use strict";
     var limOffsets = offsets(this.$within);
     this.offsets = offsets(this);
     var selfPads = paddings(this.$within);
     this.oX = this.offsets.left - this.x;
     this.oY = this.offsets.top - this.y;
-    this.limits.top = limOffsets.top - this.oY + selfPads.top;
-    this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom;
-    this.limits.left = limOffsets.left - this.oX + selfPads.left;
-    this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right;
+    var pin = this.getPinArea();
+    this.limits.top = limOffsets.top - this.oY + selfPads.top - pin[1];
+    this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom + (this.offsets.height - pin[3]);
+    this.limits.left = limOffsets.left - this.oX + selfPads.left - pin[0];
+    this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right + (this.offsets.width - pin[2]);
+  },
+  getPinArea: function() {
+    "use strict";
+    var pin;
+    if (this.pin && this.pin.length === 2) {
+      pin = [this.pin[0], this.pin[1], this.pin[0], this.pin[1]];
+    } else if (this.pin && this.pin.length === 4) {
+      pin = this.pin;
+    } else {
+      pin = [0, 0, this.offsetWidth, this.offsetHeight];
+    }
+    return pin;
   },
   get x() {
     "use strict";
@@ -637,7 +670,7 @@ Draggable.defaults = {
   treshold: 10,
   autoscroll: false,
   within: document.body.parentNode,
-  pinArea: null,
+  pin: null,
   group: null,
   ghost: false,
   translate: true,

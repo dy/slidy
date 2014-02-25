@@ -17,6 +17,12 @@ class Draggable extends Component {
 			} else if (typeof self.within === "string"){
 				if (self.within === "parent")
 					self.$within = self.parentNode;
+				else if (self.within === "..")
+					self.$within = self.parentNode;
+				else if (self.within === "...")
+					self.$within = self.parentNode.parentNode;
+				else if (self.within === "root")
+					self.$within = document.body.parentNode;
 				else
 					self.$within = $(self.within)[0];
 			} else {
@@ -39,7 +45,7 @@ class Draggable extends Component {
 	//-------------------API (verbs)
 	startDrag(e){
 		//define limits
-		this.getLimits();
+		this.updateLimits();
 
 		//init dragstate
 		this.dragstate = {
@@ -100,10 +106,12 @@ class Draggable extends Component {
 						this.limits.top,
 						this.limits.bottom), this.precision);
 		}
+
+		//TODO: calc pin area movement?
 	}
 
 	//updates limits state
-	getLimits(){
+	updateLimits(){
 		//it is here because not always element is in DOM when constructor inits
 		var limOffsets = offsets(this.$within);
 
@@ -115,13 +123,42 @@ class Draggable extends Component {
 		this.oY = this.offsets.top - this.y;
 
 		//element movement relative borders
+		//no-pinArea version
 		//TODO: make limits accesible before appending to the DOM
-		this.limits.top = limOffsets.top - this.oY + selfPads.top;
-		this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom;
-		this.limits.left = limOffsets.left - this.oX + selfPads.left;
-		this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right;
+		// this.limits.top = limOffsets.top - this.oY + selfPads.top;
+
+		// this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom;
+
+		// this.limits.left = limOffsets.left - this.oX + selfPads.left;
+
+		// this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right;
+
+		var pin = this.getPinArea();
+
+		//pinArea-including version
+		this.limits.top = limOffsets.top - this.oY + selfPads.top - pin[1];
+
+		this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom + (this.offsets.height - pin[3]);
+
+		this.limits.left = limOffsets.left - this.oX + selfPads.left - pin[0];
+
+		this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right + (this.offsets.width - pin[2]);
 
 	}
+
+	//returns pin area based on pin option
+	getPinArea(){
+		var pin;
+		if (this.pin && this.pin.length === 2) {
+			pin = [this.pin[0], this.pin[1], this.pin[0], this.pin[1]]
+		} else if (this.pin && this.pin.length === 4){
+			pin = this.pin
+		} else {
+			pin = [0,0, this.offsetWidth, this.offsetHeight]
+		}
+		return pin;
+	}
+
 
 	//relative coords
 	get x(){
@@ -236,7 +273,7 @@ Draggable.defaults = {
 
 	//what area of draggable should not be outside the restriction area
 	//by default it’s whole draggable rect
-	pinArea: null,
+	pin: null,
 
 	group: null,
 

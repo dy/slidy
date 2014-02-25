@@ -148,6 +148,11 @@ function parseAttr(str){
 }
 
 function parseMultiAttr(str){
+	//clean str from spaces/array rudiments
+	str = str.trim();
+	if (str[0] === "[") str = str.slice(1);
+	if (str.length > 1 && str[str.length - 1] === "]") str = str.slice(0,-1);
+
 	var parts = str.split(',');
 	var result = [];
 	for (var i = 0; i < parts.length; i++){
@@ -163,16 +168,31 @@ function parseAttributes(el){
 		data = {};
 
 	for (var i = 0; i < attrs.length; i++){
-		var attr = attrs[i]
-		if (attr.name.slice(0,2) === "on") {
+		var attr = attrs[i],
+			attrName = toCamelCase(attr.name)
+		if (attrName.slice(0,2) === "on") {
 			//declared evt - create anonymous fn
-			data[attr.name] = new Function(attr.value);
-		} else if (!defaultAttrs[attr.name]) {
-			data[attr.name] = parseAttr(attr.value)
+			data[attrName] = new Function(attr.value);
+		} else if (!defaultAttrs[attrName]) {
+			data[attrName] = parseAttr(attr.value)
 		}
 	}
 
 	return data;
+}
+
+//camel-case → CamelCase
+function toCamelCase(str){
+	return str.replace(/-[a-z]/g, function(match, group, position){
+		return match[1].toUpperCase()
+	})
+}
+
+//CamelCase → camel-case
+function toDashedCase(str){
+	return str.replace(/[A-Z]/g, function(match, group, position){
+		return "-" + match.toLowerCase()
+	})
 }
 
 //stringify any element passed, useful for attribute setting

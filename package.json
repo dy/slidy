@@ -26,6 +26,7 @@
     "gulp-util": "~2.2.13",
     "gulp-es6-transpiler": "~0.1.1",
     "gulp-closure-compiler": "~0.1.2",
-    "gulp-typescript": "~0.1.0"
+    "gulp-typescript": "~0.1.0",
+    "gulp-ts": "0.0.6"
   }
 }
