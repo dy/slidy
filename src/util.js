@@ -25,41 +25,43 @@ $ = $ || function(s){
 //return absolute offsets
 function offsets(el){
 	if (!el) throw new Error("No element passed");
-	var c = {},
-		rect = el.getBoundingClientRect();
-	c.top = rect.top + window.scrollY;
-	c.left = rect.left + window.scrollX;
-	c.width = el.offsetWidth;
-	c.height = el.offsetHeight;
-	c.bottom = c.top + c.height;
-	c.right = c.left + c.width;
-	c.fromRight = document.width - rect.right;
-	c.fromBottom = (window.innerHeight + window.scrollY - rect.bottom)
+	var rect = el.getBoundingClientRect(),
+		c = {
+			top: rect.top + window.pageYOffset,
+			left: rect.left + window.pageXOffset,
+			width: el.offsetWidth,
+			height: el.offsetHeight,
+			bottom: rect.top + window.pageYOffset + el.offsetHeight,
+			right: rect.left + window.pageXOffset + el.offsetWidth,
+			fromRight: window.innerWidth - rect.right,
+			fromBottom: (window.innerHeight + window.pageYOffset - rect.bottom)
+		}
+
 	return c;
 }
 
 //return paddings
 function paddings($el){
-	var box = {}, style = getComputedStyle($el);
+	var style = getComputedStyle($el);
 
-	box.top = parseCssValue(style.paddingTop)
-	box.left = parseCssValue(style.paddingLeft)
-	box.bottom = parseCssValue(style.paddingBottom)
-	box.right = parseCssValue(style.paddingRight)
-
-	return box;
+	return {
+		top: parseCssValue(style.paddingTop),
+		left: parseCssValue(style.paddingLeft),
+		bottom: parseCssValue(style.paddingBottom),
+		right: parseCssValue(style.paddingRight),
+	}
 }
 
 //return margins
 function margins($el){
-	var box = {}, style = getComputedStyle($el);
+	var style = getComputedStyle($el);
 
-	box.top = parseCssValue(style.marginTop)
-	box.left = parseCssValue(style.marginLeft)
-	box.bottom = parseCssValue(style.marginBottom)
-	box.right = parseCssValue(style.marginRight)
-
-	return box;
+	return {
+		top: parseCssValue(style.marginTop),
+		left: parseCssValue(style.marginLeft),
+		bottom: parseCssValue(style.marginBottom),
+		right: parseCssValue(style.marginRight)
+	}
 }
 
 //returns parsed css value
@@ -104,18 +106,22 @@ function off(el, evt, fn){
 * Broadcasts event: "slidy:evt" → $doc, "slidy:evt" → $el, evt → area.opts
 * target - whether area or picker class
 */
-function fire(el, eName, data){
-	//TODO: handle jQuery-way, if there is such
-	//TODO: pass data
+function fire(el, eventName, data){
+	//handle jQuery-way, if there is such
+	//pass data
 	//TODO: ie’s work
-	//TODO: options callbacks
+	//options callbacks
 	//TODO: call document specific call
-	var event = new CustomEvent(eName, {detail: data})
-	if (this['on' + eName]) this['on' + eName].apply(this, data);
+	var event = new CustomEvent(eventName, { detail: data })
+
+	//dispatch options
+	if (this['on' + eventName]) this['on' + eventName].apply(this, data);
+
+	//dispatch to DOM
 	if (jQuery){
 		$(el).trigger(event, data);
 	} else {
-		el.dispatchEvent(event)
+		el.dispatchEvent(event);
 	}
 }
 
@@ -134,6 +140,7 @@ function round(value, precision){
 //returns value from string with correct type
 //TODO: write tests for this fn
 function parseAttr(str){
+	var v;
 	if (str.indexOf(',') >= 0) return parseMultiAttr(str);
 
 	if (str === "true" || str === "") {
@@ -265,7 +272,7 @@ var cssPrefix = detectCSSPrefix();
 //TODO
 //bind element’s representation to component data
 function observeData(target, data){
-	//keyed by param name listeners
+/*	//keyed by param name listeners
 	var listeners = {},
 		propRe = /\{\{\s([a-zA-Z_$][a-zA-Z_$0-9]*)\s\}\}/;
 
@@ -338,10 +345,10 @@ function observeData(target, data){
 		})
 	}
 
-	//TODO: bind slider’s named properties to the document’s scope (publish them)
+	//TODO: bind slider’s named properties to the document’s scope (publish them)*/
 }
 
 //finds the index of next one property
 function findPropertyToInsert(str){
-	str.indexOf()
+	//str.indexOf()
 }

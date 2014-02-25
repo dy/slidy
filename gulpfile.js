@@ -14,8 +14,10 @@ var autoprefixer = require('gulp-autoprefixer'),
 	livereload = require('gulp-livereload');
 var es6transpiler = require('gulp-es6-transpiler');
 var closureCompiler = require('gulp-closure-compiler');
-// var typescript = require('gulp-typescript');
-// var ts = require('gulp-ts');
+var typescript = require('gulp-typescript');
+var ts = require('gulp-ts');
+var tsapi = require("typescript.api");
+//var tsc = require('gulp-tsc');
 
 global.path = require('path');
 
@@ -24,7 +26,7 @@ global.path = require('path');
 
 var path = {
 	all: 'src/*.js',
-	src: [	//'src/html.d.ts',
+	src: [	//'src/refs.ts',
 			'src/util.js',
 			'src/Component.js',
 			'src/Draggable.js',
@@ -36,9 +38,46 @@ var path = {
 
 
 
+function show_diagnostics (units) {
+
+	for(var n in units) {
+
+		for(var m in units[n].diagnostics) {
+
+			console.log( units[n].diagnostics[m].toString() );
+		}
+	}
+}
+
+
 //dev task, launches traceur
 //very harsh and difficult to maintain
 gulp.task('dev', function () {
+	//ts api plays
+	// tsapi.resolve(path.src, function(resolved) {
+	// 	if(!tsapi.check(resolved)) {
+
+	// 		show_diagnostics(resolved);
+
+	// 	}
+	// 	else {
+
+	// 		tsapi.compile(resolved, function(compiled) {
+	// 			if(!tsapi.check(compiled)) {
+
+	// 				show_diagnostics (compiled);
+	// 			}
+	// 			else
+	// 			{
+	// 				tsapi.run(compiled, null, function(context) {
+	// 					console.log("TODO: ok", context)
+	// 					// exports are available on the context...
+	// 				});
+	// 			}
+	// 		});
+	// 	}
+	// });
+
 	gulp.src(path.src)
 		//.pipe(concat('slidy.js'))
 		/*.pipe(uglify({
@@ -73,6 +112,7 @@ gulp.task('dev', function () {
 		// .pipe(rename(function(path){
 		// 	path.extname = ".ts"
 		// }))
+
 		// .pipe(ts())
 		// .pipe(gulp.dest(path.dest))
 

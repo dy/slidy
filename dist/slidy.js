@@ -19,35 +19,36 @@ $ = $ || function(s) {
 };
 function offsets(el) {
   if (!el) throw new Error("No element passed");
-  var c = {},
-      rect = el.getBoundingClientRect();
-  c.top = rect.top + window.scrollY;
-  c.left = rect.left + window.scrollX;
-  c.width = el.offsetWidth;
-  c.height = el.offsetHeight;
-  c.bottom = c.top + c.height;
-  c.right = c.left + c.width;
-  c.fromRight = document.width - rect.right;
-  c.fromBottom = (window.innerHeight + window.scrollY - rect.bottom);
+  var rect = el.getBoundingClientRect(),
+      c = {
+        top: rect.top + window.pageYOffset,
+        left: rect.left + window.pageXOffset,
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+        bottom: rect.top + window.pageYOffset + el.offsetHeight,
+        right: rect.left + window.pageXOffset + el.offsetWidth,
+        fromRight: window.innerWidth - rect.right,
+        fromBottom: (window.innerHeight + window.pageYOffset - rect.bottom)
+      };
   return c;
 }
 function paddings($el) {
-  var box = {},
-      style = getComputedStyle($el);
-  box.top = parseCssValue(style.paddingTop);
-  box.left = parseCssValue(style.paddingLeft);
-  box.bottom = parseCssValue(style.paddingBottom);
-  box.right = parseCssValue(style.paddingRight);
-  return box;
+  var style = getComputedStyle($el);
+  return {
+    top: parseCssValue(style.paddingTop),
+    left: parseCssValue(style.paddingLeft),
+    bottom: parseCssValue(style.paddingBottom),
+    right: parseCssValue(style.paddingRight)
+  };
 }
 function margins($el) {
-  var box = {},
-      style = getComputedStyle($el);
-  box.top = parseCssValue(style.marginTop);
-  box.left = parseCssValue(style.marginLeft);
-  box.bottom = parseCssValue(style.marginBottom);
-  box.right = parseCssValue(style.marginRight);
-  return box;
+  var style = getComputedStyle($el);
+  return {
+    top: parseCssValue(style.marginTop),
+    left: parseCssValue(style.marginLeft),
+    bottom: parseCssValue(style.marginBottom),
+    right: parseCssValue(style.marginRight)
+  };
 }
 function parseCssValue(str) {
   return ~~str.slice(0, - 2);
@@ -72,9 +73,9 @@ function off(el, evt, fn) {
   }
   return el;
 }
-function fire(el, eName, data) {
-  var event = new CustomEvent(eName, {detail: data});
-  if (this['on' + eName]) this['on' + eName].apply(this, data);
+function fire(el, eventName, data) {
+  var event = new CustomEvent(eventName, {detail: data});
+  if (this['on' + eventName]) this['on' + eventName].apply(this, data);
   if (jQuery) {
     $(el).trigger(event, data);
   } else {
@@ -89,6 +90,7 @@ function round(value, precision) {
   return Math.round(value / precision) * precision;
 }
 function parseAttr(str) {
+  var v;
   if (str.indexOf(',') >= 0) return parseMultiAttr(str);
   if (str === "true" || str === "") {
     return true;
@@ -187,52 +189,8 @@ function detectCSSPrefix() {
   return "";
 }
 var cssPrefix = detectCSSPrefix();
-function observeData(target, data) {
-  var listeners = {},
-      propRe = /\{\{\s([a-zA-Z_$][a-zA-Z_$0-9]*)\s\}\}/;
-  for (var i = 0; i < target.attributes.length; i++) {
-    var attrValue = target.attributes[i].value;
-    var propIdx = undefined;
-    while ((propIdx = attrValue.indexOf("{{")) >= 0) {
-      var closeIdx = attrValue.indexOf("}}");
-      var propName = attrValue.slice(propIdx + 2, closeIdx).trim();
-      target.attributes[i].value = [target.attributes[i].value.slice(0, propIdx), data[propName], target.attributes[i].value.slice(closeIdx, attrValue.length - 1)].join('');
-      if (!listeners[propName]) listeners[propName] = [];
-      listeners[propName].push({
-        target: target.attributes[i],
-        template: attrValue,
-        data: {}
-      });
-    }
-  }
-  var children = target.childNodes,
-      l = children.length;
-  for (var i = 0; i < l; i++) {
-    var child = children(i);
-    if (child.nodeType === 1) {
-      if (propRe.test(child.texContent)) {
-        listeners.push({
-          target: child,
-          template: target.texContent
-        });
-      }
-    }
-  }
-  for (var prop in listeners) {
-    var listener = listeners[prop];
-    document.addEventListener(prop + "Changed", function(e) {
-      var value = e.target.value;
-      for (var i = 0; i < target.attributes.length; i++) {
-        var attrName = target.attributes[i].name.replace();
-        var attrValue = target.attributes[i].value.replace();
-        if (re.test(attrName)) {}
-      }
-    });
-  }
-}
-function findPropertyToInsert(str) {
-  str.indexOf();
-}
+function observeData(target, data) {}
+function findPropertyToInsert(str) {}
 var Component = function Component(el, opts) {
   "use strict";
   var self;
