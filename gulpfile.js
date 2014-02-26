@@ -30,7 +30,7 @@ var path = {
 			'src/util.js',
 			'src/Component.js',
 			'src/Draggable.js',
-			'src/Slidy.js'
+			//'src/Slidy.js'
 	],
 	dest: 'dist',
 	destFile: 'dist/slidy.js'
@@ -54,29 +54,28 @@ function show_diagnostics (units) {
 //very harsh and difficult to maintain
 gulp.task('dev', function () {
 	//ts api plays
-	// tsapi.resolve(path.src, function(resolved) {
-	// 	if(!tsapi.check(resolved)) {
+	tsapi.resolve(path.src.concat('src/refs.ts'), function(resolved) {
+		if(!tsapi.check(resolved)) {
 
-	// 		show_diagnostics(resolved);
+			show_diagnostics(resolved);
 
-	// 	}
-	// 	else {
+		}
+		else {
 
-	// 		tsapi.compile(resolved, function(compiled) {
-	// 			if(!tsapi.check(compiled)) {
+			tsapi.compile(resolved, function(compiled) {
+				if(!tsapi.check(compiled)) {
 
-	// 				show_diagnostics (compiled);
-	// 			}
-	// 			else
-	// 			{
-	// 				tsapi.run(compiled, null, function(context) {
-	// 					console.log("TODO: ok", context)
-	// 					// exports are available on the context...
-	// 				});
-	// 			}
-	// 		});
-	// 	}
-	// });
+					show_diagnostics (compiled);
+				}
+				else
+				{
+					tsapi.run(compiled, null, function(context) {
+						console.log("TODO: ok", context)
+					});
+				}
+			});
+		}
+	});
 
 	gulp.src(path.src)
 		//.pipe(concat('slidy.js'))
@@ -95,14 +94,14 @@ gulp.task('dev', function () {
 			create_source_map: "slidy.map"
 		}))*/
 
-		//traceur
-		.pipe(exec('traceur --out <%= options.dest %> <%= options.src %> --sourcemap',
-			{
-				src: path.src.join(' '),
-				dest: path.destFile
-			}))
+		//traceur (shit with runtime)
+		// .pipe(exec('traceur --out <%= options.dest %> <%= options.src %> --sourcemap',
+		// 	{
+		// 		src: path.src.join(' '),
+		// 		dest: path.destFile
+		// 	}))
 
-		//typescript
+		//typescript (shit with source files extensions)
 		// .pipe(exec('tsc --out <%= options.dest %> <%= options.src %> --sourcemap',
 		// 	{
 		// 		src: path.src.join(' '),

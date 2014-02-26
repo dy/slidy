@@ -63,7 +63,7 @@ class Component extends HTMLElement {
 		//treat element
 		self.classList.add(this.constructor.lname);
 
-		self.fire("create")
+		self.fire("create", null)
 		//console.log(self.getBoundingClientRect())
 		//console.log("HTMLCustomElement constructor")
 		return self;
@@ -131,7 +131,7 @@ class Component extends HTMLElement {
 	*/
 	getAttributes(){
 		var result = {}
-		for (var key in this.defaults){
+		for (var key in this.constructor.defaults){
 			result[key] = this[key];
 		}
 		return result;
@@ -376,7 +376,7 @@ class Component extends HTMLElement {
 	}
 
 	//broadcaster
-	fire(eName, data){
+	fire(eName, data = undefined){
 		fire(this, eName, data);
 	}
 
@@ -391,6 +391,7 @@ class Component extends HTMLElement {
 			new this.constructor(targets[i]);
 		}
 	}
+
 }
 
 /**

@@ -1,4 +1,4 @@
-class Draggable extends Component {
+function Draggable extends Component {
 	constructor(el, opts){
 		var self = super(el, opts);
 

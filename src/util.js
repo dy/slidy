@@ -4,7 +4,7 @@ var pluginName = "slidy", jQuery, $
 //#put `var pluginName = {{ pluginName }}`
 
 //----------------Utils
-function extend(a){
+function extend(a, rest){
 	for (var i = 1, l = arguments.length; i<l; i++){
 		var b = arguments[i];
 		for (var k in b){
@@ -73,20 +73,14 @@ function parseCssValue(str){
 * Simple event methods
 */
 //Binds
-function on(el, evt, delegate, fn){
+//TODO: make delegate as event-property `:delegate(selector)`
+function on(el, evt, fn){
 	if (jQuery){
 		//delegate to jquery
 		jQuery(el).on.apply(el, arguments);
-	} else if (arguments.length === 3){
+	} else {
 		//listen element
 		el.addEventListener(evt, delegate)
-	} else if (arguments.length === 4 && !delegate) {
-		el.addEventListener(evt, fn)
-	} else {
-		//delegate listening
-		el.addEventListener(evt, function(e){
-			//TODO: if e.currentTarget is in the delegatees list - pass event
-		}.bind(el))
 	}
 	return el;
 }
@@ -95,7 +89,7 @@ function off(el, evt, fn){
 	if (jQuery){
 		//delegate to jquery
 		jQuery(el).off.apply(el, arguments);
-	} else if (arguments.length === 3){
+	} else {
 		//listen element
 		el.removeEventListener(evt, fn)
 	}
