@@ -80,7 +80,7 @@ function on(el, evt, fn){
 		jQuery(el).on.apply(el, arguments);
 	} else {
 		//listen element
-		el.addEventListener(evt, delegate)
+		el.addEventListener(evt, fn)
 	}
 	return el;
 }
