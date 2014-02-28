@@ -1,4 +1,4 @@
-/**
+﻿/**
 * Controller on the elements
 * Very similar to native elements
 */
@@ -114,7 +114,7 @@ Component.prototype.initOptions = function(extOpts){
 			if (mutation.type === "attributes"){
 				var attr = mutation.attributeName;
 				//if option attr changed - upd self value
-				if (this.constructor.defaults[attr]){
+				if (this.options[attr]){
 					//TODO: catch attribute removal
 					//TODO: avoid attr self-setup
 					console.log("Attribute externally changed", parseAttr(this.getAttribute(attr)))
@@ -153,8 +153,8 @@ Component.prototype.getAttributes = function(){
 //-----------------States
 Object.defineProperty(Component.prototype, "state",
 	{
-		configurable: true,
-		enumerable: true,
+		configurable: false,
+		enumerable: false,
 		get: function(){
 			return this._state;
 		},
@@ -163,7 +163,7 @@ Object.defineProperty(Component.prototype, "state",
 			var newState = this.states[newStateName] || this.states['default'];
 			if (!newState) throw new Error("Not existing state `" + newStateName + "`");
 
-			//console.log("Change state from `" + this._state + "` to `" + newStateName + "`")
+			console.log("State `" + this._state + "` → `" + newStateName + "`")
 
 			//handle exit
 			if (oldState) {
@@ -195,7 +195,7 @@ Object.defineProperty(Component.prototype, "state",
 				on(
 					stateEvt.src,
 					stateEvt.evt,
-					stateEvt.delegate,
+					//stateEvt.delegate,
 					stateEvt.fn
 				);
 
@@ -213,7 +213,7 @@ Object.defineProperty(Component.prototype, "state",
 * { state: { event: [src, delegate, fn], event: [src, delegate, fn], ... } }
 */
 Component.prototype.initStates = function(states){
-	var protoStates = this.constructor.states;
+	var protoStates = this.states;
 	this.states = {};
 
 	for (var stateName in protoStates){
@@ -273,7 +273,6 @@ Component.prototype.initStates = function(states){
 		}
 		//console.log("state", instanceState)
 		this.states[stateName] = instanceState;
-
 
 	}
 	//console.log("States", this.states)
@@ -477,14 +476,8 @@ Component.register = function(name, initObj){
 	}
 	//console.log(propsDescriptor)
 	Object.defineProperties(Descendant.prototype, propsDescriptor);
-	Descendant.defaults = initObj.options;
-	delete initObj.options;
 
-	//init states
-	Descendant.states = initObj.states;
-	delete initObj.states;
-
-	//init API
+	//init API (options + states as well)
 	extend(Descendant.prototype, initObj);
 
 	//Autoinit DOM elements
