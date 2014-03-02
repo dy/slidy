@@ -131,6 +131,10 @@ function round(value, precision){
 	return Math.round(value / precision) * precision
 }
 
+function preventDefault(e){
+	e.preventDefault()
+}
+
 //returns value from string with correct type
 //TODO: write tests for this fn
 function parseAttr(str){

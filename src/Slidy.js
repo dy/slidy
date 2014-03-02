@@ -1,58 +1,57 @@
 /**
 * Range input on steroids
 */
-class Slidy extends Component{
-	constructor(el, opts){
-		var self = super(el, opts);
+var Slidy = Component.register('Slidy', {
+	create: function(){
 
 		//solve h/v question
-		if (self.vertical) self.horizontal = false;
+		if (this.vertical) this.horizontal = false;
 
 		//detect how many dimensions needed
-		self.dimensions = self.value.length;
-		if (self.dimensions === 2) {
-			self.horizontal = false;
-			self.vertical = false;
+		this.dimensions = this.value.length;
+		if (this.dimensions === 2) {
+			this.horizontal = false;
+			this.vertical = false;
 		}
 
 		//ensure picker with enough dimensions
 		//TODO: take into account restrictwithin paddings
 
 		//ensure picker's position according to the value
-		//self.value = self.value;
+		//this.value = this.value;
 
 		//create enough pickers
-		self.picker = new Draggable({
-			within: self,
-			axis: self.horizontal && !self.vertical ? 'x' : (self.vertical && !self.horizontal ? 'y' : false),
-			ondrag: self.handleDrag
+		this.picker = new Draggable({
+			within: this,
+			axis: this.horizontal && !this.vertical ? 'x' : (this.vertical && !this.horizontal ? 'y' : false),
+			ondrag: this.handleDrag
 			//native: false
 		})
 
 		//calc initial picker limits
 		//TODO: find out picker height/width
-		// var selfPads = paddings(self);
-		// self.picker.limits.left = selfPads.left;
-		// self.picker.limits.top = selfPads.top;
-		// self.picker.limits.right = self.offsetWidth - selfPads.right;
-		// self.picker.limits.bottom = self.offsetHeight - selfPads.bottom;
+		// var thisPads = paddings(this);
+		// this.picker.limits.left = thisPads.left;
+		// this.picker.limits.top = thisPads.top;
+		// this.picker.limits.right = this.offsetWidth - thisPads.right;
+		// this.picker.limits.bottom = this.offsetHeight - thisPads.bottom;
 
 		//set initial position according to the value
-		//self.moveToValue.call(self);
+		//this.moveToValue.call(this);
 
-		self.appendChild(self.picker);
+		this.appendChild(this.picker);
 
 		//bind data to listen
-		if (self.expose) {
+		if (this.expose) {
 			//TODO:
-			//new Expose(self);
+			//new Expose(this);
 		}
 
-		return self;
-	}
+		return this;
+	},
 
 	//picker handler - moves thumb, if needed, fires change event
-	handleDrag(e){
+	handleDrag: function(e){
 		//console.log("drag observed", e.target.dragstate);
 		var thumb = e.currentTarget,
 			d = thumb.dragstate,
@@ -81,11 +80,11 @@ class Slidy extends Component{
 
 		//trigger onchange
 		this.fire("change")
-	}
+	},
 
 	//moves picker to the value
 	//TODO: calc this without picker being added to the DOM
-	moveToValue(){
+	moveToValue: function(){
 		var	//relative coords to move picker to
 			x = 0,
 			y = 0,
@@ -112,65 +111,65 @@ class Slidy extends Component{
 
 		this.picker.x = ratioX * hScope;
 		this.picker.y = ratioY * vScope;
+	},
+
+
+	//-----------settings
+	states: {
+		default: {
+			//click:
+		}
+	},
+
+	options: {
+		//HTML5 things
+		value: 50,
+		min: 0,
+		max: 100,
+		step: 1,
+
+		//whether to expose self data to document’s scope
+		//for declarative bindings
+		expose: true,
+
+		//Consider
+
+		//Orientation
+		//? multidimensinal
+		//dragdealer way
+		vertical: false,
+		horizontal: true,
+		//jquery-way
+		//orientation: 'horizontal',
+
+		//Range
+		//jquery-way
+		range: true, //min, max
+
+		//Multiple values
+		//? multidimensional multivalues?
+		//jqueryui
+		//NO: use just value as array
+		//values: [a,b],
+
+		//snapping function: rigid/loose
+		snap: false,
+		//?or precision?
+
+		//focusable, controllable
+		keyboard: true,
+
+		readonly: false,
+
+		//TODO: consider this
+		thumbClass: 'draggable',
+
+		//Callbacks
+		onchange: null,
+		oncreate: null,
+		onslide: null,
+		onstart: null,
+		onstop: null
+
 	}
-}
-
-Slidy.states = {
-	default: {
-		//click:
-	}
-}
-
-Slidy.defaults = {
-	//HTML5 things
-	value: 50,
-	min: 0,
-	max: 100,
-	step: 1,
-
-	//whether to expose self data to document’s scope
-	//for declarative bindings
-	expose: true,
-
-	//Consider
-
-	//Orientation
-	//? multidimensinal
-	//dragdealer way
-	vertical: false,
-	horizontal: true,
-	//jquery-way
-	//orientation: 'horizontal',
-
-	//Range
-	//jquery-way
-	range: true, //min, max
-
-	//Multiple values
-	//? multidimensional multivalues?
-	//jqueryui
-	//NO: use just value as array
-	//values: [a,b],
-
-	//snapping function: rigid/loose
-	snap: false,
-	//?or precision?
-
-	//focusable, controllable
-	keyboard: true,
-
-	readonly: false,
-
-	//TODO: consider this
-	thumbClass: 'draggable',
-
-	//Callbacks
-	onchange: null,
-	oncreate: null,
-	onslide: null,
-	onstart: null,
-	onstop: null
-
-}
-
-Component.register(Slidy);
+});

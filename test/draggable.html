@@ -143,7 +143,6 @@
 	var $renderCb = document.getElementById('render-helpers')
 
 	$renderCb.addEventListener("change", function(e){
-		console.log(e.target.checked)
 		if (e.target.checked === true){
 			setRendering();
 		} else {
@@ -183,7 +182,7 @@
 
 	//canvas painters
 	function paintRestrictionArea($el){
-		var $within = $el.$within;
+		var $within = $el.within;
 		var pos = offsets($within),
 			pads = paddings($within);
 
@@ -205,14 +204,14 @@
 	}
 
 	function paintPinRect($el){
-		var pin = $el.pin ? $el.pin.slice() : [0,0,$el.offsetWidth, $el.offsetHeight]
+		var pin = $el.pin.slice();
 		pin[2] += 1
 		pin[3] += 1
 
 		var pos = offsets($el);
 
 		ctx.strokeStyle = 'rgba(60,250,60,1)';
-		ctx.lineWidth = 10;
+		ctx.lineWidth = 2;
 
 		ctx.beginPath();
 		ctx.moveTo(pos.left + pin[0], pos.top + pin[1]);

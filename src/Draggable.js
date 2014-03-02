@@ -1,56 +1,10 @@
-var Draggable = Component.register('Draggable', {
-
-	//called on el create
-	create: function(el, opts){
-		var self = this;
-
-		//init position
-		self._x = 0;
-		self._y = 0;
-
-		//handle CSSs
-		self.style[cssPrefix + "user-select"] = "none";
-		self.style[cssPrefix + "user-drag"] = "none";
-
-		//set restricting area
-		if (self.within){
-			if (self.within instanceof Element){
-				self.$within = self.within
-			} else if (typeof self.within === "string"){
-				if (self.within === "parent")
-					self.$within = self.parentNode;
-				else if (self.within === "..")
-					self.$within = self.parentNode;
-				else if (self.within === "...")
-					self.$within = self.parentNode.parentNode;
-				else if (self.within === "root")
-					self.$within = document.body.parentNode;
-				else
-					self.$within = $(self.within)[0];
-			} else {
-				self.$within = null
-			}
-			//TODO: catch shitty elements (non-elements)
-		}
-
-		//init empty limits
-		self.limits = {};
-
-		//go native
-		if (self.native) {
-			self.state = "native";
-		}
-
-		return self;
-	},
-
-	//-------------------API (verbs)
-	startDrag: function(e){
+(function(global){
+	function startDrag($el, e){
 		//define limits
-		this.updateLimits();
+		updateLimits($el);
 
 		//init dragstate
-		this.dragstate = {
+		$el.dragstate = {
 			//viewport offset
 			clientX: e.clientX,
 			clientY: e.clientY,
@@ -60,243 +14,307 @@ var Draggable = Component.register('Draggable', {
 			offsetY: e.offsetY,
 
 			//relative coords
-			x: e.clientX + window.scrollX - this.oX,
-			y: e.clientY + window.scrollY - this.oY
+			x: e.clientX + window.scrollX - $el.oX,
+			y: e.clientY + window.scrollY - $el.oY
 		};
-	},
+	}
 
-	drag: function(e) {
+	function drag($el, e) {
 		//console.log("drag", e)
 
-		var d = this.dragstate;
+		var d = $el.dragstate;
 
 		//var difX = e.clientX - d.clientX;
 		//var difY = e.clientY - d.clientY;
 
 		//capture dragstate
 		d.isCtrl = e.ctrlKey;
-		if (e.ctrlKey && this.sniper) {
-			//d.difX *= this.options.sniperSpeed;
-			//d.difY *= this.options.sniperSpeed;
+		if (e.ctrlKey && $el.sniper) {
+			//d.difX *= $el.options.sniperSpeed;
+			//d.difY *= $el.options.sniperSpeed;
 		}
 		d.clientX = e.clientX;
 		d.clientY = e.clientY;
-		d.x = e.clientX + window.scrollX - this.oX;
-		d.y = e.clientY + window.scrollY - this.oY;
+		d.x = e.clientX + window.scrollX - $el.oX;
+		d.y = e.clientY + window.scrollY - $el.oY;
 
 		//move according to dragstate
-		this.move(d);
-	},
+		move($el, d);
+	}
 
-	stopDrag: function(e){
+	function stopDrag($el, e){
 		//console.log("stopDrag")
-		delete this.dragstate;
-	},
+		delete $el.dragstate;
+	}
 
 	//specific movement function based on dragstate passed
 	//takes into accont mouse coords, self coords, axis limits and displacement within
 	//TODO: name this more intuitively, because move supposes (x, y)
-	move: function(d){
-		if (!this.axis || this.axis === "x"){
-			this.x = round(between(d.x - d.offsetX,
-						this.limits.left,
-						this.limits.right), this.precision);
+	function move($el, d){
+		if (!$el.axis || $el.axis === "x"){
+			$el.x = round(between(d.x - d.offsetX,
+						$el.limits.left,
+						$el.limits.right), $el.precision);
 		}
 
-		if (!this.axis || this.axis === "y" ){
-			this.y = round(between(d.y - d.offsetY,
-						this.limits.top,
-						this.limits.bottom), this.precision);
+		if (!$el.axis || $el.axis === "y" ){
+			$el.y = round(between(d.y - d.offsetY,
+						$el.limits.top,
+						$el.limits.bottom), $el.precision);
 		}
 
-		this.updatePosition();
+		updatePosition($el);
 
 		//TODO: calc pin area movement?
-	},
+	}
 
 	//updates limits state
-	updateLimits: function(){
+	function updateLimits($el){
 		//it is here because not always element is in DOM when constructor inits
-		var limOffsets = offsets(this.$within);
+		var limOffsets = offsets($el.within);
 
-		this.offsets = offsets(this);
-		var selfPads = paddings(this.$within);
+		$el.offsets = offsets($el);
+		var selfPads = paddings($el.within);
 
 		//save relative coord system offsets
-		this.oX = this.offsets.left - this.x;
-		this.oY = this.offsets.top - this.y;
+		$el.oX = $el.offsets.left - $el.x;
+		$el.oY = $el.offsets.top - $el.y;
 
 		//element movement relative borders
 		//no-pinArea version
 		//TODO: make limits accesible before appending to the DOM
-		// this.limits.top = limOffsets.top - this.oY + selfPads.top;
+		// $el.limits.top = limOffsets.top - $el.oY + selfPads.top;
 
-		// this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom;
+		// $el.limits.bottom = limOffsets.bottom - $el.oY - $el.offsets.height - selfPads.bottom;
 
-		// this.limits.left = limOffsets.left - this.oX + selfPads.left;
+		// $el.limits.left = limOffsets.left - $el.oX + selfPads.left;
 
-		// this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right;
+		// $el.limits.right = limOffsets.right - $el.oX - $el.offsets.width - selfPads.right;
 
-		var pin = this.getPinArea();
+		var pin = getPinArea($el);
 
 		//pinArea-including version
-		this.limits.top = limOffsets.top - this.oY + selfPads.top - pin[1];
+		$el.limits.top = limOffsets.top - $el.oY + selfPads.top - pin[1];
 
-		this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom + (this.offsets.height - pin[3]);
+		$el.limits.bottom = limOffsets.bottom - $el.oY - $el.offsets.height - selfPads.bottom + ($el.offsets.height - pin[3]);
 
-		this.limits.left = limOffsets.left - this.oX + selfPads.left - pin[0];
+		$el.limits.left = limOffsets.left - $el.oX + selfPads.left - pin[0];
 
-		this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right + (this.offsets.width - pin[2]);
+		$el.limits.right = limOffsets.right - $el.oX - $el.offsets.width - selfPads.right + ($el.offsets.width - pin[2]);
 
-	},
+	}
 
 	//returns pin area based on pin option
-	getPinArea: function(){
+	function getPinArea($el){
 		var pin;
-		if (this.pin && this.pin.length === 2) {
-			pin = [this.pin[0], this.pin[1], this.pin[0], this.pin[1]]
-		} else if (this.pin && this.pin.length === 4){
-			pin = this.pin
+		if ($el.pin && $el.pin.length === 2) {
+			pin = [$el.pin[0], $el.pin[1], $el.pin[0], $el.pin[1]]
+		} else if ($el.pin && $el.pin.length === 4){
+			pin = $el.pin
 		} else {
-			pin = [0,0, this.offsetWidth, this.offsetHeight]
+			pin = [0,0, $el.offsetWidth, $el.offsetHeight]
 		}
 		return pin;
-	},
+	}
 
-	updatePosition: function(){
-		this.style[cssPrefix + "transform"] = ["translate3d(", this.x, "px,", this.y, "px, 0)"].join("");
-	},
+	function updatePosition($el){
+		$el.style[cssPrefix + "transform"] = ["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join("");
+	}
 
 	//native-drag helper
-	setDropEffect: function(e){
+	function setDropEffect(e){
 		e.preventDefault()
 		e.dataTransfer.dropEffect = "move"
 		return false;
-	},
-
-
-	//default options - classical jquery-like notation
-	options: {
-		treshold: 10,
-
-		autoscroll: false,
-
-		//null is no restrictions
-		within: {
-			default: document.body.parentNode,
-			attribute: {
-				//name - change attr name, like data-pin-area → pinArea
-				//
-			}
-		},
-
-		//what area of draggable should not be outside the restriction area
-		//by default it’s whole draggable rect
-		pin: null,
-
-		group: null,
-
-		ghost: false,
-
-		translate: true,
-
-		//to what extent round position
-		precision: 1,
-
-		sniper: false,
-
-		//jquery-exactly axis fn: false, x, y
-		axis: false,
-
-		//detect whether to use native drag
-		//NOTE: you can’t change drag cursor, though native drag is faster
-		//NOTE: bedides, cursor is glitching if drag started on the edge
-		//TODO: make ghost insteadof moving self
-		native: (function(){
-			var div = document.createElement("div")
-			var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
-			return isNativeSupported
-		})() && false,
-
-		x: 0,
-		y: 0
-	},
-
-	//states: grouped events
-	states: {
-		//non-native drag
-		'default': {
-			before: null,
-			after: null,
-
-			//TODO: created, inserted, removed, attributeChanged
-
-			mousedown: function(e){
-				this.startDrag(e);
-				this.fire('dragstart')
-				this.state = "drag";
-			}
-		},
-		drag: {
-			'document selectstart': 'preventDefault',
-			'document mousemove': function(e){
-				this.drag(e)
-				this.fire('drag')
-			},
-			'document mouseup, document mouseleave': function(e){
-				this.stopDrag(e);
-				this.fire('dragend');
-				this.state = "default"
-			}
-		},
-		scroll: {
-
-		},
-		tech: {
-
-		},
-		out: {
-
-		},
-
-		//native drag
-		native: {
-			before: function(){
-				//hang proper styles
-				this.style[cssPrefix + "user-drag"] = "element";
-				this.style.cursor = "pointer!important";
-
-				//make restricting area allowable to drop
-				on(this.$within, 'dragover', this.setDropEffect)
-			},
-			after: function(){
-				this.style[cssPrefix + "user-drag"] = "none";
-				off(this.$within, 'dragover', this.setDropEffect)
-			},
-
-			dragstart:  function(e){console.log(123)
-				this.startDrag(e);
-				e.dataTransfer.effectAllowed = 'all';
-
-				//hook drag image stub (native image is invisible)
-				this.$dragImageStub = document.createElement('div');
-				this.parentNode.insertBefore(this.$dragImageStub, this);
-				e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
-			},
-			dragend:  function(e){
-				this.stopDrag(e);
-
-				//remove drag image stub
-				this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
-				delete this.$dragImageStub;
-			},
-			drag:  function(e){
-				//ignore final native drag event
-				if (e.x === 0 && e.y === 0) return;
-				this.drag(e);
-				//this.ondrag && this.ondrag.call(this);
-			},
-			dragover: 'setDropEffect',
-		}
 	}
-});
+
+
+
+
+
+	global['Draggable'] = Component.register('Draggable', {
+		//default options - classical jquery-like notation
+		options: {
+			treshold: 10,
+
+			autoscroll: false,
+
+			//null is no restrictions
+			within: {
+				default: document.body.parentNode,
+				set: function(within){
+					if (within instanceof Element){
+						return within
+					} else if (typeof within === "string"){
+						if (within === "parent")
+							return this.parentNode;
+						else if (within === "..")
+							return this.parentNode;
+						else if (within === "...")
+							return this.parentNode.parentNode;
+						else if (within === "root")
+							return document.body.parentNode;
+						else
+							return $(within)[0];
+					} else {
+						return null
+					}
+				}
+			},
+
+			//what area of draggable should not be outside the restriction area
+			//by default it’s whole draggable rect
+			pin: {
+				default: null,
+				get: function(value){
+					if (!value) return [0,0,this.offsetWidth, this.offsetHeight];
+					else return value;
+				},
+				set: function(value){
+					if (value.length === 2){
+						return [value[0], value[1], value[0], value[1]];
+					} else if (value.length === 4){
+						return value
+					} else {
+						throw new Error("Unknown pin area format")
+					}
+				}
+			},
+
+			group: null,
+
+			ghost: false,
+
+			translate: true,
+
+			//to what extent round position
+			precision: 1,
+
+			sniper: false,
+
+			//jquery-exactly axis fn: false, x, y
+			axis: false,
+
+			//detect whether to use native drag
+			//NOTE: you can’t change drag cursor, though native drag is faster
+			//NOTE: bedides, cursor is glitching if drag started on the edge
+			//TODO: make ghost insteadof moving self
+			native: (function(){
+				var div = document.createElement("div")
+				var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
+				return isNativeSupported
+			})(),
+
+			//initial position
+			x: 0,
+			y: 0
+		},
+
+		//-------------------Lifecycle
+		create: function(){
+
+			//handle CSSs
+			this.style[cssPrefix + "user-select"] = "none";
+			this.style[cssPrefix + "user-drag"] = "none";
+
+			//init empty limits
+			this.limits = {};
+
+			//go native
+			if (this.native) {
+				this.state = "native";
+			}
+
+			return this;
+		},
+
+		insert: function(){
+
+		},
+
+		remove: function(){
+
+		},
+
+
+		//-------------------API (verbs)
+		//states: grouped events
+		states: {
+			//non-native drag
+			'default': {
+				before: null,
+				after: null,
+
+				//TODO: created, inserted, removed, attributeChanged
+
+				mousedown: function(e){
+					startDrag(this, e);
+					this.fire('dragstart')
+					this.state = "drag";
+				}
+			},
+			drag: {
+				'document selectstart': preventDefault,
+				'document mousemove': function(e){
+					this.drag(e)
+					this.fire('drag')
+				},
+				'document mouseup, document mouseleave': function(e){
+					stopDrag(this, e);
+					this.fire('dragend');
+					this.state = "default"
+				}
+			},
+			scroll: {
+
+			},
+			tech: {
+
+			},
+			out: {
+
+			},
+
+			//native drag
+			native: {
+				before: function(){
+					//hang proper styles
+					this.style[cssPrefix + "user-drag"] = "element";
+					this.style.cursor = "pointer!important";
+
+					//make restricting area allowable to drop
+					on(this.within, 'dragover', setDropEffect)
+				},
+				after: function(){
+					this.style[cssPrefix + "user-drag"] = "none";
+					off(this.within, 'dragover', setDropEffect)
+				},
+
+				dragstart:  function(e){
+					startDrag(this, e);
+					e.dataTransfer.effectAllowed = 'all';
+
+					//hook drag image stub (native image is invisible)
+					this.$dragImageStub = document.createElement('div');
+					this.parentNode.insertBefore(this.$dragImageStub, this);
+					e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
+				},
+				dragend:  function(e){
+					stopDrag(this, e);
+
+					//remove drag image stub
+					this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
+					delete this.$dragImageStub;
+				},
+				drag:  function(e){
+					//ignore final native drag event
+					if (e.x === 0 && e.y === 0) return;
+					drag(this, e);
+					//this.ondrag && this.ondrag.call(this);
+				},
+				dragover: 'setDropEffect'
+			}
+		}
+	});
+
+})(window)
