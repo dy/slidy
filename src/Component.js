@@ -10,62 +10,7 @@
 	//TODO: private methods (_+...) should be hjidden on instances
 	//TODO: handle disabled property at start
 	//TODO: add lifecycle events
-
-	//just wrapper over real constrctor
-	function Component(el, opts){
-		//ensure element created
-		//ensure DOM extensibility
-		//read options (el/passed)
-		//hook up events
-		//bind API methods
-		//init instance states
-
-		//Substitute `this` with DOM element
-		//TODO: get rid of that hack when native `extends HTMLElement` will work
-		var self;
-		if (el instanceof HTMLElement) {
-			self = el;
-		} else {
-			if (el){
-				opts = el;
-			}
-			self = document.createElement('div');
-		}
-
-		//TODO: resolve prototype chain, if there’re more Component-ancestored elements
-		//Intrude into el's prototype chain
-		//save original element’s prototype, like HTMLDivElement or whatever
-		var originalProto = self.__proto__;
-		//`this` loses here
-		self.__proto__ = this.constructor.prototype;
-		self.constructor = this.constructor;
-
-		//init API
-		initAPI(self)
-
-		//init options
-		initOptions(self, opts);
-
-		//keep track of instances;
-		self._id = self.constructor.instances.length;
-		self.constructor.instances.push(self);
-
-		//init state
-		initStates(self);
-		self.state = 'default';
-
-		//treat element
-		self.classList.add(this.constructor.lname);
-
-		//callbacks
-		self.fire("create", null)
-		//console.log(self.getBoundingClientRect())
-		//console.log("HTMLCustomElement constructor")
-
-		self.create && self.create.apply(self, arguments)
-		return self;
-	};
-
+	//TODO: passing `ondrag` to option causes native unpreventable events fire
 
 	/**
 	* Simply binds methods to instance
@@ -193,6 +138,129 @@
 		//console.log("States", this.states)
 	}
 
+	/**
+	* Attributes listeners
+	*/
+	function observeAttrChange($el){
+		$el._observer.observe($el, $el._observeConfig)
+	}
+
+	function ignoreAttrChange($el){
+		$el._observer.disconnect();
+	}
+
+	//correct attribute setter - reflects value changed with throttling
+	function updateAttr($el, key, value){
+		//TODO: throttle attr reflection
+		if (!$el._reflectAttrTimeout){
+			//TODO: move $el somewere to the beginning
+			var prefix = Component.safeAttributes ? "data-" : "";
+
+			//dashify case
+			key = toDashedCase(key);
+
+			//hide falsy attributes
+			if (value === false){
+				$el.removeAttribute(key);
+			} else {
+				//avoid self attr-observer catch $el attr changing
+				$el._preventOneAttrChange = true;
+				$el.setAttribute(prefix + key, stringify(value));
+			}
+
+			$el._reflectAttrTimeout = setTimeout(function(){
+				clearTimeout($el._reflectAttrTimeout);
+				$el._reflectAttrTimeout = null;
+
+			}, 500);
+		}
+	}
+	//TODO: these guys cause stack overflow because try to set themselves
+	/*set disabled(val){
+		if (val) {
+			this.setAttribute("disabled", true);
+			this.disabled = true;
+		} else {
+			this.removeAttribute("disabled")
+			this.disabled = false;
+		}
+	}
+	get disabled(){
+		return this.disabled;
+	}*/
+
+	//autoinit found instances in DOM
+	function autoinit(component){
+		var lname =  component.lname,
+			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+
+		var targets = document.querySelectorAll(selector);
+		for (var i = 0; i < targets.length; i++){
+			new component(targets[i]);
+		}
+	}
+
+
+
+
+	/**
+	* Component constructor
+	*/
+	//just wrapper over real constrctor
+	function Component(el, opts){
+		//ensure element created
+		//ensure DOM extensibility
+		//read options (el/passed)
+		//hook up events
+		//bind API methods
+		//init instance states
+
+		//Substitute `this` with DOM element
+		//TODO: get rid of that hack when native `extends HTMLElement` will work
+		var self;
+		if (el instanceof HTMLElement) {
+			self = el;
+		} else {
+			if (el){
+				opts = el;
+			}
+			self = document.createElement('div');
+		}
+
+		//TODO: resolve prototype chain, if there’re more Component-ancestored elements
+		//Intrude into el's prototype chain
+		//save original element’s prototype, like HTMLDivElement or whatever
+		var originalProto = self.__proto__;
+		//`this` loses here
+		self.__proto__ = this.constructor.prototype;
+		self.constructor = this.constructor;
+
+		//init API
+		initAPI(self)
+
+		//init options
+		initOptions(self, opts);
+
+		//keep track of instances;
+		self._id = self.constructor.instances.length;
+		self.constructor.instances.push(self);
+
+		//init state
+		initStates(self);
+		self.state = 'default';
+
+		//treat element
+		self.classList.add(this.constructor.lname);
+
+		//callbacks
+		self.fire("create", null)
+		//console.log(self.getBoundingClientRect())
+		//console.log("HTMLCustomElement constructor")
+
+		self.create && self.create.apply(self, arguments)
+		return self;
+	};
+
 	Component.lname = "component"
 
 	//Prototype is inherital for children elements
@@ -304,58 +372,6 @@
 		this.fire('enable');
 	}
 
-	/**
-	* Attributes listeners
-	*/
-	observeAttrChange = function($el){
-		$el._observer.observe($el, $el._observeConfig)
-	}
-
-	ignoreAttrChange = function($el){
-		$el._observer.disconnect();
-	}
-
-	//correct attribute setter - reflects value changed with throttling
-	updateAttr = function($el, key, value){
-		//TODO: throttle attr reflection
-		if (!$el._reflectAttrTimeout){
-			//TODO: move $el somewere to the beginning
-			var prefix = Component.safeAttributes ? "data-" : "";
-
-			//dashify case
-			key = toDashedCase(key);
-
-			//hide falsy attributes
-			if (value === false){
-				$el.removeAttribute(key);
-			} else {
-				//avoid self attr-observer catch $el attr changing
-				$el._preventOneAttrChange = true;
-				$el.setAttribute(prefix + key, stringify(value));
-			}
-
-			$el._reflectAttrTimeout = setTimeout(function(){
-				clearTimeout($el._reflectAttrTimeout);
-				$el._reflectAttrTimeout = null;
-
-			}, 500);
-		}
-	}
-	//TODO: these guys cause stack overflow because try to set themselves
-	/*set disabled(val){
-		if (val) {
-			this.setAttribute("disabled", true);
-			this.disabled = true;
-		} else {
-			this.removeAttribute("disabled")
-			this.disabled = false;
-		}
-	}
-	get disabled(){
-		return this.disabled;
-	}*/
-
-
 	//----------------------Events
 	//as jquery one does
 	Component.prototype.one = function(evt, fn){
@@ -375,22 +391,9 @@
 		this.removeEventListener(evt, fn);
 		return this;
 	}
-
 	//broadcaster
 	Component.prototype.fire = function(eName, data){
 		fire(this, eName, data);
-	}
-
-
-	//autoinit found instances in DOM
-	function autoinit(component){
-		var lname =  component.lname,
-			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
-
-		var targets = document.querySelectorAll(selector);
-		for (var i = 0; i < targets.length; i++){
-			new component(targets[i]);
-		}
 	}
 
 

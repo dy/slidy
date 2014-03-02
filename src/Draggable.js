@@ -309,6 +309,10 @@
 				drag:  function(e){
 					//ignore final native drag event
 					if (e.x === 0 && e.y === 0) return;
+
+					//ignore zero-movement
+					if (this.dragstate.clientX === e.clientX && this.dragstate.clientY === e.clientY) return e.stopImmediatePropagation();
+
 					drag(this, e);
 					//this.ondrag && this.ondrag.call(this);
 				},
