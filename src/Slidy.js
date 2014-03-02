@@ -34,78 +34,69 @@
 	}
 
 
-	//moves picker to the value
-	//TODO: calc this without picker being added to the DOM
-	function moveToValue(){
+	//moves picker accordind to the value
+	function updatePosition($el){
 		var	//relative coords to move picker to
 			x = 0,
 			y = 0,
-			picker = this.picker,
+			picker = $el.picker,
 			lim = picker.limits,
 			hScope = (lim.right - lim.left),
 			vScope = (lim.bottom - lim.top)
 
-		if (this.dimensions == 2){
-			var hRange = this.max[0] - this.min[0],
-				vRange = this.max[1] - this.min[1],
-				ratioX = (this.value[0] - this.min[0]) / hRange,
-				ratioY = (this.value[1] - this.min[1]) / vRange
-
-		} else if (this.vertical){
-			var vRange = this.max - this.min,
-				ratioY = (this.value - this.min) / vRange;
-
+		if ($el.dimensions == 2){
+			var hRange = $el.max[0] - $el.min[0],
+				vRange = $el.max[1] - $el.min[1],
+				ratioX = ($el.value[0] - $el.min[0]) / hRange,
+				ratioY = ($el.value[1] - $el.min[1]) / vRange
+			console.log("2dim")
+		} else if ($el.vertical){
+			var vRange = $el.max - $el.min,
+				ratioY = ($el.value - $el.min) / vRange;
+			console.log("y")
 		} else {
-			var hRange = this.max - this.min,
-				ratioX = (this.value - this.min) / hRange;
-
+			var hRange = $el.max - $el.min,
+				ratioX = ($el.value - $el.min) / hRange;
+			console.log("x")
 		}
 
-		this.picker.x = ratioX * hScope;
-		this.picker.y = ratioY * vScope;
+		if (ratioX) $el.picker.x = ratioX * hScope;
+		if (ratioY) $el.picker.y = ratioY * vScope;
+		console.log($el.picker.limits, $el.picker.x, $el.picker.y)
 	}
 
 
 	global['slidy'] = Component.register('Slidy', {
 		create: function(){
-
-			//solve h/v question
-			if (this.vertical) this.horizontal = false;
-
-			//detect how many dimensions needed
-			this.dimensions = this.value.length;
-			if (this.dimensions === 2) {
-				this.horizontal = false;
-				this.vertical = false;
-			}
-
+			//console.log("slidy create")
 			//ensure picker with enough dimensions
 			//TODO: take into account restrictwithin paddings
 
 			//ensure picker's position according to the value
 			//this.value = this.value;
+			this.dimensions = this.value.length;
 
 			//create enough pickers
 			var self = this;
 			this.picker = new Draggable({
 				within: this,
-				axis: this.horizontal && !this.vertical ? 'x' : (this.vertical && !this.horizontal ? 'y' : false)
-				//native: false
+				axis: this.dimensions === 2 ? null : (this.vertical ? 'y' : 'x'),
+				pin: [0,0],
+
+				insert: function(e){
+					updatePosition(self, self.value);
+				},
+				//TODO: make it be last listener in listeners stack to be preventable within own component states
+				drag: function(e){
+					handleDrag(self, e)
+				},
+				native: false
 			})
-			this.picker.on('drag', function(e){ handleDrag(self, e) })
 
 			//calc initial picker limits
-			//TODO: find out picker height/width
-			// var thisPads = paddings(this);
-			// this.picker.limits.left = thisPads.left;
-			// this.picker.limits.top = thisPads.top;
-			// this.picker.limits.right = this.offsetWidth - thisPads.right;
-			// this.picker.limits.bottom = this.offsetHeight - thisPads.bottom;
-
-			//set initial position according to the value
-			//this.moveToValue.call(this);
-
 			this.appendChild(this.picker);
+			//TODO: replace that with DOM observer
+			this.picker.fire("insert")
 
 			//bind data to listen
 			if (this.expose) {
@@ -114,6 +105,11 @@
 			}
 
 			return this;
+		},
+
+		insert: function(){
+			console.log("insert slidy")
+			//updatePosition(this)
 		},
 
 		states: {
@@ -138,8 +134,40 @@
 			//Orientation
 			//? multidimensinal
 			//dragdealer way
-			vertical: false,
-			horizontal: true,
+			vertical: {
+				default: false,
+				set: function(vert){
+					if (this.dimensions === 2){
+						if (vert === false) this.dimensions = 1;
+					} else if (this.horizontal === true){
+						if (vert === true) this.horizontal = false;
+					}
+					return vert;
+				}
+			},
+			horizontal: {
+				default: true,
+				//mutual with vertical & dimensions
+				set: function(horiz){
+					if (this.dimensions === 2){
+						if (horiz === false) this.dimensions = 1;
+					} else if (this.vertical === true){
+						if (horiz === true) this.vertical = false;
+					}
+					return horiz;
+				}
+			},
+			dimensions: {
+				default: 1,
+				//mutual with vertical/horizontal
+				set: function(dim){
+					if (dim === 2){
+						this.vertical = true;
+						this.horizontal = true;
+					}
+					return dim
+				}
+			},
 			//jquery-way
 			//orientation: 'horizontal',
 
@@ -162,15 +190,7 @@
 
 			readonly: false,
 
-			//TODO: consider this
-			thumbClass: 'draggable',
-
-			//Callbacks
-			onchange: null,
-			oncreate: null,
-			onslide: null,
-			onstart: null,
-			onstop: null
+			repeat: false
 
 		}
 	});

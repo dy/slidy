@@ -109,7 +109,7 @@ function fire(el, eventName, data){
 	var event = new CustomEvent(eventName, { detail: data })
 
 	//dispatch options
-	if (this['on' + eventName]) this['on' + eventName].apply(this, data);
+	if (el[eventName]) el[eventName].apply(el, data);
 
 	//dispatch to DOM
 	if (jQuery){
@@ -166,8 +166,19 @@ function parseMultiAttr(str){
 	return result
 }
 
+//attributes to ignore
+var defaultAttrs = {
+	'class': true,
+	'id': true,
+	'style': true,
+	'name': true,
+	'type': true,
+	'src': true,
+	'link': true,
+	'href': true,
+	'disabled': true
+};
 //returns data object representing attributes read
-var defaultAttrs = {'class': true, 'id': true, 'style': true};
 function parseAttributes(el){
 	var attrs = el.attributes,
 		data = {};

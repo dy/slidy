@@ -104,14 +104,14 @@
 	<pre>
 &lt;div draggable&gt;
 &lt;/div&gt;</pre>
-	<div draggable>Just drag</div>
+	<div draggable disabled>Just drag</div>
 </article>
 
 <article id="within-parent">
 	<pre>
 &lt;div draggable within=&quot;parent&quot;&gt;
 &lt;/div&gt;</pre>
-	<div draggable within="parent">Drag within parent</div>
+	<div draggable disabled within="parent">Drag within parent</div>
 </article>
 
 <article id="pin-area">
@@ -120,12 +120,12 @@
 	within=&quot;parent&quot;
 	pin=&quot;[50,50,100,100]&quot;&gt;
 &lt;/div&gt;</pre>
-	<div draggable within="parent" pin="[50,50,100,100]">Pin area</div>
+	<div draggable disabled within="parent" pin="[50,50,100,100]">Pin area</div>
 </article>
 
 <article id="point-picker">
 	<pre></pre>
-	<div class="picker" draggable within=".." pin="40,40">Point picker</div>
+	<div class="picker" draggable disabled within=".." pin="40,40">Point picker</div>
 </article>
 
 <script src='../src/util.js'></script>
@@ -133,6 +133,9 @@
 <script src='../src/Draggable.js'></script>
 
 <script>
+var x = new Draggable();
+document.body.appendChild(x)
+
 	//------------Canvas visualizers
 	var canvas = document.querySelector("canvas");
 	var ctx = canvas.getContext("2d");

@@ -52,15 +52,15 @@
 	//TODO: name this more intuitively, because move supposes (x, y)
 	function move($el, d){
 		if (!$el.axis || $el.axis === "x"){
-			$el.x = round(between(d.x - d.offsetX,
+			$el.x = between(d.x - d.offsetX,
 						$el.limits.left,
-						$el.limits.right), $el.precision);
+						$el.limits.right);
 		}
 
 		if (!$el.axis || $el.axis === "y" ){
-			$el.y = round(between(d.y - d.offsetY,
+			$el.y = between(d.y - d.offsetY,
 						$el.limits.top,
-						$el.limits.bottom), $el.precision);
+						$el.limits.bottom);
 		}
 
 		updatePosition($el);
@@ -117,6 +117,7 @@
 		return pin;
 	}
 
+	//set displacement according to the x & y
 	function updatePosition($el){
 		$el.style[cssPrefix + "transform"] = ["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join("");
 	}
@@ -206,12 +207,31 @@
 			})(),
 
 			//initial position
-			x: 0,
-			y: 0
+			x: {
+				default: 0,
+				set: function(value){
+					value = round(value, this.precision)
+					return value;
+				},
+				change: function(){
+					updatePosition(this)
+				}
+			},
+			y: {
+				default: 0,
+				set: function(value){
+					value = round(value, this.precision)
+					return value;
+				},
+				change: function(){
+					updatePosition(this)
+				}
+			}
 		},
 
 		//-------------------Lifecycle
 		create: function(){
+			//console.log("draggable create")
 
 			//handle CSSs
 			this.style[cssPrefix + "user-select"] = "none";
@@ -229,7 +249,9 @@
 		},
 
 		insert: function(){
-
+			//TODO: catch this
+			console.log("insert picker")
+			updateLimits(this);
 		},
 
 		remove: function(){
@@ -256,7 +278,7 @@
 			drag: {
 				'document selectstart': preventDefault,
 				'document mousemove': function(e){
-					this.drag(e)
+					drag(this,e)
 					this.fire('drag')
 				},
 				'document mouseup, document mouseleave': function(e){

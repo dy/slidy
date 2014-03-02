@@ -29,24 +29,40 @@
 	*/
 	//TODO: hook up attributeChanged listeners, to reflect values of attributes
 	//TODO: keep callbacks
+	//TODO: handle lifecycle events
 	function initOptions($el, extOpts){
 		//read dataset attributes
 		extOpts = extend(parseAttributes($el), extOpts);
 
 		//for every instance option create attribute reflection (just set value)
 		for (var key in extOpts){
-			$el[key] = extOpts[key];
+			//ignore autolaunch property
+			if (key === $el.constructor.lname) continue;
+
+			//catch option
+			if (key in $el.options) {
+				//option
+				//console.log('attr', key, extOpts[key])
+				$el[key] = extOpts[key];
+			} else {
+				//listener
+				var cb = extOpts[key];
+				var evt = (key.slice(0,2) === "on") ? key.slice(0, 2) : key;
+				//console.log('listener', key, extOpts[key])
+				$el.on(evt, cb.bind(this));
+			}
 		}
 
 		//register observers for data-attributes
 		$el._observer = new MutationObserver(function(mutations) {
 			if ($el._preventOneAttrChange){
 				$el._preventOneAttrChange = true;
-				return //console.log("attr change prevented");
+				return //console.log("attr change prevented", mutations);
 			}
 
 			for (var i = 0; i < mutations.length; i++){
 				var mutation = mutations[i];
+				//console.log(mutation, mutation.type)
 				if (mutation.type === "attributes"){
 					var attr = mutation.attributeName;
 					//if option attr changed - upd self value
@@ -60,7 +76,10 @@
 			}
 		}.bind($el));
 		$el._observeConfig = {
-			attributes: true
+			attributes: true,
+			childList: true,
+			subtree: true,
+			characterData: true
 		}
 		observeAttrChange($el);
 	}
@@ -150,9 +169,10 @@
 	}
 
 	//correct attribute setter - reflects value changed with throttling
-	function updateAttr($el, key, value){
+	var _reflectAttrTimeout;
+	function updateAttr($el, key, value, isFinal){
 		//TODO: throttle attr reflection
-		if (!$el._reflectAttrTimeout){
+		if (!_reflectAttrTimeout){
 			//TODO: move $el somewere to the beginning
 			var prefix = Component.safeAttributes ? "data-" : "";
 
@@ -168,10 +188,10 @@
 				$el.setAttribute(prefix + key, stringify(value));
 			}
 
-			$el._reflectAttrTimeout = setTimeout(function(){
-				clearTimeout($el._reflectAttrTimeout);
-				$el._reflectAttrTimeout = null;
-
+			_reflectAttrTimeout = !isFinal && setTimeout(function(){
+				clearTimeout(_reflectAttrTimeout);
+				_reflectAttrTimeout = null;
+				updateAttr($el, key, value, true);
 			}, 500);
 		}
 	}
@@ -194,13 +214,42 @@
 		var lname =  component.lname,
 			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
 
-		var targets = document.querySelectorAll(selector);
+		var targets = $(selector);
 		for (var i = 0; i < targets.length; i++){
-			new component(targets[i]);
+			var c = new component(targets[i]);
 		}
 	}
 
 
+	//component initialiser
+	function init($el, opts){
+		//init API
+		initAPI($el)
+
+		//keep track of instances;
+		$el._id = $el.constructor.instances.length;
+		$el.constructor.instances.push($el);
+
+		//init state
+		initStates($el);
+
+		//treat element
+		$el.classList.add($el.constructor.lname);
+
+		//init options
+		initOptions($el, opts);
+
+		//callbacks
+		$el.fire("create")
+		//console.log($el.getBoundingClientRect())
+		//console.log("HTMLCustomElement constructor")
+
+		//if state hasn’t been set in create - reset it
+		if (!$el.state) $el.state = 'default';
+
+		//if element in DOM already
+		if ($el.parentNode instanceof HTMLElement) $el.fire('insert');
+	}
 
 
 	/**
@@ -235,29 +284,12 @@
 		self.__proto__ = this.constructor.prototype;
 		self.constructor = this.constructor;
 
-		//init API
-		initAPI(self)
+		//ignore disabled
+		if (self.getAttribute('disabled') !== null) return self;
 
-		//init options
-		initOptions(self, opts);
+		//init options, states, API, etc
+		init(self, opts);
 
-		//keep track of instances;
-		self._id = self.constructor.instances.length;
-		self.constructor.instances.push(self);
-
-		//init state
-		initStates(self);
-		self.state = 'default';
-
-		//treat element
-		self.classList.add(this.constructor.lname);
-
-		//callbacks
-		self.fire("create", null)
-		//console.log(self.getBoundingClientRect())
-		//console.log("HTMLCustomElement constructor")
-
-		self.create && self.create.apply(self, arguments)
 		return self;
 	};
 
@@ -384,11 +416,11 @@
 	//TODO: handle `:delegate` listener event, as x-tags does
 	//listener wrapper, just makes chaining
 	Component.prototype.on = function(evt, fn){
-		this.addEventListener(evt, fn);
+		on(this, evt, fn);
 		return this;
 	}
 	Component.prototype.off = function(evt, fn){
-		this.removeEventListener(evt, fn);
+		off(this, evt, fn);
 		return this;
 	}
 	//broadcaster
@@ -442,7 +474,7 @@
 				}
 			})(key, propDesc && propDesc.get)
 
-			var set = (function(key, set){
+			var set = (function(key, set, change){
 				return function(value){
 					//ignore same value
 					if (this['_' + key ] === value) return;
@@ -450,10 +482,11 @@
 					value = set && set.call(this,value) || value;
 					this['_' + key ] = value;
 					updateAttr(this, key, value);
+					change && change.call(this, value)
 					this.fire("optionChanged")
 					this.fire(key + "Changed")
 				}
-			})(key, (propDesc && propDesc.set))
+			})(key, (propDesc && propDesc.set), (propDesc && propDesc.change))
 
 			//TODO: parse attribute settings
 
