@@ -49,7 +49,7 @@
 				var cb = extOpts[key];
 				var evt = (key.slice(0,2) === "on") ? key.slice(0, 2) : key;
 				//console.log('listener', key, extOpts[key])
-				$el.on(evt, cb.bind(this));
+				$el.on(evt, cb.bind($el));
 			}
 		}
 
@@ -82,6 +82,15 @@
 			characterData: true
 		}
 		observeAttrChange($el);
+	}
+
+	/**
+	* Binds every callback passed to instance
+	*/
+	function initCallbacks($el){
+		for (var evt in $el.callbacks){
+			$el.on(evt, $el.callbacks[evt]);
+		}
 	}
 
 
@@ -223,12 +232,15 @@
 
 	//component initialiser
 	function init($el, opts){
-		//init API
-		initAPI($el)
+		//TODO: init API
+		//initAPI($el)
 
 		//keep track of instances;
 		$el._id = $el.constructor.instances.length;
 		$el.constructor.instances.push($el);
+
+		//bind lifecycle and other callbacks, if any
+		initCallbacks($el);
 
 		//init state
 		initStates($el);
@@ -502,12 +514,31 @@
 		//console.log(propsDescriptor)
 		Object.defineProperties(Descendant.prototype, propsDescriptor);
 
-		//init API (options + states as well)
+
+		//Save for instance init
+		Descendant.prototype.options = initObj.options;
+		//TODO: init most part of states here, not in instance
+		Descendant.prototype.states = initObj.states;
+
+		//Add callbacks
+		Descendant.prototype.callbacks = initObj.callbacks || {};
+		Descendant.prototype.callbacks.create = initObj.create || initObj.ready;
+		Descendant.prototype.callbacks.insert = initObj.insert;
+		Descendant.prototype.callbacks.remove = initObj.remove;
+
+		//remove technical stuff
+		delete initObj.options;
+		delete initObj.states;
+		delete initObj.create;
+		delete initObj.ready;
+		delete initObj.remove;
+		delete initObj.insert;
+
+		//init API - all other methods
 		extend(Descendant.prototype, initObj);
 
 		//Autoinit DOM elements
 		autoinit(Descendant);
-
 
 		return Descendant;
 	}

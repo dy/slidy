@@ -74,6 +74,7 @@ function parseCssValue(str){
 */
 //Binds
 //TODO: make delegate as event-property `:delegate(selector)`
+//TODO: pass array of functions to bind
 function on(el, evt, fn){
 	if (jQuery){
 		//delegate to jquery
@@ -109,7 +110,8 @@ function fire(el, eventName, data){
 	var event = new CustomEvent(eventName, { detail: data })
 
 	//dispatch options
-	if (el[eventName]) el[eventName].apply(el, data);
+	//@deprecated - option listeners are now simple listeners
+	//if (el[eventName]) el[eventName].apply(el, data);
 
 	//dispatch to DOM
 	if (jQuery){

@@ -49,24 +49,24 @@
 				vRange = $el.max[1] - $el.min[1],
 				ratioX = ($el.value[0] - $el.min[0]) / hRange,
 				ratioY = ($el.value[1] - $el.min[1]) / vRange
-			console.log("2dim")
+			//console.log("2dim")
 		} else if ($el.vertical){
 			var vRange = $el.max - $el.min,
 				ratioY = ($el.value - $el.min) / vRange;
-			console.log("y")
+			//console.log("y")
 		} else {
 			var hRange = $el.max - $el.min,
 				ratioX = ($el.value - $el.min) / hRange;
-			console.log("x")
+			//console.log("x")
 		}
 
-		if (ratioX) $el.picker.x = ratioX * hScope;
-		if (ratioY) $el.picker.y = ratioY * vScope;
-		console.log($el.picker.limits, $el.picker.x, $el.picker.y)
+		if (ratioX) $el.picker.x = ratioX * hScope - $el.picker.pin[0];
+		if (ratioY) $el.picker.y = ratioY * vScope - $el.picker.pin[1];
+		//console.log($el.picker.limits, $el.picker.x, $el.picker.y)
 	}
 
 
-	global['slidy'] = Component.register('Slidy', {
+	global['Slidy'] = Component.register('Slidy', {
 		create: function(){
 			//console.log("slidy create")
 			//ensure picker with enough dimensions
@@ -84,6 +84,9 @@
 				pin: [0,0],
 
 				insert: function(e){
+					//correct pin (centrize based on width of picker)
+					this.pin = [this.offsets.width / 2, this.offsets.height / 2];
+					//set initial position
 					updatePosition(self, self.value);
 				},
 				//TODO: make it be last listener in listeners stack to be preventable within own component states
