@@ -166,7 +166,7 @@
 		//starts drag from event passed
 		startDrag: function(e){
 			//define limits
-			this.this.updateLimi;
+			this.updateLimits();
 
 			//if event is outside the self area
 			//move self to that area
@@ -190,6 +190,7 @@
 				if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
 				if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
 				//pretend as if drag has happened
+				this.fire('dragstart')
 				this.fire('drag')
 			} else {
 				offsetX = e.offsetX;
@@ -270,8 +271,8 @@
 				},
 
 				mousedown: function(e){
-					this.startDrag(this, e);
 					this.fire('dragstart')
+					this.startDrag(this, e);
 				}
 			},
 

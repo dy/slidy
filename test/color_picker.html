@@ -68,6 +68,19 @@
 	$hl.on('change', update)
 	$alpha.on('change', update)
 
+	//clear pickers
+	for (var i = 0; i < $pickers.length; i++){
+		var $p = $pickers[i];
+		$p.on("dragstart", function(){
+			this.style.background = "";
+		}).on("dragend", function(){
+			var c = ['hsl(', $hl.value[0], ",",
+							$saturation.value, "%,",
+							$hl.value[1], "%)"].join("");
+			this.style.background = c;
+		})
+	}
+
 	//update
 	function update(){
 		var c = ['hsla(', $hl.value[0], ",",
@@ -79,7 +92,6 @@
 		$body.style.background = c;
 		updateHL();
 		updateSat();
-		updatePickers();
 	}
 
 	update();
@@ -125,18 +137,6 @@
 		].join("")
 
 		$saturation.style.background = sat
-	}
-
-
-	function updatePickers(){
-		var c = ['hsl(', $hl.value[0], ",",
-							$saturation.value, "%,",
-							$hl.value[1], "%)"].join("");
-		for (var i = 0; i < $pickers.length; i++){
-			var $p = $pickers[i];
-			$p.style.background = c;
-			//console.log(c)
-		}
 	}
 
 </script>
