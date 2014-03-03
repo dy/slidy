@@ -523,6 +523,7 @@
 		Descendant.prototype.states = initObj.states;
 
 		//Add callbacks
+		//TODO: move lifecycle to states
 		Descendant.prototype.callbacks = initObj.callbacks || {};
 		Descendant.prototype.callbacks.create = initObj.create || initObj.ready;
 		Descendant.prototype.callbacks.insert = initObj.insert;

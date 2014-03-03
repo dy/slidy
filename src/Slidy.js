@@ -110,14 +110,11 @@
 			return this;
 		},
 
-		insert: function(){
-			console.log("insert slidy")
-			//updatePosition(this)
-		},
-
 		states: {
 			default: {
-				//click:
+				mousedown: function(e){
+					this.picker.startDrag(e);
+				}
 			}
 		},
 

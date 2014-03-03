@@ -1,24 +1,4 @@
 (function(global){
-	function startDrag($el, e){
-		//define limits
-		updateLimits($el);
-
-		//init dragstate
-		$el.dragstate = {
-			//viewport offset
-			clientX: e.clientX,
-			clientY: e.clientY,
-
-			//offset within self
-			offsetX: e.offsetX,
-			offsetY: e.offsetY,
-
-			//relative coords
-			x: e.clientX + window.scrollX - $el.oX,
-			y: e.clientY + window.scrollY - $el.oY
-		};
-	}
-
 	function drag($el, e) {
 		//console.log("drag", e)
 
@@ -39,7 +19,7 @@
 		d.y = e.clientY + window.scrollY - $el.oY;
 
 		//move according to dragstate
-		move($el, d);
+		moveToDragstate($el, d);
 	}
 
 	function stopDrag($el, e){
@@ -50,7 +30,7 @@
 	//specific movement function based on dragstate passed
 	//takes into accont mouse coords, self coords, axis limits and displacement within
 	//TODO: name this more intuitively, because move supposes (x, y)
-	function move($el, d){
+	function moveToDragstate($el, d){
 		if (!$el.axis || $el.axis === "x"){
 			$el.x = between(d.x - d.offsetX,
 						$el.limits.left,
@@ -68,7 +48,7 @@
 		//TODO: calc pin area movement?
 	}
 
-	//updates limits state
+	//updates movement restrictions
 	function updateLimits($el){
 		//it is here because not always element is in DOM when constructor inits
 		var limOffsets = offsets($el.within);
@@ -91,7 +71,7 @@
 
 		// $el.limits.right = limOffsets.right - $el.oX - $el.offsets.width - selfPads.right;
 
-		var pin = getPinArea($el);
+		var pin = $el.pin;
 
 		//pinArea-including version
 		$el.limits.top = limOffsets.top - $el.oY + selfPads.top - pin[1];
@@ -102,19 +82,6 @@
 
 		$el.limits.right = limOffsets.right - $el.oX - $el.offsets.width - selfPads.right + ($el.offsets.width - pin[2]);
 
-	}
-
-	//returns pin area based on pin option
-	function getPinArea($el){
-		var pin;
-		if ($el.pin && $el.pin.length === 2) {
-			pin = [$el.pin[0], $el.pin[1], $el.pin[0], $el.pin[1]]
-		} else if ($el.pin && $el.pin.length === 4){
-			pin = $el.pin
-		} else {
-			pin = [0,0, $el.offsetWidth, $el.offsetHeight]
-		}
-		return pin;
 	}
 
 	//set displacement according to the x & y
@@ -260,21 +227,76 @@
 
 
 		//-------------------API (verbs)
+		//starts drag from event passed
+		startDrag: function(e){
+			//define limits
+			updateLimits(this);
+
+			//if event is outside the self area
+			//move self to that area
+			//make offsets half of width
+			var offsetX, offsetY,
+				//event absolute coords
+				eAbsoluteX = e.clientX + window.scrollX,
+				eAbsoluteY = e.clientY + window.scrollY;
+
+			//if drag started outside self area - move self to that place
+			if (
+				eAbsoluteX > this.offsets.right ||
+				eAbsoluteX < this.offsets.left ||
+				eAbsoluteY < this.offsets.top ||
+				eAbsoluteY > this.offsets.bottom
+			) {
+				//pretend as if offsets within self are ideal
+				offsetX = this.offsets.width * .5;
+				offsetY = this.offsets.height * .5;
+				//move to that new place
+				if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
+				if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
+				//pretend as if drag has happened
+				this.fire('drag')
+			} else {
+				offsetX = e.offsetX;
+				offsetY = e.offsetY;
+			}
+
+			//init dragstate
+			this.dragstate = {
+				//previous mouse vp coords
+				clientX: e.clientX,
+				clientY: e.clientY,
+
+				//offset within self
+				offsetX: offsetX,
+				offsetY: offsetY,
+
+				//relative coords
+				x: eAbsoluteX - this.oX,
+				y: eAbsoluteY - this.oY
+			};
+
+			if (this.state !== "native") this.state = "drag";
+		},
+
 		//states: grouped events
 		states: {
+			disabled: {
+				//TODO
+			},
+
 			//non-native drag
-			'default': {
+			default: {
 				before: null,
 				after: null,
 
 				//TODO: created, inserted, removed, attributeChanged
 
 				mousedown: function(e){
-					startDrag(this, e);
+					this.startDrag(this, e);
 					this.fire('dragstart')
-					this.state = "drag";
 				}
 			},
+
 			drag: {
 				before: function(){
 					this.within.style.cursor = "none"
@@ -319,7 +341,7 @@
 				},
 
 				dragstart:  function(e){
-					startDrag(this, e);
+					this.startDrag(e);
 					e.dataTransfer.effectAllowed = 'all';
 
 					//hook drag image stub (native image is invisible)
