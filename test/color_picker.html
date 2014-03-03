@@ -69,17 +69,18 @@
 	$alpha.on('change', update)
 
 	//clear pickers
-	for (var i = 0; i < $pickers.length; i++){
-		var $p = $pickers[i];
-		$p.on("dragstart", function(){
-			this.style.background = "";
-		}).on("dragend", function(){
-			var c = ['hsl(', $hl.value[0], ",",
-							$saturation.value, "%,",
-							$hl.value[1], "%)"].join("");
-			this.style.background = c;
-		})
-	}
+	//TODO: this is wrong
+	// for (var i = 0; i < $pickers.length; i++){
+	// 	var $p = $pickers[i];
+	// 	$p.on("dragstart", function(){
+	// 		this.style.background = "";
+	// 	}).on("dragend", function(){
+	// 		var c = ['hsl(', $hl.value[0], ",",
+	// 						$saturation.value, "%,",
+	// 						$hl.value[1], "%)"].join("");
+	// 		this.style.background = c;
+	// 	})
+	// }
 
 	//update
 	function update(){

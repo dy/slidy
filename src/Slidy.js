@@ -57,10 +57,12 @@
 		} else if ($el.vertical){
 			var vRange = $el.max - $el.min,
 				ratioY = (- $el.value + $el.max) / vRange;
+				ratioX = .5;
 			//console.log("y", ratioY)
 		} else {
 			var hRange = $el.max - $el.min,
 				ratioX = ($el.value - $el.min) / hRange;
+				ratioY = .5;
 			//console.log("x")
 		}
 
@@ -172,7 +174,9 @@
 					if (this.dimensions === 2){
 						if (vert === false) this.dimensions = 1;
 					} else if (this.horizontal === true){
-						if (vert === true) this.horizontal = false;
+						if (vert === true) {
+							this.horizontal = false;
+						}
 					}
 					return vert;
 				}
@@ -184,7 +188,9 @@
 					if (this.dimensions === 2){
 						if (horiz === false) this.dimensions = 1;
 					} else if (this.vertical === true){
-						if (horiz === true) this.vertical = false;
+						if (horiz === true) {
+							this.vertical = false;
+						}
 					}
 					return horiz;
 				}
