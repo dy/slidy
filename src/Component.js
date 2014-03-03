@@ -242,22 +242,21 @@
 		//bind lifecycle and other callbacks, if any
 		initCallbacks($el);
 
-		//init state
-		initStates($el);
-
 		//treat element
 		$el.classList.add($el.constructor.lname);
 
 		//init options
 		initOptions($el, opts);
 
+		//init state
+		initStates($el);
+		//if state hasn’t been set in create - reset it
+		if (!$el.state) $el.state = 'default';
+
 		//callbacks
 		$el.fire("create")
 		//console.log($el.getBoundingClientRect())
 		//console.log("HTMLCustomElement constructor")
-
-		//if state hasn’t been set in create - reset it
-		if (!$el.state) $el.state = 'default';
 
 		//if element in DOM already
 		if ($el.parentNode instanceof HTMLElement) $el.fire('insert');
@@ -297,7 +296,10 @@
 		self.constructor = this.constructor;
 
 		//ignore disabled
-		if (self.getAttribute('disabled') !== null) return self;
+		if (self.getAttribute('disabled') !== null) {
+			console.log('Component `' + self.constructor.lname + "` is disabled")
+			return self;
+		}
 
 		//init options, states, API, etc
 		init(self, opts);

@@ -250,7 +250,7 @@
 
 		insert: function(){
 			//TODO: catch this
-			console.log("insert picker")
+			console.log("draggable insert")
 			updateLimits(this);
 		},
 
@@ -276,6 +276,12 @@
 				}
 			},
 			drag: {
+				before: function(){
+					this.within.style.cursor = "none"
+				},
+				after: function(){
+					this.within.style.cursor = ""
+				},
 				'document selectstart': preventDefault,
 				'document mousemove': function(e){
 					drag(this,e)
