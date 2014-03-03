@@ -115,6 +115,10 @@
 			ready: {
 				mousedown: function(e){
 					this.picker.startDrag(e);
+				},
+				'window resize': function(){
+					this.picker.updateLimits();
+					updatePosition(this, this.value)
 				}
 			}
 		},

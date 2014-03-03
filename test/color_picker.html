@@ -10,11 +10,11 @@
 
 	[slidy]{
 		background: rgba(120,130,140,.5);
-		min-width: 40px;
-		min-height: 40px;
-		margin-top: 10px;
+		min-width: 7vw;
+		min-height: 10vh;
+		margin-top: 1vh;
 		/*padding: 5px;*/
-		margin-right: 50px;
+		margin-right: 8vw;
 	}
 	[slidy] > .draggable{
 		width: 20px;
@@ -25,11 +25,11 @@
 		position: relative;
 	}
 	#hue-lightness{
-		height: 200px;
+		height: 40vh;
 	}
 	#alpha{
 		float: right;
-		height: 250px;
+		height: 51vh;
 		margin-top: 0;
 		margin-right: 0;
 	}
@@ -61,10 +61,12 @@
 
 	var $body = document.body;
 
+	var $pickers = $('.draggable')
+
 	//events
-	$saturation.addEventListener('change', update)
-	$hl.addEventListener('change', update)
-	$alpha.addEventListener('change', update)
+	$saturation.on('change', update)
+	$hl.on('change', update)
+	$alpha.on('change', update)
 
 	//update
 	function update(){
@@ -75,7 +77,66 @@
 		//console.log(c)
 		//console.log(this.value)
 		$body.style.background = c;
+		updateHL();
+		updateSat();
+		updatePickers();
 	}
 
 	update();
+
+
+	//redraw HL
+	function updateHL(){
+		var sat = $saturation.value + "%";
+
+		//lightness
+		var lightness = [
+			"linear-gradient(to bottom, ",
+			"hsla(0,0%,100%,1) 0%, ",
+			"hsla(0,0%,100%,0) 50%, ",
+			"hsla(0,0%,0%,0) 50%, ",
+			"hsla(0,0%,0%,1) 100%)"
+		].join("")
+
+		//hue
+		var hue = ["linear-gradient(to right,",
+		"hsl(0," + sat + ",50%) 0%,",
+		"hsl(60," + sat + ",50%) 16.666%,",
+		"hsl(120," + sat + ",50%) 33.333%,",
+		"hsl(180," + sat + ",50%) 50%,",
+		"hsl(240," + sat + ",50%) 66.666%,",
+		"hsl(300," + sat + ",50%) 83.333%,",
+		"hsl(360," + sat + ",50%) 100%)"].join("");
+
+		//change 2nd layer opacity
+
+		$hl.style.background = lightness + ", " + hue;
+	}
+
+	//redraw saturation bg
+	function updateSat(){
+		var h = $hl.value[0];
+		var l = $hl.value[1] + "%";
+
+		var sat = [
+			"linear-gradient(to right, ",
+			"hsl(" + h + ", 0%, " + l + ") 0%, ",
+			"hsl(" + h + ", 100%, " + l + ") 100%)"
+		].join("")
+
+		$saturation.style.background = sat
+	}
+
+
+	function updatePickers(){
+		var c = ['hsl(', $hl.value[0], ",",
+							$saturation.value, "%,",
+							$hl.value[1], "%)"].join("");
+		for (var i = 0; i < $pickers.length; i++){
+			var $p = $pickers[i];
+			$p.style.background = c;
+			//console.log(c)
+		}
+	}
+
 </script>

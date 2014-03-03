@@ -48,42 +48,6 @@
 		//TODO: calc pin area movement?
 	}
 
-	//updates movement restrictions
-	function updateLimits($el){
-		//it is here because not always element is in DOM when constructor inits
-		var limOffsets = offsets($el.within);
-
-		$el.offsets = offsets($el);
-		var selfPads = paddings($el.within);
-
-		//save relative coord system offsets
-		$el.oX = $el.offsets.left - $el.x;
-		$el.oY = $el.offsets.top - $el.y;
-
-		//element movement relative borders
-		//no-pinArea version
-		//TODO: make limits accesible before appending to the DOM
-		// $el.limits.top = limOffsets.top - $el.oY + selfPads.top;
-
-		// $el.limits.bottom = limOffsets.bottom - $el.oY - $el.offsets.height - selfPads.bottom;
-
-		// $el.limits.left = limOffsets.left - $el.oX + selfPads.left;
-
-		// $el.limits.right = limOffsets.right - $el.oX - $el.offsets.width - selfPads.right;
-
-		var pin = $el.pin;
-
-		//pinArea-including version
-		$el.limits.top = limOffsets.top - $el.oY + selfPads.top - pin[1];
-
-		$el.limits.bottom = limOffsets.bottom - $el.oY - $el.offsets.height - selfPads.bottom + ($el.offsets.height - pin[3]);
-
-		$el.limits.left = limOffsets.left - $el.oX + selfPads.left - pin[0];
-
-		$el.limits.right = limOffsets.right - $el.oX - $el.offsets.width - selfPads.right + ($el.offsets.width - pin[2]);
-
-	}
-
 	//set displacement according to the x & y
 	function updatePosition($el){
 		$el.style[cssPrefix + "transform"] = ["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join("");
@@ -202,7 +166,7 @@
 		//starts drag from event passed
 		startDrag: function(e){
 			//define limits
-			updateLimits(this);
+			this.this.updateLimi;
 
 			//if event is outside the self area
 			//move self to that area
@@ -250,6 +214,32 @@
 			if (this.state !== "native") this.state = "drag";
 		},
 
+
+		//updates movement restrictions
+		updateLimits: function(){
+			//it is here because not always element is in DOM when constructor inits
+			var limOffsets = offsets(this.within);
+
+			this.offsets = offsets(this);
+			var selfPads = paddings(this.within);
+
+			//save relative coord system offsets
+			this.oX = this.offsets.left - this.x;
+			this.oY = this.offsets.top - this.y;
+
+			var pin = this.pin;
+
+			//pinArea-including version
+			this.limits.top = limOffsets.top - this.oY + selfPads.top - pin[1];
+
+			this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom + (this.offsets.height - pin[3]);
+
+			this.limits.left = limOffsets.left - this.oX + selfPads.left - pin[0];
+
+			this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right + (this.offsets.width - pin[2]);
+
+		},
+
 		//states: grouped events
 		states: {
 			init: {
@@ -273,7 +263,7 @@
 			ready: {
 				before: function(){
 					//console.log("draggable before ready")
-					updateLimits(this);
+					this.updateLimits();
 
 					//go native
 					if (this.native) return "native";
