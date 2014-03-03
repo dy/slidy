@@ -4,14 +4,21 @@ var pluginName = "slidy", jQuery, $
 //#put `var pluginName = {{ pluginName }}`
 
 //----------------Utils
-function extend(a, rest){
+function extend(a){
+	var isDeep = arguments[arguments.length - 1] === true;
 	for (var i = 1, l = arguments.length; i<l; i++){
 		var b = arguments[i];
 		for (var k in b){
-			a[k] = b[k];
+			if (isDeep && a.hasOwnProperty(k) && isObject(a[k]) && isObject(b[k])) {
+				extend(a[k], b[k], true)
+			} else a[k] = b[k];
 		}
 	}
 	return a;
+}
+
+function isObject(a){
+	return (a && a !== null && typeof a === 'object')
 }
 
 //Simple DOMs
@@ -128,6 +135,9 @@ function between(a, min, max){
 
 //math precision round
 function round(value, precision){
+	precision = parseInt(precision);
+	if(isNaN(precision)) throw new Error("Bad precision passed")
+
 	if (precision === 0) return value;
 
 	return Math.round(value / precision) * precision

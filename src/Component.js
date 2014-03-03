@@ -11,171 +11,9 @@
 	//TODO: handle disabled property at start
 	//TODO: add lifecycle events
 	//TODO: passing `ondrag` to option causes native unpreventable events fire
+	//TODO: bind event-attributes like so: ondrag="{{ handleDrag }}"
+	//TODO: enteredView, leftView callbacks
 
-	/**
-	* Simply binds methods to instance
-	*/
-	function initAPI($el){
-		for (var meth in $el){
-			if (!Object.hasOwnProperty(meth)) continue;
-			if (typeof $el[meth] === "function")
-				$el[meth] = $el[meth].bind($el);
-		}
-	}
-
-
-	/**
-	* Instance options initializer
-	*/
-	//TODO: hook up attributeChanged listeners, to reflect values of attributes
-	//TODO: keep callbacks
-	//TODO: handle lifecycle events
-	function initOptions($el, extOpts){
-		//read dataset attributes
-		extOpts = extend(parseAttributes($el), extOpts);
-
-		//for every instance option create attribute reflection (just set value)
-		for (var key in extOpts){
-			//ignore autolaunch property
-			if (key === $el.constructor.lname) continue;
-
-			//catch option
-			if (key in $el.options) {
-				//option
-				//console.log('attr', key, extOpts[key])
-				$el[key] = extOpts[key];
-			} else {
-				//listener
-				var cb = extOpts[key];
-				var evt = (key.slice(0,2) === "on") ? key.slice(0, 2) : key;
-				//console.log('listener', key, extOpts[key])
-				$el.on(evt, cb.bind($el));
-			}
-		}
-
-		//register observers for data-attributes
-		$el._observer = new MutationObserver(function(mutations) {
-			if ($el._preventOneAttrChange){
-				$el._preventOneAttrChange = true;
-				return //console.log("attr change prevented", mutations);
-			}
-
-			for (var i = 0; i < mutations.length; i++){
-				var mutation = mutations[i];
-				//console.log(mutation, mutation.type)
-				if (mutation.type === "attributes"){
-					var attr = mutation.attributeName;
-					//if option attr changed - upd self value
-					if ($el.options[attr]){
-						//TODO: catch attribute removal
-						//TODO: avoid attr self-setup
-						console.log("Attribute externally changed", parseAttr($el.getAttribute(attr)))
-						$el["_" + attr] = parseAttr($el.getAttribute(attr));
-					}
-				}
-			}
-		}.bind($el));
-		$el._observeConfig = {
-			attributes: true,
-			childList: true,
-			subtree: true,
-			characterData: true
-		}
-		observeAttrChange($el);
-	}
-
-	/**
-	* Binds every callback passed to instance
-	*/
-	function initCallbacks($el){
-		for (var evt in $el.callbacks){
-			$el.on(evt, $el.callbacks[evt]);
-		}
-	}
-
-
-	/**
-	* Instance states initilizer
-	* Binds functions, recognizes objects to call
-	* States parsed to object like
-	* { state: { event: [src, delegate, fn], event: [src, delegate, fn], ... } }
-	*/
-	function initStates($el, states){
-		var protoStates = $el.states;
-		$el.states = {};
-
-		for (var stateName in protoStates){
-			//create instance state based on proto states
-			var protoState = protoStates[stateName],
-				instanceState = {};
-
-			//recognize events strings: src, evt, delegate
-			//possible evt id:
-			//`on('[document|window]? super:event .something > .which > is > #listening', fn)`
-			//console.log("bind state", stateName , protoState)
-			for (var evtId in protoState){
-				//bind fn
-				var fnRef = protoState[evtId], fn = undefined;
-				if (typeof fnRef === "function"){
-					fn = fnRef.bind($el);
-				} else if (typeof fnRef === "string" && $el[fnRef]){
-					//NOTE: no need to bind `fn` here because it’s already been bound in `initAPI`
-					fn = $el[fnRef]//.bind($el);
-					//console.log(evt, fnRef, fn)
-				}
-
-				var evtDirectives = evtId.split(',');
-				for (var i = 0; i < evtDirectives.length; i++){
-					var evtDirective = evtDirectives[i].trim();
-					var evt = undefined, src = undefined, delegate = undefined;
-
-					var evtParams = evtDirective.split(" ");
-
-					//detect source
-					if (evtParams[0] === 'document'){
-						src = document;
-						evtParams = evtParams.slice(1);
-					} else if (evtParams[0] === 'window'){
-						src = window
-						evtParams = evtParams.slice(1);
-					} else {
-						src = $el;
-					}
-
-					//detect evt name
-					evt = evtParams[0];
-
-					//is there delegatees?
-					delegate = evtParams.slice(1).join('');
-
-					//collect class instance state
-					if (fn && evt){
-						instanceState[evt] = {
-							evt: evt,
-							src: src,
-							delegate: delegate,
-							fn: fn
-						};
-					}
-				}
-			}
-			//console.log("state", instanceState)
-			$el.states[stateName] = instanceState;
-
-		}
-		//console.log("States", this.states)
-	}
-
-	/**
-	* Attributes listeners
-	*/
-	function observeAttrChange($el){
-		$el._observer.observe($el, $el._observeConfig)
-	}
-
-	function ignoreAttrChange($el){
-		$el._observer.disconnect();
-	}
 
 	//correct attribute setter - reflects value changed with throttling
 	var _reflectAttrTimeout;
@@ -204,63 +42,7 @@
 			}, 500);
 		}
 	}
-	//TODO: these guys cause stack overflow because try to set themselves
-	/*set disabled(val){
-		if (val) {
-			this.setAttribute("disabled", true);
-			this.disabled = true;
-		} else {
-			this.removeAttribute("disabled")
-			this.disabled = false;
-		}
-	}
-	get disabled(){
-		return this.disabled;
-	}*/
 
-	//autoinit found instances in DOM
-	function autoinit(component){
-		var lname =  component.lname,
-			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
-
-		var targets = $(selector);
-		for (var i = 0; i < targets.length; i++){
-			var c = new component(targets[i]);
-		}
-	}
-
-
-	//component initialiser
-	function init($el, opts){
-		//TODO: init API
-		//initAPI($el)
-
-		//keep track of instances;
-		$el._id = $el.constructor.instances.length;
-		$el.constructor.instances.push($el);
-
-		//bind lifecycle and other callbacks, if any
-		initCallbacks($el);
-
-		//treat element
-		$el.classList.add($el.constructor.lname);
-
-		//init options
-		initOptions($el, opts);
-
-		//init state
-		initStates($el);
-		//if state hasn’t been set in create - reset it
-		if (!$el.state) $el.state = 'default';
-
-		//callbacks
-		$el.fire("create")
-		//console.log($el.getBoundingClientRect())
-		//console.log("HTMLCustomElement constructor")
-
-		//if element in DOM already
-		if ($el.parentNode instanceof HTMLElement) $el.fire('insert');
-	}
 
 
 	/**
@@ -296,16 +78,214 @@
 		self.constructor = this.constructor;
 
 		//ignore disabled
-		if (self.getAttribute('disabled') !== null) {
-			console.log('Component `' + self.constructor.lname + "` is disabled")
-			return self;
-		}
+		// if (self.getAttribute('disabled') !== null) {
+		// 	console.log('Component `' + self.constructor.lname + "` is disabled")
+		// 	return self;
+		// }
 
 		//init options, states, API, etc
 		init(self, opts);
 
 		return self;
 	};
+
+
+	//component initialiser
+	function init($el, opts){
+		//init state
+		initStates($el);
+
+		$el.state = "init";
+		//TODO: init API
+		//initAPI($el)
+
+		//keep track of instances;
+		$el._id = $el.constructor.instances.length;
+		$el.constructor.instances.push($el);
+
+		//treat element
+		$el.classList.add($el.constructor.lname);
+
+		//init options
+		initOptions($el, opts);
+
+
+		//if element in DOM already - go ready
+		//TODO: observe DOM, look for insertion, removal events
+		if ($el.parentNode instanceof HTMLElement) {
+			$el.state = "ready"
+		} else {
+			//if element is not in DOM - go detached
+			$el.state = "detached"
+		}
+	}
+
+
+	/**
+	* Simply binds methods to instance
+	*/
+	function initAPI($el){
+		for (var meth in $el){
+			if (!$el.hasOwnProperty(meth)) continue;
+			if (typeof $el[meth] === "function")
+				$el[meth] = $el[meth].bind($el);
+			console.log("bind API", meth)
+		}
+	}
+
+
+	/**
+	* Instance options initializer
+	*/
+	//TODO: hook up attributeChanged listeners, to reflect values of attributes
+	//TODO: keep callbacks
+	//TODO: handle lifecycle events
+	function initOptions($el, extOpts){
+		//read dataset attributes
+		extOpts = extend(parseAttributes($el), extOpts);
+
+		//for every instance option create attribute reflection (just set value)
+		for (var key in extOpts){
+			//ignore autolaunch property
+			if (key === $el.constructor.lname) continue;
+
+			//catch option
+			if (key in $el.options) {
+				//option
+				//console.log('attr', key, extOpts[key])
+				$el[key] = extOpts[key];
+			} else {
+				//listener
+				var cb = extOpts[key];
+				var evt = (key.slice(0,2) === "on") ? key.slice(0, 2) : key;
+				//console.log('listener', key)
+				$el.on(evt, cb.bind($el));
+			}
+		}
+
+		//register observers for data-attributes
+		$el._observer = new MutationObserver(function(mutations) {
+			if ($el._preventOneAttrChange){
+				$el._preventOneAttrChange = true;
+				return //console.log("attr change prevented", mutations);
+			}
+
+			for (var i = 0; i < mutations.length; i++){
+				var mutation = mutations[i];
+				//console.log(mutation, mutation.type)
+				if (mutation.type === "attributes"){
+					var attr = mutation.attributeName;
+					//if option attr changed - upd self value
+					if ($el.options[attr]){
+						//TODO: catch attribute removal
+						//TODO: avoid attr self-setup
+						console.log("Attribute externally changed", parseAttr($el.getAttribute(attr)))
+						$el["_" + attr] = parseAttr($el.getAttribute(attr));
+					}
+				}
+			}
+		}.bind($el));
+		$el._observeConfig = {
+			attributes: true,
+			childList: true,
+			subtree: true,
+			characterData: true
+		}
+		$el._observer.observe($el, $el._observeConfig)
+	}
+
+
+	/**
+	* Instance states initilizer
+	* Binds functions, recognizes objects to call
+	* Instance states are parsed to object of type:
+	* { state: { event: {src: $el, evt: 'ename', fn: fn], ... } }
+	*/
+	//TODO: deal with extStates passed (via instance options)
+	function initStates($el, extStates){
+		var protoStates = $el.states;
+		$el.states = {};
+
+		for (var stateName in protoStates){
+			//create instance state based on proto states
+			var protoState = protoStates[stateName],
+				instanceState = {};
+
+			//recognize events strings: src, evt, delegate
+			//possible evt id:
+			//`[document|window|selector]? event[:delegate(.something > .which > is > #listening)]`
+			//console.log("bind state", stateName , protoState)
+			for (var evtId in protoState){
+				//bind fn
+				var fnRef = protoState[evtId], fn = undefined;
+				if (typeof fnRef === "function"){
+					fn = fnRef.bind($el);
+				} else if (typeof fnRef === "string" && $el[fnRef]){
+					//NOTE: no need to bind `fn` here because it’s already been bound in `initAPI`
+					fn = $el[fnRef]//.bind($el);
+					//console.log(evt, fnRef, fn)
+				}
+
+				//unravel events
+				var evtDirectives = evtId.split(',');
+				for (var i = 0; i < evtDirectives.length; i++){
+					var evtDirective = evtDirectives[i].trim();
+					var evt, src, delegate;
+
+					var evtParams = evtDirective.split(" ");
+
+					//detect source
+					if (evtParams[0] === 'document'){
+						src = document;
+						evtParams = evtParams.slice(1);
+					} else if (evtParams[0] === 'window'){
+						src = window;
+						evtParams = evtParams.slice(1);
+					} else if (evtParams[0] === 'parent' || evtParams[0] === '..'){
+						//parent
+						src = $el.parentNode;
+						evtParams = evtParams.slice(1);
+					} else if (evtParams[0][0] === '.' || evtParams[0][0] === '#' || evtParams[0][0] === '['){
+						//custom one-word selector
+						src = $(evtParams[0]);
+						evtParams = evtParams.slice(1);
+					} else {
+						src = $el;
+					}
+
+					//is there delegatees?
+					delegateParts = evtParams[0].split(":");
+					if (delegateParts > 1) {
+						//yes
+						var delegateStr = delegateParts[1];
+						//TODO
+						delegate = delegateStr;
+					} else {
+						//no
+						delegate = null;
+					}
+
+					//detect evt name
+					evt = delegateParts[0];
+
+					//collect class instance state
+					if (fn && evt){
+						instanceState[evt] = {
+							evt: evt,
+							src: src,
+							delegate: delegate,
+							fn: fn
+						};
+					}
+				}
+			}
+			//console.log("state", instanceState)
+			$el.states[stateName] = instanceState;
+
+		}
+		//console.log("States", $el.states)
+	}
+
 
 	Component.lname = "component"
 
@@ -346,8 +326,9 @@
 	}
 
 	/**
-	* States
+	* State switcher
 	*/
+	//TODO: prevent state being swithed within transitional `before` and `after`, switch only by result of before/after
 	Object.defineProperty(Component.prototype, "state",
 		{
 			configurable: false,
@@ -356,18 +337,25 @@
 				return this._state;
 			},
 			set: function(newStateName){
+				if (!this.states[newStateName]){
+					throw new Error("No state `" + newStateName + "` exist");
+				}
+
 				var oldState = this.states[this._state];
-				var newState = this.states[newStateName] || this.states['default'];
+				var newState = this.states[newStateName];
+
+				//if state’s been rethought in process
+				var reState;
+
 				if (!newState) throw new Error("Not existing state `" + newStateName + "`");
 
-				//console.log("State `" + this._state + "` → `" + newStateName + "`")
+				//console.log(this.constructor.lname + " `" + this._state + "` → `" + newStateName + "`")
 
 				//handle exit
 				if (oldState) {
 					//trigger exit
-					oldState.after && oldState.after.fn.call(this);
-					this.fire("after" + this._state[0].toUpperCase() + this._state.slice(1) + "State");
-					this.fire("afterState");
+					reState = (oldState.after && oldState.after.fn.call(this));
+					this.fire("after" + this._state[0].toUpperCase() + this._state.slice(1));
 
 					//unbind old state events
 					for(var evt in oldState){
@@ -380,11 +368,22 @@
 					}
 				}
 
-				//handle enter
+				//if new state returned
+				if (reState && reState !== newStateName && this.states[reState]){
+					newStateName = reState;
+					newState = this.states[reState];
+				}
+				reState = (newState.before && newState.before.fn.call(this));
+
+				//if after returned other state, handle entrance
+				while (reState && reState !== newStateName && this.states[reState]) {
+					newStateName = reState;
+					newState = this.states[reState];
+					reState = (newState.before && newState.before.fn.call(this));
+				}
+
 				//trigger enter
-				newState.before && newState.before.fn.call(this);
-				this.fire("before" + newStateName[0].toUpperCase() + newStateName.slice(1) + "State");
-				this.fire("beforeState");
+				this.fire(newStateName);
 
 				//bind new state events
 				for(var evt in newState){
@@ -408,13 +407,12 @@
 	* Common component behaviour - enabled/disabled
 	*/
 	Component.prototype.disable = function(){
-		this.disabled = true;
-		ignoreAttrChange($el);
+		this._lastState = this.state;
+		this.state = "disabled";
 		this.fire('disable');
 	}
 	Component.prototype.enable = function(){
-		this.disabled = false;
-		observeAttrChange(this);
+		this.state = this._lastState;
 		this.fire('enable');
 	}
 
@@ -441,8 +439,45 @@
 	Component.prototype.fire = function(eName, data){
 		fire(this, eName, data);
 	}
+	//dom node extenders
+	Component.prototype.remove = function(){
+		this.parentNode.removeChild(this);
+		this.state = "detached";
+		return this;
+	}
 
 
+	/**
+	* Canonical states
+	* Reflects lifecycle of any component
+	*/
+	Component.prototype.states = {
+		//element isn’t ready
+		init: {
+		},
+
+		//element’s been created but hasn’t attached to the DOM yet
+		detached: {
+		},
+
+		//element is in DOM
+		ready: {
+		},
+
+		//element is in DOM, but events and attributes are off
+		disabled: {
+			before: function(){
+				this._observer.disconnect();
+			},
+			after: function(){
+				this._observer.observe(this, this._observeConfig);
+			}
+		}
+	}
+
+
+	//Keyed by name set of components
+	Component.registry = {};
 
 	//Main component registar, xtags-like
 	Component.register = function(name, initObj){
@@ -464,8 +499,7 @@
 		Descendant.name = name;
 		Descendant.lname = name.toLowerCase();
 
-		//TODO:init options
-		//init default options as prototype getters/setters with trigger
+		//init options as prototype getters/setters
 		var propsDescriptor = {};
 		for (var key in initObj.options){
 			//TODO: correct the way options created
@@ -474,17 +508,17 @@
 			//assign defaults - prototypical properties
 			//NOTE: default values may be of other type than required, like number insteadof array
 			//console.log(propDesc)
-			Descendant.prototype["_" + key] = (propDesc && propDesc !== null && typeof propDesc === 'object' && ('default' in propDesc)) ? propDesc.default : propDesc;
+			//TODO: if default is function - defer it’s calling
+			Descendant.prototype["_" + key] = (isObject(propDesc) && ('default' in propDesc)) ? propDesc.default : propDesc;
 			//console.log('to', Descendant.prototype["_" + key])
 
 			//ignore already defined setter/getter
 			if (Object.getOwnPropertyDescriptor(Descendant.prototype, key)) continue;
 
 			//make instance getter/setters
-			//TODO: ensure setters/getters are right (parse special options)
 			var get = (function(key, get){
 				return function(){
-					return get && get.call(this, this['_' + key]) || this['_' + key];
+					return get ? get.call(this, this['_' + key]) : this['_' + key];
 				}
 			})(key, propDesc && propDesc.get)
 
@@ -492,17 +526,18 @@
 				return function(value){
 					//ignore same value
 					if (this['_' + key ] === value) return;
-
-					value = set && set.call(this,value) || value;
+					//console.log("set", key, value)
+					value = set ? set.call(this,value) : value;
+					//console.log("→", value)
 					this['_' + key ] = value;
 					updateAttr(this, key, value);
 					change && change.call(this, value)
 					this.fire("optionChanged")
 					this.fire(key + "Changed")
 				}
-			})(key, (propDesc && propDesc.set), (propDesc && propDesc.change))
+			})(key, (propDesc && propDesc.set), (propDesc && propDesc.change));
 
-			//TODO: parse attribute settings
+			//TODO: think about custom `attribute` setting for getters/setters
 
 			propsDescriptor[key] = {
 				//do not delete default properties
@@ -516,38 +551,29 @@
 		//console.log(propsDescriptor)
 		Object.defineProperties(Descendant.prototype, propsDescriptor);
 
+		//init API (deep) - all other methods as an API
+		//TODO: watch out for correct states inheritance
+		initObj.states = extend({}, Component.prototype.states, initObj.states)
+		extend(Descendant.prototype, initObj, true);
 
-		//Save for instance init
-		Descendant.prototype.options = initObj.options;
-		//TODO: init most part of states here, not in instance
-		Descendant.prototype.states = initObj.states;
-
-		//Add callbacks
-		//TODO: move lifecycle to states
-		Descendant.prototype.callbacks = initObj.callbacks || {};
-		Descendant.prototype.callbacks.create = initObj.create || initObj.ready;
-		Descendant.prototype.callbacks.insert = initObj.insert;
-		Descendant.prototype.callbacks.remove = initObj.remove;
-
-		//remove technical stuff
-		delete initObj.options;
-		delete initObj.states;
-		delete initObj.create;
-		delete initObj.ready;
-		delete initObj.remove;
-		delete initObj.insert;
-
-		//init API - all other methods
-		extend(Descendant.prototype, initObj);
-
-		//Autoinit DOM elements
+		//Autoinit already present in DOM elements
 		autoinit(Descendant);
 
 		return Descendant;
 	}
 
-	//Keyed by name set of components
-	Component.registry = {};
+
+	//autoinit found instances in DOM
+	function autoinit(component){
+		var lname =  component.lname,
+			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+
+		var targets = $(selector);
+		for (var i = 0; i < targets.length; i++){
+			var c = new component(targets[i]);
+		}
+	}
+
 
 
 	//Component constructor, just to use as a fabric method
@@ -577,7 +603,7 @@
 
 
 
-	//----------Init generic component behaviour
+	//Generic component behaviour
 
 	//whether to use data-attributes instead of straight ones, which may be invalid
 	Component.safeAttributes = Component.safeAttributes || false;

@@ -1,4 +1,4 @@
-(function(global){
+﻿(function(global){
 	function drag($el, e) {
 		//console.log("drag", e)
 
@@ -187,7 +187,9 @@
 			y: {
 				default: 0,
 				set: function(value){
+					//console.log("set", value)
 					value = round(value, this.precision)
+					//console.log("→", value)
 					return value;
 				},
 				change: function(){
@@ -195,36 +197,6 @@
 				}
 			}
 		},
-
-		//-------------------Lifecycle
-		create: function(){
-			//console.log("draggable create")
-
-			//handle CSSs
-			this.style[cssPrefix + "user-select"] = "none";
-			this.style[cssPrefix + "user-drag"] = "none";
-
-			//init empty limits
-			this.limits = {};
-
-			//go native
-			if (this.native) {
-				this.state = "native";
-			}
-
-			return this;
-		},
-
-		insert: function(){
-			//TODO: catch this
-			console.log("draggable insert")
-			updateLimits(this);
-		},
-
-		remove: function(){
-
-		},
-
 
 		//-------------------API (verbs)
 		//starts drag from event passed
@@ -280,16 +252,32 @@
 
 		//states: grouped events
 		states: {
-			disabled: {
-				//TODO
+			init: {
+				before: function(){
+					//console.log("draggable before init", this)
+				},
+				after: function(){
+					//console.log("draggable after init")
+
+					//handle CSSs
+					this.style[cssPrefix + "user-select"] = "none";
+					this.style[cssPrefix + "user-drag"] = "none";
+
+					//init empty limits
+					this.limits = {};
+
+				}
 			},
 
 			//non-native drag
-			default: {
-				before: null,
-				after: null,
+			ready: {
+				before: function(){
+					//console.log("draggable before ready")
+					updateLimits(this);
 
-				//TODO: created, inserted, removed, attributeChanged
+					//go native
+					if (this.native) return "native";
+				},
 
 				mousedown: function(e){
 					this.startDrag(this, e);
@@ -312,7 +300,7 @@
 				'document mouseup, document mouseleave': function(e){
 					stopDrag(this, e);
 					this.fire('dragend');
-					this.state = "default"
+					this.state = "ready"
 				}
 			},
 			scroll: {
@@ -328,6 +316,7 @@
 			//native drag
 			native: {
 				before: function(){
+					//console.log("draggable before native")
 					//hang proper styles
 					this.style[cssPrefix + "user-drag"] = "element";
 					this.style.cursor = "pointer!important";
@@ -341,6 +330,7 @@
 				},
 
 				dragstart:  function(e){
+					//console.log(e)
 					this.startDrag(e);
 					e.dataTransfer.effectAllowed = 'all';
 
