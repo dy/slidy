@@ -158,7 +158,7 @@
 				//listener
 				var cb = extOpts[key];
 				var evt = (key.slice(0,2) === "on") ? key.slice(0, 2) : key;
-				//console.log('listener', key)
+				console.log('listener', key)
 				$el.on(evt, cb.bind($el));
 			}
 		}
