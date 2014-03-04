@@ -76,6 +76,22 @@ function parseCssValue(str){
 	return ~~str.slice(0,-2);
 }
 
+//disable any select possibilities for an element
+function disableSelection($el){
+	$el.style[cssPrefix + "user-select"] = "none";
+	$el.style[cssPrefix + "user-drag"] = "none";
+	$el.style[cssPrefix + "touch-callout"] = "none";
+	$el.setAttribute("unselectable", "on")
+	$el.onselectstart = function(){return false}
+}
+function enableSelection($el){
+	$el.style[cssPrefix + "user-select"] = "";
+	$el.style[cssPrefix + "user-drag"] = "";
+	$el.style[cssPrefix + "touch-callout"] = "";
+	$el.removeAttribute("unselectable")
+	delete $el.onselectstart;
+}
+
 /**
 * Simple event methods
 */

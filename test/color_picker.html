@@ -41,9 +41,9 @@
 
 	<div id="alpha" slidy vertical min="0" max="1" value="1" name="alpha"></div>
 
-	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange=""></div>
-
 	<div id="hue-lightness" slidy min="0,0" max="360,100" value="50,50" repeat="x" snap="both" name="hue,lightness"></div>
+
+	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange=""></div>
 
 	<output id="color">hsla({{ hue }}, {{ saturation }}, {{ lightness }}, {{ alpha }})</output>
 

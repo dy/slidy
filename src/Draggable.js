@@ -250,9 +250,7 @@
 				after: function(){
 					//console.log("draggable after init")
 
-					//handle CSSs
-					this.style[cssPrefix + "user-select"] = "none";
-					this.style[cssPrefix + "user-drag"] = "none";
+					disableSelection(this)
 
 					//init empty limits
 					this.limits = {};
@@ -279,9 +277,13 @@
 			drag: {
 				before: function(){
 					this.within.style.cursor = "none"
+					//handle CSSs
+					disableSelection(this.within)
 				},
 				after: function(){
 					this.within.style.cursor = ""
+
+					enableSelection(this.within)
 				},
 				'document selectstart': preventDefault,
 				'document mousemove': function(e){
