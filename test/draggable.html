@@ -38,11 +38,11 @@
 
 	[draggable]{
 		background: rgba(120,130,140,1);
-		width: 100px;
-		height: 100px;
+		width: 10vh;
+		height: 10vh;
 		color: white;
-		font-size: 14px;
-		padding: 20px 15px;
+		font-size: 13px;
+		padding: 1vh 1vw;
 		text-align: center;
 		position: relative;
 		cursor: move;
@@ -50,11 +50,10 @@
 
 	article{
 		/*position: relative;*/
-		padding:15px;
+		padding:2vh 2vw;
 		background: #f3f3f3;
 		/*min-height: 300px;*/
-		margin-bottom: 15px;
-		margin-top: 15px;
+		margin: 2vh 0;
 		position: relative;
 	}
 	pre{
@@ -132,7 +131,7 @@
 	within=&quot;parent&quot;
 	pin=&quot;[50,50,100,100]&quot;&gt;
 &lt;/div&gt;</pre>
-	<div draggable within="parent" pin="[50,50,100,100]">Pin area</div>
+	<div draggable within="parent" pin="[20,20,40,40]">Pin area</div>
 </article>
 
 <article id="point-picker">
@@ -145,7 +144,7 @@
 
 <article id="repeat">
 	<pre></pre>
-	<div draggable within="parent" pin="40,40" repeat="x" axis="x">Repeat by x</div>
+	<div draggable within="parent" pin="30,30" repeat="x" axis="x">Repeat by x</div>
 </article>
 
 <article id="handle">

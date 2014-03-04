@@ -31,17 +31,9 @@
 	//takes into accont mouse coords, self coords, axis limits and displacement within
 	//TODO: name this more intuitively, because move supposes (x, y)
 	function moveToDragstate($el, d){
-		if (!$el.axis || $el.axis === "x"){
-			$el.x = between(d.x - d.offsetX,
-						$el.limits.left,
-						$el.limits.right);
-		}
 
-		if (!$el.axis || $el.axis === "y" ){
-			$el.y = between(d.y - d.offsetY,
-						$el.limits.top,
-						$el.limits.bottom);
-		}
+		$el.x = d.x - d.offsetX;
+		$el.y = d.y - d.offsetY;
 
 		updatePosition($el);
 
@@ -127,6 +119,10 @@
 			//jquery-exactly axis fn: false, x, y
 			axis: false,
 
+			repeat: {
+				default: null
+			},
+
 			//detect whether to use native drag
 			//NOTE: you can’t change drag cursor, though native drag is faster
 			//NOTE: bedides, cursor is glitching if drag started on the edge
@@ -141,6 +137,23 @@
 			x: {
 				default: 0,
 				set: function(value){
+					if (this.repeat === 'both' || this.repeat === 'x'){
+						//mind repeat
+						if (value < this.limits.left){
+							value += this.limits.right - this.limits.left;
+						} else if (value > this.limits.right){
+							value -= this.limits.right - this.limits.left;
+						}
+					} else if (!this.axis || this.axis === "x"){
+						//mind axis
+						value = between(value,
+							this.limits.left,
+							this.limits.right);
+					} else {
+						//ignore change
+						return this._x;
+					}
+
 					value = round(value, this.precision)
 					return value;
 				},
@@ -151,6 +164,23 @@
 			y: {
 				default: 0,
 				set: function(value){
+					if (this.repeat === 'both' || this.repeat === 'y'){
+						//mind repeat
+						if (value < this.limits.top){
+							value += this.limits.bottom - this.limits.top;
+						} else if (value > this.limits.bottom){
+							value -= this.limits.bottom - this.limits.top;
+						}
+					} else if (!this.axis || this.axis === "y"){
+						//mind axis
+						value = between(value,
+							this.limits.top,
+							this.limits.bottom);
+					} else {
+						//ignore change
+						return this._y
+					}
+
 					//console.log("set", value)
 					value = round(value, this.precision)
 					//console.log("→", value)

@@ -154,12 +154,14 @@
 				//option
 				//console.log('attr', key, extOpts[key])
 				$el[key] = extOpts[key];
-			} else {
+			} else if (typeof extOpts[key] === 'function') {
 				//listener
 				var cb = extOpts[key];
 				var evt = (key.slice(0,2) === "on") ? key.slice(0, 2) : key;
-				console.log('listener', key)
+				//console.log('listener', key)
 				$el.on(evt, cb.bind($el));
+			} else {
+				//other value (ignore)
 			}
 		}
 
