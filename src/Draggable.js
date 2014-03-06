@@ -119,8 +119,31 @@
 			//jquery-exactly axis fn: false, x, y
 			axis: false,
 
+			//
 			repeat: {
-				default: null
+				default: null,
+				set: function(repeat){
+					if (repeat === "both" || repeat === "x" || repeat === "y"){
+						//straight value passed
+						return repeat;
+					} else if (repeat instanceof Array){
+						//vector passed
+						if (repeat.length){
+							if (repeat[0] && repeat[1])
+								return "both";
+							else if (repeat[0])
+								return "x";
+							else if (repeat[1])
+								return "y";
+						}
+					} else if (repeat === true){
+						//just repeat any possible way
+						return this.axis ? this.axis : "both"
+					} else {
+						//unrecognized value passed
+						return false;
+					}
+				}
 			},
 
 			//detect whether to use native drag

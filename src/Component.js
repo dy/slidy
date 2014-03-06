@@ -13,6 +13,7 @@
 	//TODO: passing `ondrag` to option causes native unpreventable events fire
 	//TODO: bind event-attributes like so: ondrag="{{ handleDrag }}"
 	//TODO: enteredView, leftView callbacks
+	//TODO: check correctness of option notation (default exists)
 
 
 	//correct attribute setter - reflects value changed with throttling
@@ -528,6 +529,7 @@
 				return function(value){
 					//ignore same value
 					if (this['_' + key ] === value) return;
+
 					//console.log("set", key, value)
 					value = set ? set.call(this,value) : value;
 					//console.log("→", value)

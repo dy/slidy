@@ -1,6 +1,7 @@
 /**
 * Range input on steroids
 */
+//TODO: <input type="slidy"/>
 (function(global){
 	function handleDrag($el, e){
 		//console.log("drag observed", e.target.dragstate);
@@ -75,21 +76,11 @@
 	global['Slidy'] = Component.register('Slidy', {
 		states: {
 			init: {
-				after: function(){
-					//console.log("slidy create", this)
-					//ensure picker with enough dimensions
-					//TODO: take into account restrictwithin paddings
-
-					//ensure picker's position according to the value
-					//this.value = this.value;
-					this.dimensions = this.value.length;
-
-					//create enough pickers
+				before: function(){
+					//basic picker init
 					var self = this;
 					this.picker = new Draggable({
 						within: this,
-						axis: this.dimensions === 2 ? null : (this.vertical ? 'y' : 'x'),
-						pin: [0,0],
 
 						ready: function(e){
 							//correct pin (centrize based on width of picker)
@@ -102,16 +93,24 @@
 						drag: function(e){
 							handleDrag(self, e)
 						},
+
 						native: false
 					})
+				},
+				after: function(){
+					//console.log("slidy create", this)
+					//TODO: take into account restrictwithin paddings
+
+					//additional picker init
+					this.picker.axis = (this.dimensions === 2 ? null : (this.vertical ? 'y' : 'x'));
 
 					//calc initial picker limits
 					this.appendChild(this.picker);
+
 					//TODO: replace that ↓ with DOM observer
 					this.picker.state = "ready";
 
 					//TODO: bind data
-
 				}
 			},
 			ready: {
@@ -133,8 +132,13 @@
 					if (value.length == 2){
 						value[0] = round(between(value[0], this.min[0], this.max[0]), this.step)
 						value[1] = round(between(value[1], this.min[1], this.max[1]), this.step)
+
+						this.dimensions = 2;
 						return value;
+					} else {
+						this.dimensions = 1;
 					}
+
 					return round(between(value, this.min, this.max), this.step);
 				}
 			},
@@ -202,10 +206,10 @@
 					if (dim === 2){
 						this.vertical = true;
 						this.horizontal = true;
-					} else if (!dim){
+						return dim;
+					} else {
 						return 1;
 					}
-					return dim
 				}
 			},
 			//jquery-way
@@ -230,7 +234,17 @@
 
 			readonly: false,
 
-			repeat: false
+			//whether to repeat either by one axis if one dimension or by both axis or one pointed if two dimensions
+			//false, true, [bool, bool]
+			repeat: {
+				default: false,
+				set: function(repeat){
+					// console.log("set repeat")
+					//TODO: cover with tests, if possible
+					this.picker.repeat = repeat;
+					return repeat;
+				}
+			}
 
 		}
 	});
