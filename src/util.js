@@ -78,18 +78,47 @@ function parseCssValue(str){
 
 //disable any select possibilities for an element
 function disableSelection($el){
-	$el.style[cssPrefix + "user-select"] = "none";
-	$el.style[cssPrefix + "user-drag"] = "none";
-	$el.style[cssPrefix + "touch-callout"] = "none";
+	css($el, {
+		"user-select": "none",
+		"user-drag": "none",
+		"touch-callout": "none"
+	})
 	$el.setAttribute("unselectable", "on")
 	$el.onselectstart = function(){return false}
 }
 function enableSelection($el){
-	$el.style[cssPrefix + "user-select"] = "";
-	$el.style[cssPrefix + "user-drag"] = "";
-	$el.style[cssPrefix + "touch-callout"] = "";
+	css($el, {
+		"user-select": null,
+		"user-drag": null,
+		"touch-callout": null
+	})
 	$el.removeAttribute("unselectable")
 	delete $el.onselectstart;
+}
+
+//stupid css styler
+function css($el, style, value){
+	if (value !== undefined) {
+		//one property
+		if (prefixedProps[style]) style = cssPrefix + style;
+		$el.style[style] = value;
+	} else {
+		//obj passed
+		var initialDisplay = $el.style.display;
+		$el.style.display = "none";
+		for (var prop in style){
+			if (prefixedProps[prop]) $el.style[cssPrefix + prop] = style[prop];
+			else $el.style[prop] = style[prop];
+		}
+		$el.style.display = initialDisplay;
+	}
+}
+//set of properties to add prefix
+var prefixedProps = {
+	"user-drag": true,
+	"user-select": true,
+	"touch-callout": true,
+	"transform": true
 }
 
 /**

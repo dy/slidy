@@ -42,7 +42,7 @@
 
 	//set displacement according to the x & y
 	function updatePosition($el){
-		$el.style[cssPrefix + "transform"] = ["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join("");
+		css($el, "transform", ["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join(""));
 	}
 
 	//native-drag helper
@@ -364,14 +364,16 @@
 				before: function(){
 					//console.log("draggable before native")
 					//hang proper styles
-					this.style[cssPrefix + "user-drag"] = "element";
-					this.style.cursor = "pointer!important";
+					css(this, {
+						"user-drag": "element",
+						"cursor": "pointer!important"
+					})
 
 					//make restricting area allowable to drop
 					on(this.within, 'dragover', setDropEffect)
 				},
 				after: function(){
-					this.style[cssPrefix + "user-drag"] = "none";
+					css(this, "user-drag", "none");
 					off(this.within, 'dragover', setDropEffect)
 				},
 

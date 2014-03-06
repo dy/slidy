@@ -90,8 +90,16 @@
 						},
 
 						//TODO: make it be last listener in listeners stack to be preventable within own component states
+						dragstart: function(e){
+							disableSelection(document.documentElement);
+							css(document.documentElement, {"cursor": "none"});
+						},
 						drag: function(e){
 							handleDrag(self, e)
+						},
+						dragend: function(e){
+							enableSelection(document.documentElement);
+							css(document.documentElement, {"cursor": null});
 						},
 
 						native: false
