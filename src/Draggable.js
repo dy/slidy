@@ -96,12 +96,16 @@
 				},
 				set: function(value){
 					if (value.length === 2){
-						return [value[0], value[1], value[0], value[1]];
+						value = [value[0], value[1], value[0], value[1]];
 					} else if (value.length === 4){
-						return value
 					} else {
 						throw new Error("Unknown pin area format")
 					}
+
+					return value;
+				},
+				change: function(){
+					this.updateLimits();
 				}
 			},
 

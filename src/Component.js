@@ -14,6 +14,9 @@
 	//TODO: bind event-attributes like so: ondrag="{{ handleDrag }}"
 	//TODO: enteredView, leftView callbacks
 	//TODO: check correctness of option notation (default exists)
+	//TODO: make `throttle` method to call something not more often than Nms
+	//TODO: make `async` method to defer calling
+	//TODO: make promises: promise to call some method when some event occurs
 
 
 	//correct attribute setter - reflects value changed with throttling

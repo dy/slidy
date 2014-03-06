@@ -246,11 +246,8 @@
 			//false, true, [bool, bool]
 			repeat: {
 				default: false,
-				set: function(repeat){
-					// console.log("set repeat")
-					//TODO: cover with tests, if possible
+				change: function(repeat){
 					this.picker.repeat = repeat;
-					return repeat;
 				}
 			}
 
