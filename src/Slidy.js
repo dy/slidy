@@ -54,7 +54,7 @@
 				vRange = $el.max[1] - $el.min[1],
 				ratioX = ($el.value[0] - $el.min[0]) / hRange,
 				ratioY = (- $el.value[1] + $el.max[1]) / vRange
-			//console.log("2dim")
+			//console.log("2dim", ratioY, ratioX)
 		} else if ($el.vertical){
 			var vRange = $el.max - $el.min,
 				ratioY = (- $el.value + $el.max) / vRange;
@@ -64,21 +64,22 @@
 			var hRange = $el.max - $el.min,
 				ratioX = ($el.value - $el.min) / hRange;
 				ratioY = .5;
-			//console.log("x")
+			//console.log("x", ratioX)
 		}
 
 		if (ratioX !== undefined) $el.picker.x = ratioX * hScope - $el.picker.pin[0];
 		if (ratioY !== undefined) $el.picker.y = ratioY * vScope - $el.picker.pin[1];
-		//console.log($el.picker.limits, $el.picker.x, $el.picker.y)
+		//console.log($el.picker.x, $el.picker.y)
 	}
 
 
-	global['Slidy'] = Component.register('Slidy', {
+	var Slidy = Component.register('Slidy', {
 		states: {
 			init: {
 				before: function(){
 					//basic picker init
 					var self = this;
+
 					this.picker = new Draggable({
 						within: this,
 
@@ -86,6 +87,7 @@
 							//correct pin (centrize based on width of picker)
 							this.pin = [this.offsets.width / 2, this.offsets.height / 2];
 							//set initial position
+							//console.log("picker ready")
 							updatePosition(self, self.value);
 						},
 
@@ -106,7 +108,7 @@
 					})
 				},
 				after: function(){
-					//console.log("slidy create", this)
+					//console.log("slidy after init")
 					//TODO: take into account restrictwithin paddings
 
 					//additional picker init
@@ -128,6 +130,14 @@
 				'window resize': function(){
 					this.picker.updateLimits();
 					updatePosition(this, this.value)
+				},
+				'dragstart': function(){
+					console.log("dstart")
+					this.within.style.cursor = "none"
+				},
+				'dragend': function(){
+					console.log("dend")
+					this.within.style.cursor = ""
 				}
 			}
 		},
@@ -253,4 +263,7 @@
 
 		}
 	});
+
+	//exports
+	global['Slidy'] = Slidy;
 })(window)

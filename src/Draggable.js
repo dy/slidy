@@ -4,8 +4,8 @@
 
 		var d = $el.dragstate;
 
-		//var difX = e.clientX - d.clientX;
-		//var difY = e.clientY - d.clientY;
+		var difX = e.clientX - d.clientX;
+		var difY = e.clientY - d.clientY;
 
 		//capture dragstate
 		d.isCtrl = e.ctrlKey;
@@ -19,20 +19,15 @@
 		d.y = e.clientY + window.scrollY - $el.oY;
 
 		//move according to dragstate
-		moveToDragstate($el, d);
+		//$el.x = d.x - d.offsetX;
+		//$el.y = d.y - d.offsetY;
+		$el.x += difX;
+		$el.y += difY;
 	}
 
 	function stopDrag($el, e){
 		//console.log("stopDrag")
 		delete $el.dragstate;
-	}
-
-	//specific movement function based on dragstate passed
-	//takes into accont mouse coords, self coords, axis limits and displacement within
-	//TODO: name this more intuitively, because move supposes (x, y)
-	function moveToDragstate($el, d){
-		$el.x = d.x - d.offsetX;
-		$el.y = d.y - d.offsetY;
 	}
 
 	//set displacement according to the x & y
@@ -128,9 +123,9 @@
 				attribute: false,
 				global: true,
 				change: function(value){
-					if (value === false){
+					if (value === false && this.state === "native"){
 						this.state = "ready";
-					} else {
+					} else if (this.state !== "init") {
 						this.state = "native";
 					}
 				}
@@ -308,7 +303,7 @@
 		states: {
 			init: {
 				before: function(){
-					//console.log("draggable before init", this)
+					//console.log("draggable before init")
 					//init empty limits
 					this.limits = {};
 
@@ -337,13 +332,10 @@
 
 			drag: {
 				before: function(){
-					this.within.style.cursor = "none"
 					//handle CSSs
 					disableSelection(this.within)
 				},
 				after: function(){
-					this.within.style.cursor = ""
-
 					enableSelection(this.within)
 				},
 				'document selectstart': preventDefault,

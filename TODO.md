@@ -1,5 +1,6 @@
 # Draggalbe
 * Sniper mode
+* Treshold
 * Circular
 * Tests
 * Demo page

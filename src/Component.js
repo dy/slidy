@@ -404,6 +404,7 @@
 					reState = (newState.before && newState.before.fn.call(this));
 				}
 
+
 				//trigger enter
 				this.fire(newStateName);
 
@@ -540,9 +541,9 @@
 			//console.log(propDesc)
 			//TODO: if default is function - defer it’s calling
 
-			var defaultValue = undefined,
-				setFn, getFn, expose = false, changeCb = null,
-				isGlobal = false, attr = true, get, set;
+			var defaultValue,
+				setFn, getFn, expose, changeCb,
+				isGlobal, attr, get, set;
 
 			//init option behaviour (variables above)
 			if (isObject(propDesc) && 'default' in propDesc) {
@@ -558,6 +559,14 @@
 			} else {
 				//just set prototypal value
 				defaultValue =  propDesc;
+				setFn = null;
+				getFn = null;
+				set = null;
+				get = null;
+				changeCb = null;
+				isGlobal = false;
+				attr = true;
+				expose = false;
 			}
 
 			//instance-level options
@@ -647,7 +656,8 @@
 			//instance option
 			return function(value){
 				//ignore same value
-				if (this['_' + key ] === value) return;
+				if (this['_' + key ] === value) return ;
+				//console.log("set", key, value)
 
 				value = set ? set.call(this,value) : value;
 				this['_' + key ] = value;
@@ -706,14 +716,8 @@
 
 	//Generic component behaviour
 
-	//whether to use data-attributes instead of straight ones, which may be invalid
+	//TODO: whether to use data-attributes instead of straight ones, which may be invalid
 	Component.safeAttributes = Component.safeAttributes || false;
-
-	//whether to init components on
-	Component.autoinit = Component.autoinit || true;
-
-	//Whether to expose descendant classes to global
-	Component.exposeClasses = Component.exposeClasses || true;
 
 
 	//Export
