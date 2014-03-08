@@ -189,6 +189,15 @@
 <script>
 	//------------Make native drag optional
 	Draggable.defaults.native = false;
+	var $nativeDrag = document.getElementById('native-drag')
+	$nativeDrag.addEventListener("change", function(e){
+		if (e.target.checked === true){
+			Draggable.defaults.native = true;
+		} else {
+			Draggable.defaults.native = false;
+		}
+	})
+	$nativeDrag.checked = false;
 
 	//------------Canvas visualizers
 	var canvas = document.querySelector("canvas");
