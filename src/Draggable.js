@@ -248,8 +248,8 @@
 				if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
 				if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
 				//pretend as if drag has happened
-				this.fire('dragstart')
-				this.fire('drag')
+				this.fire('dragstart', null, true)
+				this.fire('drag', null, true)
 			} else {
 				offsetX = e.offsetX;
 				offsetY = e.offsetY;
@@ -325,7 +325,7 @@
 				},
 
 				mousedown: function(e){
-					this.fire('dragstart')
+					this.fire('dragstart', null, true)
 					this.startDrag(e);
 				}
 			},
@@ -341,11 +341,11 @@
 				'document selectstart': preventDefault,
 				'document mousemove': function(e){
 					drag(this,e)
-					this.fire('drag')
+					this.fire('drag', null, true)
 				},
 				'document mouseup, document mouseleave': function(e){
 					stopDrag(this, e);
-					this.fire('dragend');
+					this.fire('dragend', null, true);
 					this.state = "ready"
 				}
 			},

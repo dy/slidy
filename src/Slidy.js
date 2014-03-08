@@ -130,14 +130,6 @@
 				'window resize': function(){
 					this.picker.updateLimits();
 					updatePosition(this, this.value)
-				},
-				'dragstart': function(){
-					console.log("dstart")
-					this.within.style.cursor = "none"
-				},
-				'dragend': function(){
-					console.log("dend")
-					this.within.style.cursor = ""
 				}
 			}
 		},

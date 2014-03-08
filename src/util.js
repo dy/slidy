@@ -153,13 +153,13 @@ function off(el, evt, fn){
 * Broadcasts event: "slidy:evt" → $doc, "slidy:evt" → $el, evt → area.opts
 * target - whether area or picker class
 */
-function fire(el, eventName, data){
+function fire(el, eventName, data, bubbles){
 	//handle jQuery-way, if there is such
 	//pass data
 	//TODO: ie’s work
 	//options callbacks
-	//TODO: call document specific call
-	var event = new CustomEvent(eventName, { detail: data })
+
+	var event = new CustomEvent(eventName, { detail: data, bubbles: bubbles })
 
 	//dispatch options
 	//@deprecated - option listeners are now simple listeners

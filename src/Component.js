@@ -459,8 +459,8 @@
 		return this;
 	}
 	//broadcaster
-	Component.prototype.fire = function(eName, data){
-		fire(this, eName, data);
+	Component.prototype.fire = function(eName, data, bubble){
+		fire(this, eName, data, bubble);
 	}
 	//dom node extenders
 	Component.prototype.remove = function(){
@@ -670,8 +670,9 @@
 	function _updateTarget(target, key, value, change){
 		_updateAttr(target, key, value);
 		change && change.call(target, value)
-		target.fire("optionChanged")
-		target.fire(key + "Changed")
+		//TODO: turn these two on when they needed
+		//target.fire("optionChanged")
+		//target.fire(key + "Changed")
 	}
 
 
