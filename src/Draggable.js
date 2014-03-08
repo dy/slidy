@@ -10,8 +10,8 @@
 		//capture dragstate
 		d.isCtrl = e.ctrlKey;
 		if (e.ctrlKey && $el.sniper) {
-			//d.difX *= $el.options.sniperSpeed;
-			//d.difY *= $el.options.sniperSpeed;
+			difX *= $el.sniperSpeed;
+			difY *= $el.sniperSpeed;
 		}
 		d.clientX = e.clientX;
 		d.clientY = e.clientY;
@@ -116,7 +116,14 @@
 			//to what extent round position
 			precision: 1,
 
-			sniper: false,
+			sniper: {
+				default: true,
+				global: true
+			},
+			sniperSpeed: {
+				default: .2,
+				global: true
+			},
 
 			native: {
 				default: isNativeSupported,
