@@ -38,9 +38,6 @@
 	function _updateAttr($el, key, value, isFinal){
 		//throttle attr reflection
 		if (!_reflectAttrTimeout){
-			//TODO: move $el somewere to the beginning
-			var prefix = Component.safeAttributes ? "data-" : "";
-
 			//dashify case
 			key = toDashedCase(key);
 
@@ -50,7 +47,7 @@
 			} else {
 				//avoid self attr-observer catch $el attr changing
 				$el._preventOneAttrChange = true;
-				$el.setAttribute(prefix + key, stringify(value));
+				$el.setAttribute(key, stringify(value));
 			}
 
 			_reflectAttrTimeout = !isFinal && setTimeout(function(){
@@ -198,6 +195,7 @@
 				if (mutation.type === "attributes"){
 					var attr = mutation.attributeName;
 					//if option attr changed - upd self value
+					//TODO: catch attribute name different from it’s initial name
 					if ($el.options[attr]){
 						//TODO: catch attribute removal
 						//TODO: avoid attr self-setup
@@ -555,7 +553,7 @@
 				expose = propDesc.expose;
 				changeCb = propDesc.change;
 				isGlobal = propDesc.global;
-				attr = propDesc.attribute || true;
+				attr = propDesc.attribute || false;
 			} else {
 				//just set prototypal value
 				defaultValue =  propDesc;
@@ -565,7 +563,7 @@
 				get = null;
 				changeCb = null;
 				isGlobal = false;
-				attr = true;
+				attr = false;
 				expose = false;
 			}
 
@@ -579,7 +577,7 @@
 					configurable: false,
 					enumerable: true,
 					//TODO: instances there are not defined yet :( Hope they’ll be hooked up in runtime
-					set: _getSet(Descendant.prototype, key, setFn, changeCb, Descendant.instances),
+					set: _getSet(Descendant.prototype, key, setFn, attr, changeCb, Descendant.instances),
 					get: _getGet(Descendant.prototype, key, getFn)
 				})
 			}
@@ -591,7 +589,7 @@
 				//do not enumerate non-instance properties
 				enumerable: true,
 				get: _getGet(null, key, getFn),
-				set: _getSet(null, key, setFn, changeCb)
+				set: _getSet(null, key, setFn, attr, changeCb)
 			}
 		}
 
@@ -637,7 +635,7 @@
 			}
 		}
 	}
-	function _getSet(target, key, set, change, updateTargets){
+	function _getSet(target, key, set, attr, change, updateTargets){
 		if (updateTargets && target){
 			//most probably global option
 			return function(value){
@@ -649,7 +647,7 @@
 
 				//update targets passed
 				for (var i = updateTargets.length; i--;){
-					_updateTarget(updateTargets[i], key, value, change);
+					_updateTarget(updateTargets[i], key, value, attr, change);
 				}
 			}
 		} else {
@@ -662,13 +660,13 @@
 				value = set ? set.call(this,value) : value;
 				this['_' + key ] = value;
 
-				_updateTarget(this, key, value, change);
+				_updateTarget(this, key, value, attr, change);
 			}
 		}
 	}
 	//option updater on target
-	function _updateTarget(target, key, value, change){
-		_updateAttr(target, key, value);
+	function _updateTarget(target, key, value, attr, change){
+		attr && _updateAttr(target, (attr === true ? key : attr), value, attr);
 		change && change.call(target, value)
 		//TODO: turn these two on when they needed
 		//target.fire("optionChanged")
@@ -716,9 +714,6 @@
 
 
 	//Generic component behaviour
-
-	//TODO: whether to use data-attributes instead of straight ones, which may be invalid
-	Component.safeAttributes = Component.safeAttributes || false;
 
 
 	//Export
