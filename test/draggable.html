@@ -32,6 +32,11 @@
 		/*color: white;*/
 		font-size: 13px;
 	}
+	label{
+		display: inline-block;
+		vertical-align: top;
+		margin-left: 10px;
+	}
 	input{
 		margin: 0;
 	}
@@ -106,6 +111,9 @@
 <h1>Draggable</h1>
 
 <nav class="options">
+	<label for="native-drag">
+		<input type="checkbox" id="native-drag"/> Native drag
+	</label>
 	<label for="render-helpers">
 		<input type="checkbox" id="render-helpers"/> Render helpers
 	</label>
@@ -173,11 +181,14 @@
 	<li>Autoscroll (drag off the screen)</li>
 </ul>
 
+
 <script src='../src/util.js'></script>
 <script src='../src/Component.js'></script>
 <script src='../src/Draggable.js'></script>
 
 <script>
+	//------------Make native drag optional
+	Draggable.defaults.native = false;
 
 	//------------Canvas visualizers
 	var canvas = document.querySelector("canvas");

@@ -1,10 +1,20 @@
-* Cycling
+# Draggalbe
 * Sniper mode
+* Circular
+* Tests
+* Demo page
+* Compile/build/minify/deliver package
+* Component rename to behaviour
+* Component register everywhere
+* Component out
+* Component tests
+
+# Slidy
+* Expose data
 * Focusable
 * Keyboard
-* Expose data
-* Circular
 * HTML5 input range compliance page
+
 * Demo page
 * Debug touches
 

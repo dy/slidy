@@ -31,13 +31,8 @@
 	//takes into accont mouse coords, self coords, axis limits and displacement within
 	//TODO: name this more intuitively, because move supposes (x, y)
 	function moveToDragstate($el, d){
-
 		$el.x = d.x - d.offsetX;
 		$el.y = d.y - d.offsetY;
-
-		updatePosition($el);
-
-		//TODO: calc pin area movement?
 	}
 
 	//set displacement according to the x & y
@@ -53,10 +48,18 @@
 	}
 
 
+	//TODO: make ghost insteadof moving self
 
+	//detect whether to use native drag
+	//NOTE: native drag is faster though you can’t change drag cursor
+	//NOTE: native-drag cursor is glitching if drag started on the edge
+	var isNativeSupported = (function(){
+		var div = document.createElement("div")
+		var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
+		return isNativeSupported
+	})();
 
-
-	global['Draggable'] = Component.register('Draggable', {
+	var Draggable = Component.register('Draggable', {
 		//default options - classical jquery-like notation
 		options: {
 			treshold: 10,
@@ -65,7 +68,7 @@
 
 			//null is no restrictions
 			within: {
-				default: document.body.parentNode,
+				default: document.documentElement,
 				set: function(within){
 					if (within instanceof Element){
 						return within
@@ -120,6 +123,19 @@
 
 			sniper: false,
 
+			native: {
+				default: isNativeSupported,
+				attribute: false,
+				global: true,
+				change: function(value){
+					if (value === false){
+						this.state = "ready";
+					} else {
+						this.state = "native";
+					}
+				}
+			},
+
 			//jquery-exactly axis fn: false, x, y
 			axis: false,
 
@@ -149,16 +165,6 @@
 					}
 				}
 			},
-
-			//detect whether to use native drag
-			//NOTE: you can’t change drag cursor, though native drag is faster
-			//NOTE: bedides, cursor is glitching if drag started on the edge
-			//TODO: make ghost insteadof moving self
-			native: (function(){
-				var div = document.createElement("div")
-				var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
-				return isNativeSupported
-			})(),
 
 			//initial position
 			x: {
@@ -303,15 +309,13 @@
 			init: {
 				before: function(){
 					//console.log("draggable before init", this)
-				},
-				after: function(){
-					//console.log("draggable after init")
-
-					disableSelection(this)
-
 					//init empty limits
 					this.limits = {};
 
+					disableSelection(this)
+				},
+				after: function(){
+					//console.log("draggable after init")
 				}
 			},
 
@@ -327,7 +331,7 @@
 
 				mousedown: function(e){
 					this.fire('dragstart')
-					this.startDrag(this, e);
+					this.startDrag(e);
 				}
 			},
 
@@ -353,6 +357,7 @@
 					this.state = "ready"
 				}
 			},
+
 			scroll: {
 
 			},
@@ -377,6 +382,7 @@
 					on(this.within, 'dragover', setDropEffect)
 				},
 				after: function(){
+					//console.log("after native")
 					css(this, "user-drag", "none");
 					off(this.within, 'dragover', setDropEffect)
 				},
@@ -412,5 +418,10 @@
 			}
 		}
 	});
+
+
+
+	//exports
+	global['Draggable'] = Draggable;
 
 })(window)

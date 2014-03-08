@@ -1,9 +1,19 @@
-﻿(function(global){
-	/**
-	* Controller on the elements
-	* Very similar to native elements
-	*/
-
+﻿/**
+* Controller on elements
+* Workhorse of components
+*/
+(function(global){
+	var KEYCODES = {
+        33: "PAGE_UP",
+        34: "PAGE_DOWN",
+        35: "END",
+        36: "HOME",
+        37: "LEFT_ARROW",
+        38: "UP_ARROW",
+        39: "RIGHT_ARROW",
+        40: "DOWN_ARROW"
+    };
+    var LEFT_MOUSE_BTN = 0;
 
 	//TODO: add document-level listener pluginName:event
 	//TODO: think how should it work within components group, like active tab
@@ -18,11 +28,15 @@
 	//TODO: make `async` method to defer calling
 	//TODO: make promises: promise to call some method when some event occurs
 
+	//TODO: add custom methods to options objects
+	//TODO: pass constructor to the component instance
+
 
 	//correct attribute setter - reflects value changed with throttling
 	var _reflectAttrTimeout;
-	function updateAttr($el, key, value, isFinal){
-		//TODO: throttle attr reflection
+	//TODO: make absent attributes return default values instead of false
+	function _updateAttr($el, key, value, isFinal){
+		//throttle attr reflection
 		if (!_reflectAttrTimeout){
 			//TODO: move $el somewere to the beginning
 			var prefix = Component.safeAttributes ? "data-" : "";
@@ -30,8 +44,8 @@
 			//dashify case
 			key = toDashedCase(key);
 
-			//hide falsy attributes
-			if (value === false){
+			if (value === false || value === null || value === undefined){
+				//hide falsy attributes
 				$el.removeAttribute(key);
 			} else {
 				//avoid self attr-observer catch $el attr changing
@@ -42,7 +56,7 @@
 			_reflectAttrTimeout = !isFinal && setTimeout(function(){
 				clearTimeout(_reflectAttrTimeout);
 				_reflectAttrTimeout = null;
-				updateAttr($el, key, value, true);
+				_updateAttr($el, key, value, true);
 			}, 500);
 		}
 	}
@@ -67,7 +81,8 @@
 		if (el instanceof HTMLElement) {
 			self = el;
 		} else {
-			if (el){
+			if (el && !opts){
+				//opts passed as a first argument
 				opts = el;
 			}
 			self = document.createElement('div');
@@ -151,6 +166,7 @@
 		//for every instance option create attribute reflection (just set value)
 		for (var key in extOpts){
 			//ignore autolaunch property
+			//TODO: think of using name-attribute value (e.g. in picker)
 			if (key === $el.constructor.lname) continue;
 
 			//catch option
@@ -485,7 +501,9 @@
 	//Keyed by name set of components
 	Component.registry = {};
 
-	//Main component registar, xtags-like
+	/**
+	* Main component registrar
+	*/
 	Component.register = function(name, initObj){
 		//create new component
 		var Descendant = function(){
@@ -505,9 +523,15 @@
 		Descendant.name = name;
 		Descendant.lname = name.toLowerCase();
 
-		//init options as prototype getters/setters
+		//keep track of default options
+		Descendant.defaults = {};
+
+		//init prototype options as getters/setters
 		var propsDescriptor = {};
 		for (var key in initObj.options){
+			//ignore already defined setter/getter
+			if (Object.getOwnPropertyDescriptor(Descendant.prototype, key)) continue;
+
 			//TODO: correct the way options created
 			var propDesc = initObj.options[key];
 
@@ -515,67 +539,137 @@
 			//NOTE: default values may be of other type than required, like number insteadof array
 			//console.log(propDesc)
 			//TODO: if default is function - defer it’s calling
-			Descendant.prototype["_" + key] = (isObject(propDesc) && ('default' in propDesc)) ? propDesc.default : propDesc;
-			//console.log('to', Descendant.prototype["_" + key])
 
-			//ignore already defined setter/getter
-			if (Object.getOwnPropertyDescriptor(Descendant.prototype, key)) continue;
+			var defaultValue = undefined,
+				setFn, getFn, expose = false, changeCb = null,
+				isGlobal = false, attr = true, get, set;
 
-			//make instance getter/setters
-			var get = (function(key, get){
-				return function(){
-					return get ? get.call(this, this['_' + key]) : this['_' + key];
-				}
-			})(key, propDesc && propDesc.get)
+			//init option behaviour (variables above)
+			if (isObject(propDesc) && 'default' in propDesc) {
+				//init propDesc
+				//TODO: think whether to use function init
+				defaultValue =  propDesc.default;
+				setFn = propDesc.set;
+				getFn = propDesc.get;
+				expose = propDesc.expose;
+				changeCb = propDesc.change;
+				isGlobal = propDesc.global;
+				attr = propDesc.attribute || true;
+			} else {
+				//just set prototypal value
+				defaultValue =  propDesc;
+			}
 
-			var set = (function(key, set, change){
-				return function(value){
-					//ignore same value
-					if (this['_' + key ] === value) return;
+			//instance-level options
+			//set prototype default value (to redefine in instances)
+			Descendant.prototype["_" + key] =  defaultValue;
 
-					//console.log("set", key, value)
-					value = set ? set.call(this,value) : value;
-					//console.log("→", value)
-					this['_' + key ] = value;
-					updateAttr(this, key, value);
-					change && change.call(this, value)
-					this.fire("optionChanged")
-					this.fire(key + "Changed")
-				}
-			})(key, (propDesc && propDesc.set), (propDesc && propDesc.change));
+			//define global getters/setters (sets prototypal default value)
+			if (isGlobal){
+				Object.defineProperty( Descendant.defaults, key, {
+					configurable: false,
+					enumerable: true,
+					//TODO: instances there are not defined yet :( Hope they’ll be hooked up in runtime
+					set: _getSet(Descendant.prototype, key, setFn, changeCb, Descendant.instances),
+					get: _getGet(Descendant.prototype, key, getFn)
+				})
+			}
 
-			//TODO: think about custom `attribute` setting for getters/setters
-
+			//define instance getters/setters
 			propsDescriptor[key] = {
 				//do not delete default properties
 				configurable: false,
 				//do not enumerate non-instance properties
-				enumerable: false,
-				get: get,
-				set: set
+				enumerable: true,
+				get: _getGet(null, key, getFn),
+				set: _getSet(null, key, setFn, changeCb)
 			}
 		}
+
 		//console.log(propsDescriptor)
 		Object.defineProperties(Descendant.prototype, propsDescriptor);
+
+		//TODO: think of init descendant global options
 
 		//init API (deep) - all other methods as an API
 		//TODO: watch out for correct states inheritance
 		initObj.states = extend({}, Component.prototype.states, initObj.states)
 		extend(Descendant.prototype, initObj, true);
 
+
 		//Autoinit already present in DOM elements
-		autoinit(Descendant);
+		if (initObj.autoinit !== false) autoinit(Descendant);
 
 		return Descendant;
 	}
 
 
+	//options getter/setter constructors
+	function _getGet(target, key, get){
+		if (get){
+			if (target) {
+				return function(){
+					return get.call(target, target["_" + key]);
+				};
+			} else {
+				return function(){
+					return get.call(this, this["_" + key]);
+				};
+			}
+		} else {
+			if (target) {
+				return function(){
+					return target["_" + key];
+				};
+			} else {
+				return function(){
+					return this["_" + key];
+				}
+			}
+		}
+	}
+	function _getSet(target, key, set, change, updateTargets){
+		if (updateTargets && target){
+			//most probably global option
+			return function(value){
+				//ignore same value
+				if (target['_' + key ] === value) return;
+
+				value = set ? set.call(target,value) : value;
+				target['_' + key ] = value;
+
+				//update targets passed
+				for (var i = updateTargets.length; i--;){
+					_updateTarget(updateTargets[i], key, value, change);
+				}
+			}
+		} else {
+			//instance option
+			return function(value){
+				//ignore same value
+				if (this['_' + key ] === value) return;
+
+				value = set ? set.call(this,value) : value;
+				this['_' + key ] = value;
+
+				_updateTarget(this, key, value, change);
+			}
+		}
+	}
+	//option updater on target
+	function _updateTarget(target, key, value, change){
+		_updateAttr(target, key, value);
+		change && change.call(target, value)
+		target.fire("optionChanged")
+		target.fire(key + "Changed")
+	}
+
+
 	//autoinit found instances in DOM
 	function autoinit(component){
-		var lname =  component.lname,
-			selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+		var lname =  component.lname;
 
-		var targets = $(selector);
+		var targets = queryComponents(lname);
 		for (var i = 0; i < targets.length; i++){
 			var c = new component(targets[i]);
 		}

@@ -418,3 +418,14 @@ function observeData(target, data){
 function findPropertyToInsert(str){
 	//str.indexOf()
 }
+
+
+/**
+* Searches for all components in document
+*/
+//TODO: consider implements="a,b,c" attribute
+function queryComponents(name, within){
+	return (within || document).querySelectorAll(
+		["[", name, "], [data-", name, "], .", name, ""].join("")
+	);
+}
