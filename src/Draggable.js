@@ -1,34 +1,4 @@
 ﻿(function(global){
-	function drag($el, e) {
-		//console.log("drag", e)
-
-		var d = $el.dragstate;
-
-		var difX = e.clientX - d.clientX;
-		var difY = e.clientY - d.clientY;
-
-		//capture dragstate
-		d.isCtrl = e.ctrlKey;
-		if (e.ctrlKey && $el.sniper) {
-			difX *= $el.sniperSpeed;
-			difY *= $el.sniperSpeed;
-		}
-		d.clientX = e.clientX;
-		d.clientY = e.clientY;
-		d.x = e.clientX + window.scrollX - $el.oX;
-		d.y = e.clientY + window.scrollY - $el.oY;
-
-		//move according to dragstate
-		//$el.x = d.x - d.offsetX;
-		//$el.y = d.y - d.offsetY;
-		$el.x += difX;
-		$el.y += difY;
-	}
-
-	function stopDrag($el, e){
-		//console.log("stopDrag")
-		delete $el.dragstate;
-	}
 
 	//set displacement according to the x & y
 	function updatePosition($el){
@@ -121,7 +91,7 @@
 				global: true
 			},
 			sniperSpeed: {
-				default: .2,
+				default: .15,
 				global: true
 			},
 
@@ -243,10 +213,8 @@
 
 			//if drag started outside self area - move self to that place
 			if (
-				eAbsoluteX > this.offsets.right ||
-				eAbsoluteX < this.offsets.left ||
-				eAbsoluteY < this.offsets.top ||
-				eAbsoluteY > this.offsets.bottom
+				!isBetween(eAbsoluteX, this.offsets.left, this.offsets.right) ||
+				!isBetween(eAbsoluteY, this.offsets.top, this.offsets.bottom)
 			) {
 				//pretend as if offsets within self are ideal
 				offsetX = this.offsets.width * .5;
@@ -272,12 +240,52 @@
 				offsetX: offsetX,
 				offsetY: offsetY,
 
-				//relative coords
+				//relative coords (from initial(zero) position)
 				x: eAbsoluteX - this.oX,
-				y: eAbsoluteY - this.oY
+				y: eAbsoluteY - this.oY,
+
+				//sniper run distances
+				sniperRunX: 0,
+				sniperRunY: 0
 			};
 
 			if (this.state !== "native") this.state = "drag";
+		},
+
+		drag: function(e) {
+			//console.log("drag", e)
+
+			var d = this.dragstate;
+
+			var difX = e.clientX - d.clientX;
+			var difY = e.clientY - d.clientY;
+
+			d.clientX = e.clientX;
+			d.clientY = e.clientY;
+
+			//capture dragstate
+			d.isCtrl = e.ctrlKey;
+			if (e.ctrlKey && this.sniper) {
+				if (isBetween(this.x, this.limits.left, this.limits.right))
+					d.sniperRunX += difX * (1 - this.sniperSpeed)
+				if (isBetween(this.y, this.limits.top, this.limits.bottom))
+					d.sniperRunY += difY * (1 - this.sniperSpeed)
+			}
+			d.x = e.clientX + window.scrollX - this.oX;
+			d.y = e.clientY + window.scrollY - this.oY;
+
+			//move according to dragstate
+			this.x = d.x - d.offsetX - d.sniperRunX;
+			this.y = d.y - d.offsetY - d.sniperRunY;
+
+			//if within limits - move buy difX
+			// this.x += difX;
+			// this.y += difY;
+		},
+
+		stopDrag: function(e){
+			//console.log("stopDrag")
+			delete this.dragstate;
 		},
 
 
@@ -347,11 +355,11 @@
 				},
 				'document selectstart': preventDefault,
 				'document mousemove': function(e){
-					drag(this,e)
+					this.drag(e)
 					this.fire('drag', null, true)
 				},
 				'document mouseup, document mouseleave': function(e){
-					stopDrag(this, e);
+					this.stopDrag(e);
 					this.fire('dragend', null, true);
 					this.state = "ready"
 				}
@@ -397,7 +405,7 @@
 					e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
 				},
 				dragend:  function(e){
-					stopDrag(this, e);
+					this.stopDrag(e);
 
 					//remove drag image stub
 					this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
@@ -410,7 +418,7 @@
 					//ignore zero-movement
 					if (this.dragstate.clientX === e.clientX && this.dragstate.clientY === e.clientY) return e.stopImmediatePropagation();
 
-					drag(this, e);
+					this.drag(e);
 					//this.ondrag && this.ondrag.call(this);
 				},
 				dragover: 'setDropEffect'

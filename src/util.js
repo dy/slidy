@@ -177,6 +177,10 @@ function fire(el, eventName, data, bubbles){
 function between(a, min, max){
 	return Math.max(Math.min(a,max),min);
 }
+function isBetween(a, left, right){
+	if (a <= right && a >= left) return true;
+	return false;
+}
 
 //math precision round
 function round(value, precision){
