@@ -1,5 +1,4 @@
 # Draggalbe
-* Treshold
 * Expose data
 * Circular
 * Tests

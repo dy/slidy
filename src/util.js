@@ -84,7 +84,7 @@ function disableSelection($el){
 		"touch-callout": "none"
 	})
 	$el.setAttribute("unselectable", "on")
-	$el.onselectstart = function(){return false}
+	on($el, 'selectstart', preventDefault)
 }
 function enableSelection($el){
 	css($el, {
@@ -93,7 +93,7 @@ function enableSelection($el){
 		"touch-callout": null
 	})
 	$el.removeAttribute("unselectable")
-	delete $el.onselectstart;
+	off($el, 'selectstart', preventDefault)
 }
 
 //stupid css styler

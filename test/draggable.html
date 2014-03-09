@@ -135,8 +135,7 @@
 
 <article id="pin-area">
 	<pre>
-&lt;div draggable
-	within=&quot;parent&quot;
+&lt;div draggable within=&quot;parent&quot;
 	pin=&quot;[50,50,100,100]&quot;&gt;
 &lt;/div&gt;</pre>
 	<div draggable within="parent" pin="[20,20,40,40]">Pin area</div>
@@ -144,14 +143,20 @@
 
 <article id="point-picker">
 	<pre>
-&lt;div draggable
-	within=&quot;parent&quot;
-	pin=&quot;40,40&quot;&gt;&lt;/div&gt;</pre>
-	<div class="picker" draggable within="parent" pin="40,40">Point picker</div>
+&lt;div draggable within=&quot;parent&quot;
+	pin=&quot;30,30&quot;
+	threshold=&quot;0&quot;&gt;&lt;/div&gt;</pre>
+	<div class="picker" draggable within="parent" pin="30,30" threshold="0">Point picker</div>
 </article>
 
 <article id="repeat">
-	<pre></pre>
+	<pre>
+&lt;div draggable within=&quot;parent&quot;
+	pin=&quot;30,30&quot;
+	repeat=&quot;x&quot;
+	axis=&quot;x&quot;&gt;&lt;/div&gt;
+
+	</pre>
 	<div draggable within="parent" pin="30,30" repeat="x" axis="x">Repeat by x</div>
 </article>
 
