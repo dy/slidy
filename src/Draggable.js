@@ -12,35 +12,35 @@
 		return false;
 	}
 
-	//treshold passing checker
-	function tresholdPassed(difX, difY, treshold){
-		if (typeof treshold === "number"){
+	//threshold passing checker
+	function thresholdPassed(difX, difY, threshold){
+		if (typeof threshold === "number"){
 			//straight number
-			if (Math.abs(difX) > treshold *.5 || Math.abs(difY) > treshold*.5){
+			if (Math.abs(difX) > threshold *.5 || Math.abs(difY) > threshold*.5){
 				return true
 			}
-		} else if (treshold.length === 2){
+		} else if (threshold.length === 2){
 			//Array(w,h)
-			if (Math.abs(difX) > treshold[0]*.5 || Math.abs(difY) > treshold[1]*.5) return true;
-		} else if(treshold.length === 4){
+			if (Math.abs(difX) > threshold[0]*.5 || Math.abs(difY) > threshold[1]*.5) return true;
+		} else if(threshold.length === 4){
 			//Array(x1,y1,x2,y2)
-			if (!isBetween(difX, treshold[0], treshold[2]) || !isBetween(difX, treshold[1], treshold[3]))
+			if (!isBetween(difX, threshold[0], threshold[2]) || !isBetween(difX, threshold[1], threshold[3]))
 				return true;
-		} else if (typeof treshold === "function"){
-			//custom treshold funciton
-			return treshold(difX, difY);
+		} else if (typeof threshold === "function"){
+			//custom threshold funciton
+			return threshold(difX, difY);
 		}
 		return false;
 	}
 
 	//dragstate init
 	function initDragstate($el, e){
-		$el.dragstate = {
-			initX: e.clientX,
-			initY: e.clientY,
-			offsetX: e.offsetX,
-			offsetY: e.offsetY
-		}
+		if (!$el.dragstate) $el.dragstate = {}
+		$el.dragstate.initX = e.clientX
+		$el.dragstate.initY = e.clientY
+		$el.dragstate.offsetX = e.offsetX
+		$el.dragstate.offsetY = e.offsetY;
+		return $el.dragstate;
 	}
 
 
@@ -59,7 +59,7 @@
 		//default options - classical jquery-like notation
 		options: {
 			//how many pixels to omit before switching to drag state
-			treshold: {
+			threshold: {
 				//Number/Array[w,h]/Array[x,y,x,y]/function (custom shape)
 				default: 12
 			},
@@ -238,6 +238,8 @@
 			//define limits
 			this.updateLimits();
 
+			var d = this.dragstate;
+
 			//if event is outside the self area
 			//move self to that area
 			//make offsets half of width
@@ -251,28 +253,35 @@
 				!isBetween(eAbsoluteX, this.offsets.left, this.offsets.right) ||
 				!isBetween(eAbsoluteY, this.offsets.top, this.offsets.bottom)
 			) {
-				//pretend as if offsets within self are ideal
-				offsetX = this.offsets.width * .5;
-				offsetY = this.offsets.height * .5;
+				if (d) {
+					//if threshold crossed outside self
+					offsetX = d.offsetX + e.clientX - d.initX
+					offsetY = d.offsetY + e.clientY - d.initY
+				} else {
+					//no threshold state (drag started from outside)
+					//pretend as if offsets within self are ideal
+					offsetX = this.offsets.width * .5;
+					offsetY = this.offsets.height * .5;
+				}
+
 				//move to that new place
 				if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
 				if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
+
 				//pretend as if drag has happened
-				initDragstate(this, {
+				d = initDragstate(this, {
 					offsetX: offsetX,
 					offsetY: offsetY,
 					clientX: e.clientX,
 					clientY: e.clientY
 				})
+
 				this.fire('dragstart', null, true)
 				this.fire('drag', null, true)
 			} else {
 				offsetX = e.offsetX;
 				offsetY = e.offsetY;
 			}
-
-			//init dragstate
-			var d = this.dragstate;
 
 			//previous mouse vp coords
 			d.clientX = e.clientX;
@@ -387,13 +396,13 @@
 
 				mousedown: function(e){
 					initDragstate(this, e)
-					this.state = "treshold";
+					this.state = "threshold";
 				}
 
 			},
 
-			//when element clicked but drag treshold hasn’t passed yet
-			treshold: {
+			//when element clicked but drag threshold hasn’t passed yet
+			threshold: {
 				// before: function(){
 				// 	console.log("ts before")
 				// },
@@ -401,12 +410,12 @@
 				// 	console.log("ts after")
 				// },
 				'document mousemove': function(e){
-					//console.log("move in", this.treshold)
+					//console.log("move in", this.threshold)
 					var difX = (e.clientX - this.dragstate.initX);
 					var difY = (e.clientY - this.dragstate.initY);
 
-					//if treshold passed - go drag
-					if (tresholdPassed(difX, difY, this.treshold)) {
+					//if threshold passed - go drag
+					if (thresholdPassed(difX, difY, this.threshold)) {
 						this.fire('dragstart', null, true)
 						this.startDrag(e);
 					}

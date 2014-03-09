@@ -222,7 +222,7 @@
 	function setRendering(){
 		Array.prototype.forEach.call(items, function (item) {
 			item
-			.on('treshold', paintTreshold)
+			.on('threshold', paintThreshold)
 			.on('dragstart', renderHelpers)
 			.on('drag', renderHelpers)
 			.on('dragend', clear)
@@ -235,7 +235,7 @@
 	function unsetRendering(){
 		Array.prototype.forEach.call(items, function (item) {
 			item
-			.off('treshold', paintTreshold)
+			.off('threshold', paintThreshold)
 			.off('dragstart', renderHelpers)
 			.off('drag', renderHelpers)
 			.off('dragend', clear)
@@ -269,12 +269,12 @@
 	}
 
 
-	function paintTreshold(e){
+	function paintThreshold(e){
 		var $el = e.currentTarget;
 
 		clear();
 
-		var rect = $el.treshold,
+		var rect = $el.threshold,
 			d = $el.dragstate,
 			offsetX = d.offsetX,
 			offsetY = d.offsetY;
