@@ -1,4 +1,4 @@
-## Component tests
+﻿## Component tests
 
 * Simple create
 * Multi-behaviours on one element (2 components)
@@ -25,3 +25,7 @@
 * Within `window`
 	* declarative
 	* imperative
+
+
+* Plain native draggable polyfill
+* Plain native range polyfill

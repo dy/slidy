@@ -222,9 +222,11 @@
 	function setRendering(){
 		Array.prototype.forEach.call(items, function (item) {
 			item
+			.on('treshold', paintTreshold)
 			.on('dragstart', renderHelpers)
 			.on('drag', renderHelpers)
 			.on('dragend', clear)
+			.on('ready', clear)
 		});
 	}
 
@@ -233,9 +235,11 @@
 	function unsetRendering(){
 		Array.prototype.forEach.call(items, function (item) {
 			item
+			.off('treshold', paintTreshold)
 			.off('dragstart', renderHelpers)
 			.off('drag', renderHelpers)
 			.off('dragend', clear)
+			.off('ready', clear)
 		});
 	}
 
@@ -243,7 +247,6 @@
 		clear();
 		paintRestrictionArea(this);
 		paintPinRect(this);
-		paintTreshold(this);
 	}
 
 	//canvas painters
@@ -265,8 +268,46 @@
 		ctx.stroke();
 	}
 
-	function paintTreshold($el){
-		xxx
+
+	function paintTreshold(e){
+		var $el = e.currentTarget;
+
+		clear();
+
+		var rect = $el.treshold,
+			d = $el.dragstate,
+			offsetX = d.offsetX,
+			offsetY = d.offsetY;
+
+		if (typeof rect === "number"){
+			//number
+			rect = [-rect*.5, -rect*.5, rect*.5, rect*.5]
+		} else if (rect.length === 2){
+			//Array(w,h)
+			rect = [-rect[0] *.5, -rect[1] *.5, rect[0] *.5, rect[1] *.5]
+		} else if(rect.length === 4){
+			//Array(x1,y1,x2,y2)
+			rect = rect.slice();
+		} else if (typeof rect === "function"){
+			//custom rect funciton
+			return;
+		}
+
+		rect[2] += 1
+		rect[3] += 1
+
+		var pos = offsets($el);
+
+		ctx.strokeStyle = 'rgba(60,180,250,1)';
+		ctx.lineWidth = 2;
+
+		ctx.beginPath();
+		ctx.moveTo(pos.left + offsetX + rect[0], pos.top + offsetY + rect[1]);
+		ctx.lineTo(pos.left + offsetX + rect[2], pos.top + offsetY + rect[1]);
+		ctx.lineTo(pos.left + offsetX + rect[2], pos.top + offsetY + rect[3]);
+		ctx.lineTo(pos.left + offsetX + rect[0], pos.top + offsetY + rect[3]);
+		ctx.lineTo(pos.left + offsetX + rect[0], pos.top + offsetY + rect[1]);
+		ctx.stroke();
 	}
 
 	function paintPinRect($el){

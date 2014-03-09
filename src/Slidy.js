@@ -93,13 +93,16 @@
 
 						//TODO: make it be last listener in listeners stack to be preventable within own component states
 						dragstart: function(e){
+							//console.log("dstart")
 							disableSelection(document.documentElement);
 							css(document.documentElement, {"cursor": "none"});
 						},
 						drag: function(e){
+							//console.log("drag")
 							handleDrag(self, e)
 						},
 						dragend: function(e){
+							//console.log("dend")
 							enableSelection(document.documentElement);
 							css(document.documentElement, {"cursor": null});
 						},

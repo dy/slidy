@@ -31,6 +31,8 @@
 	//TODO: add custom methods to options objects
 	//TODO: pass constructor to the component instance
 
+	//TODO: make attr reflection custom function
+
 
 	//correct attribute setter - reflects value changed with throttling
 	var _reflectAttrTimeout;

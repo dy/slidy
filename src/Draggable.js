@@ -12,6 +12,37 @@
 		return false;
 	}
 
+	//treshold passing checker
+	function tresholdPassed(difX, difY, treshold){
+		if (typeof treshold === "number"){
+			//straight number
+			if (Math.abs(difX) > treshold *.5 || Math.abs(difY) > treshold*.5){
+				return true
+			}
+		} else if (treshold.length === 2){
+			//Array(w,h)
+			if (Math.abs(difX) > treshold[0]*.5 || Math.abs(difY) > treshold[1]*.5) return true;
+		} else if(treshold.length === 4){
+			//Array(x1,y1,x2,y2)
+			if (!isBetween(difX, treshold[0], treshold[2]) || !isBetween(difX, treshold[1], treshold[3]))
+				return true;
+		} else if (typeof treshold === "function"){
+			//custom treshold funciton
+			return treshold(difX, difY);
+		}
+		return false;
+	}
+
+	//dragstate init
+	function initDragstate($el, e){
+		$el.dragstate = {
+			initX: e.clientX,
+			initY: e.clientY,
+			offsetX: e.offsetX,
+			offsetY: e.offsetY
+		}
+	}
+
 
 	//TODO: make ghost insteadof moving self
 
@@ -27,7 +58,11 @@
 	var Draggable = Component.register('Draggable', {
 		//default options - classical jquery-like notation
 		options: {
-			treshold: 10,
+			//how many pixels to omit before switching to drag state
+			treshold: {
+				//Number/Array[w,h]/Array[x,y,x,y]/function (custom shape)
+				default: 12
+			},
 
 			autoscroll: false,
 
@@ -90,6 +125,7 @@
 				default: true,
 				global: true
 			},
+			//how much slower sniper drag is
 			sniperSpeed: {
 				default: .15,
 				global: true
@@ -97,7 +133,6 @@
 
 			native: {
 				default: isNativeSupported,
-				attribute: false,
 				global: true,
 				change: function(value){
 					if (value === false && this.state === "native"){
@@ -223,6 +258,12 @@
 				if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
 				if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
 				//pretend as if drag has happened
+				initDragstate(this, {
+					offsetX: offsetX,
+					offsetY: offsetY,
+					clientX: e.clientX,
+					clientY: e.clientY
+				})
 				this.fire('dragstart', null, true)
 				this.fire('drag', null, true)
 			} else {
@@ -231,25 +272,27 @@
 			}
 
 			//init dragstate
-			this.dragstate = {
-				//previous mouse vp coords
-				clientX: e.clientX,
-				clientY: e.clientY,
+			var d = this.dragstate;
 
-				//offset within self
-				offsetX: offsetX,
-				offsetY: offsetY,
+			//previous mouse vp coords
+			d.clientX = e.clientX;
+			d.clientY = e.clientY;
 
-				//relative coords (from initial(zero) position)
-				x: eAbsoluteX - this.oX,
-				y: eAbsoluteY - this.oY,
+			//offset within self
+			d.offsetX = offsetX;
+			d.offsetY = offsetY;
 
-				//sniper run distances
-				sniperRunX: 0,
-				sniperRunY: 0
-			};
+			//relative coords (from initial(zero) position)
+			d.x = eAbsoluteX - this.oX;
+			d.y = eAbsoluteY - this.oY;
 
-			if (this.state !== "native") this.state = "drag";
+			//sniper run distances
+			d.sniperRunX = 0;
+			d.sniperRunY = 0;
+
+			if (this.state !== "native") {
+				this.state = "drag";
+			}
 		},
 
 		drag: function(e) {
@@ -338,11 +381,40 @@
 					//go native
 					if (this.native) return "native";
 				},
+				// after: function(){
+				// 	console.log("ready after")
+				// },
 
 				mousedown: function(e){
-					this.fire('dragstart', null, true)
-					this.startDrag(e);
+					initDragstate(this, e)
+					this.state = "treshold";
 				}
+
+			},
+
+			//when element clicked but drag treshold hasn’t passed yet
+			treshold: {
+				// before: function(){
+				// 	console.log("ts before")
+				// },
+				// after: function(){
+				// 	console.log("ts after")
+				// },
+				'document mousemove': function(e){
+					//console.log("move in", this.treshold)
+					var difX = (e.clientX - this.dragstate.initX);
+					var difY = (e.clientY - this.dragstate.initY);
+
+					//if treshold passed - go drag
+					if (tresholdPassed(difX, difY, this.treshold)) {
+						this.fire('dragstart', null, true)
+						this.startDrag(e);
+					}
+				},
+				'document mouseup, document mouseleave': function(){
+					this.state = "ready";
+				},
+				'document selectstart': preventDefault
 			},
 
 			drag: {
@@ -396,6 +468,7 @@
 
 				dragstart:  function(e){
 					//console.log(e)
+					initDragstate(this, e);
 					this.startDrag(e);
 					e.dataTransfer.effectAllowed = 'all';
 
