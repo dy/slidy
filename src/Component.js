@@ -193,14 +193,18 @@
 				var mutation = mutations[i];
 				//console.log(mutation, mutation.type)
 				if (mutation.type === "attributes"){
-					var attr = mutation.attributeName;
+					var attrName = mutation.attributeName,
+						attr = $el._attrNames[attrName];
+
+					//ignore unknown attr name
+					if (!attr) continue;
+
 					//if option attr changed - upd self value
-					//TODO: catch attribute name different from it’s initial name
 					if ($el.options[attr]){
 						//TODO: catch attribute removal
 						//TODO: avoid attr self-setup
-						console.log("Attribute externally changed", parseAttr($el.getAttribute(attr)))
-						$el["_" + attr] = parseAttr($el.getAttribute(attr));
+						console.log("Attribute externally changed", parseAttr($el.getAttribute(attrName)))
+						$el[attr] = parseAttr($el.getAttribute(attrName));
 					}
 				}
 			}
@@ -524,6 +528,7 @@
 
 		//keep track of default options
 		Descendant.defaults = {};
+		Descendant.prototype._attrNames = {};
 
 		//init prototype options as getters/setters
 		var propsDescriptor = {};
@@ -570,6 +575,9 @@
 			//instance-level options
 			//set prototype default value (to redefine in instances)
 			Descendant.prototype["_" + key] =  defaultValue;
+
+			//save attr name
+			Descendant.prototype._attrNames[attr || key] = key;
 
 			//define global getters/setters (sets prototypal default value)
 			if (isGlobal){
