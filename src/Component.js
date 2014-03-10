@@ -33,6 +33,8 @@
 
 	//TODO: make attr reflection custom function
 
+	//TODO: handle Mutation events with mutationobserver: insert, remove
+
 
 	//correct attribute setter - reflects value changed with throttling
 	var _reflectAttrTimeout;
@@ -703,27 +705,51 @@
 
 
 
-	//Autolaunch registered components when document is ready
-	//TODO: probably it is better to init components before Ready - values, at least, should be there beforehead
-	/*document.addEventListener("DOMContentLoaded", function(){
-		for (var name in Component.registry){
-			var Descendant = Component.registry[name];
 
-			var lname = Descendant.lname,
-				selector = ["[", lname, "], [data-", lname, "], .", lname, ""].join("");
+	/**
+	* Document observer & data-bindings
+	*/
+	//Storage of data-listeners to keep updated
+	//keyed by param name particles to update
+	var dataListeners = {};
+	//most actual data
+	var	dataSource = {};
 
-			//init all elements in DOM
-			var targets = document.querySelectorAll(selector);
-			for (var i = 0; i < targets.length; i++){
-				new Descendant(targets[i]);
+	//Parse document data requirements
+	findElementData(document.documentElement, dataListeners);
+	console.log(dataListeners)
+
+	//TODO: Observe exposed data-changes
+
+
+	//2.1 Update data-listeners values with exposed data
+
+	//Observe DOM changes
+	var docObserver = new MutationObserver(function(mutations) {
+		for (var i = 0; i < mutations.length; i++){
+			var mutation = mutations[i];
+			//console.log(mutation, mutation.type)
+
+			//TODO: Update list of data-listeners
+			if (mutation.type === "attributes"){
+				//TODO: findAttributeData
+			} else if (mutation.type === ""){
+				//TODO: findElementData
+			} else {
+				//TODO: Trigger insertion methods on elements (change state to ready)
 			}
 		}
-	})*/
-	//init every element [classname], [data-classname] or .classname
+	});
 
+	var docObserverConfig = {
+		attributes: true,
+		childList: true,
+		subtree: true,
+		characterData: true
+	}
 
+	docObserver.observe(document, docObserverConfig);
 
-	//Generic component behaviour
 
 
 	//Export

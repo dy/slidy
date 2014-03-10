@@ -36,3 +36,5 @@
     * Behaviour over element (mixin? inheritance?)
 
 * Make all old libs versions: jquery/component/vanilla
+
+* Replace templates with unibrow.js

@@ -35,7 +35,7 @@
 	}
 </style>
 
-<body style="background: hsla({{ hue }}, {{ saturation }}, {{ lightness }}, {{ alpha }})" data-bind>
+<body style="background: hsla({{ hue }}, {{ saturation }}%, {{ lightness }}%, {{ alpha }})">
 
 	<h1>Simple three-component picker</h1>
 
@@ -45,12 +45,13 @@
 
 	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange=""></div>
 
-	<output id="color">hsla({{ hue }}, {{ saturation }}, {{ lightness }}, {{ alpha }})</output>
+	<output id="color">hsla({{ hue }}, {{ saturation }}%, {{ lightness }}%, {{ alpha }})</output>
 
 </body>
 
 
 <script src='../src/util.js'></script>
+<script src='../src/databind.js'></script>
 <script src='../src/Component.js'></script>
 <script src='../src/Draggable.js'></script>
 <script src='../src/Slidy.js'></script>
@@ -91,7 +92,7 @@
 		//console.clear();
 		//console.log(c)
 		//console.log(this.value)
-		$body.style.background = c;
+		//$body.style.background = c;
 		updateHL();
 		updateSat();
 	}
