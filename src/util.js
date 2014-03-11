@@ -296,21 +296,8 @@ function parseMultiAttr(str){
 	return result
 }
 
-//attributes to ignore
-var defaultAttrs = {
-	'class': true,
-	'id': true,
-	'style': true,
-	'name': true,
-	'type': true,
-	'src': true,
-	'link': true,
-	'href': true,
-	'disabled': true
-};
-
 //returns data object representing attributes read
-function parseAttributes(el){
+function parseAttributes(el, except){
 	var attrs = el.attributes,
 		data = {};
 
@@ -320,7 +307,7 @@ function parseAttributes(el){
 		if (attrName.slice(0,2) === "on") {
 			//declared evt - create anonymous fn
 			data[attrName] = new Function(attr.value);
-		} else if (!defaultAttrs[attrName]) {
+		} else if (!except[attrName]) {
 			data[attrName] = parseAttr(attr.value)
 		}
 	}

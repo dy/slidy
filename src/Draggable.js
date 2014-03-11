@@ -55,7 +55,7 @@
 		return isNativeSupported
 	})();
 
-	var Draggable = Component.register('Draggable', {
+	var Draggable = Behaviour.register('Draggable', {
 		//default options - classical jquery-like notation
 		options: {
 			//how many pixels to omit before switching to drag state

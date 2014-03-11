@@ -34,6 +34,11 @@
 	//TODO: make attr reflection custom function
 
 	//TODO: handle Mutation events with mutationobserver: insert, remove
+	//TODO: make able to build with events, not the states (to build simplier components)
+
+	//TODO: add straightforward CustomElement callbacks: attached, detached, attributeChanged
+
+	//TODO: pass `extends` directive to component to extend behavior
 
 
 	//correct attribute setter - reflects value changed with throttling
@@ -93,9 +98,14 @@
 		//Intrude into el's prototype chain
 		//save original element’s prototype, like HTMLDivElement or whatever
 		var originalProto = self.__proto__;
-		//`this` loses here
-		self.__proto__ = this.constructor.prototype;
-		self.constructor = this.constructor;
+		if (originalProto instanceof Component){
+			//keep original prototype as is as it is Component already
+		} else {
+			//Refer prototype to Component
+			//`this` loses here
+			self.__proto__ = this.constructor.prototype;
+			self.constructor = this.constructor;
+		}
 
 		//ignore disabled
 		// if (self.getAttribute('disabled') !== null) {
@@ -154,6 +164,19 @@
 	}
 
 
+	//attributes to ignore
+	var defaultAttrs = {
+		'class': true,
+		'id': true,
+		'style': true,
+		'name': true,
+		'type': true,
+		'src': true,
+		'link': true,
+		'href': true,
+		'disabled': true
+	};
+
 	/**
 	* Instance options initializer
 	*/
@@ -162,7 +185,7 @@
 	//TODO: handle lifecycle events
 	function initOptions($el, extOpts){
 		//read dataset attributes
-		extOpts = extend(parseAttributes($el), extOpts);
+		extOpts = extend(parseAttributes($el, defaultAttrs), extOpts);
 
 		//for every instance option create attribute reflection (just set value)
 		for (var key in extOpts){
@@ -613,6 +636,7 @@
 		//init API (deep) - all other methods as an API
 		//TODO: watch out for correct states inheritance
 		initObj.states = extend({}, Component.prototype.states, initObj.states)
+		if (!initObj.options) initObj.options = {};
 		extend(Descendant.prototype, initObj, true);
 
 
@@ -654,32 +678,36 @@
 				//ignore same value
 				if (target['_' + key ] === value) return;
 
+				var oldValue = target['_' + key];
+
 				value = set ? set.call(target,value) : value;
 				target['_' + key ] = value;
 
 				//update targets passed
 				for (var i = updateTargets.length; i--;){
-					_updateTarget(updateTargets[i], key, value, attr, change);
+					_updateTarget(updateTargets[i], key, value, oldValue, attr, change);
 				}
 			}
 		} else {
 			//instance option
 			return function(value){
 				//ignore same value
-				if (this['_' + key ] === value) return ;
+				if (this['_' + key ] === value) return;
 				//console.log("set", key, value)
+
+				var oldValue = this['_' + key ];
 
 				value = set ? set.call(this,value) : value;
 				this['_' + key ] = value;
 
-				_updateTarget(this, key, value, attr, change);
+				_updateTarget(this, key, value, oldValue, attr, change);
 			}
 		}
 	}
 	//option updater on target
-	function _updateTarget(target, key, value, attr, change){
+	function _updateTarget(target, key, value, oldValue, attr, change){
 		attr && _updateAttr(target, (attr === true ? key : attr), value, attr);
-		change && change.call(target, value)
+		change && change.call(target, value, oldValue)
 		//TODO: turn these two on when they needed
 		//target.fire("optionChanged")
 		//target.fire(key + "Changed")
@@ -753,5 +781,5 @@
 
 
 	//Export
-	global["Component"] = Component;
+	global["Behaviour"] = Component;
 })(window);

@@ -73,7 +73,7 @@
 	}
 
 
-	var Slidy = Component.register('Slidy', {
+	var Slidy = Behaviour.register('Slidy', {
 		states: {
 			init: {
 				before: function(){
@@ -123,7 +123,9 @@
 					//TODO: replace that ↓ with DOM observer
 					this.picker.state = "ready";
 
-					//TODO: bind data
+					//make self data-exposable
+					new Exposable(this);
+					console.dir(this)
 				}
 			},
 			ready: {
@@ -153,8 +155,17 @@
 					}
 
 					return round(between(value, this.min, this.max), this.step);
-				}
+				},
+
+				//TODO: make expose work as input
+				expose: function(){ return this.name }
 			},
+			//TODO: make name work not-interfering with native input
+			name: {
+				default: "",
+				attribute: false
+			},
+
 			min: 0,
 			max: 100,
 			step: {
