@@ -1,3 +1,5 @@
+* Move component out. Include it as a dependency
+
 # Draggalbe
 * Expose data
 * Circular
