@@ -1,15 +1,8 @@
-* Move component out. Include it as a dependency
-
 # Draggalbe
 * Expose data
 * Circular
 * Tests
 * Demo page
-* Compile/build/minify/deliver package
-* Component rename to behaviour
-* Component register everywhere
-* Component out
-* Component tests
 
 # Slidy
 * Expose data
@@ -29,14 +22,3 @@
 
 * get/set value API for case of one picker
 	* reversive transfer, mapping & placing fn's
-
-* Implement typer’s draggable
-
-* Compile down to polymer/xtags/vanilla web-components:
-    * attributeChanged
-    * registerElement
-    * Behaviour over element (mixin? inheritance?)
-
-* Make all old libs versions: jquery/component/vanilla
-
-* Replace templates with unibrow.js

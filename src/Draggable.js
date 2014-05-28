@@ -1,427 +1,244 @@
-﻿(function(global){
+﻿//TODO: make ghost insteadof moving self
+var Draggable = Mod.extend({
+	init: function(){
+	},
 
-	//set displacement according to the x & y
-	function updatePosition($el){
-		css($el, "transform", ["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join(""));
-	}
+	created: function(){
+		disableSelection(this);
+		// console.log("draggable created")
+	},
 
-	//native-drag helper
-	function setDropEffect(e){
-		e.preventDefault()
-		e.dataTransfer.dropEffect = "move"
-		return false;
-	}
-
-	//threshold passing checker
-	function thresholdPassed(difX, difY, threshold){
-		if (typeof threshold === "number"){
-			//straight number
-			if (Math.abs(difX) > threshold *.5 || Math.abs(difY) > threshold*.5){
-				return true
-			}
-		} else if (threshold.length === 2){
-			//Array(w,h)
-			if (Math.abs(difX) > threshold[0]*.5 || Math.abs(difY) > threshold[1]*.5) return true;
-		} else if(threshold.length === 4){
-			//Array(x1,y1,x2,y2)
-			if (!isBetween(difX, threshold[0], threshold[2]) || !isBetween(difX, threshold[1], threshold[3]))
-				return true;
-		} else if (typeof threshold === "function"){
-			//custom threshold funciton
-			return threshold(difX, difY);
+	attached: function(){
+		//ensure pin correctness
+		// console.log("draggable attached")
+		if (this.pin[2] === 0){
+			// console.log("draggable attached")
+			// this.pin = [0,0,this.offsetWidth, this.offsetHeight];
 		}
-		return false;
-	}
+	},
 
-	//dragstate init
-	function initDragstate($el, e){
-		if (!$el.dragstate) $el.dragstate = {}
-		$el.dragstate.initX = e.clientX
-		$el.dragstate.initY = e.clientY
-		$el.dragstate.offsetX = e.offsetX
-		$el.dragstate.offsetY = e.offsetY;
-		return $el.dragstate;
-	}
+	//how many pixels to omit before switching to drag state
+	threshold: {
+		//Number/Array[w,h]/Array[x,y,x,y]/function (custom shape)
+		value: 12
+	},
 
+	//whether to autoscroll on reaching the border of the screen
+	autoscroll: false,
 
-	//TODO: make ghost insteadof moving self
-
-	//detect whether to use native drag
-	//NOTE: native drag is faster though you can’t change drag cursor
-	//NOTE: native-drag cursor is glitching if drag started on the edge
-	var isNativeSupported = (function(){
-		var div = document.createElement("div")
-		var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
-		return isNativeSupported
-	})();
-
-	var Draggable = Behaviour.register('Draggable', {
-		//default options - classical jquery-like notation
-		options: {
-			//how many pixels to omit before switching to drag state
-			threshold: {
-				//Number/Array[w,h]/Array[x,y,x,y]/function (custom shape)
-				default: 12
-			},
-
-			autoscroll: false,
-
-			//null is no restrictions
-			within: {
-				default: document.documentElement,
-				set: function(within){
-					if (within instanceof Element){
-						return within
-					} else if (typeof within === "string"){
-						if (within === "parent")
-							return this.parentNode;
-						else if (within === "..")
-							return this.parentNode;
-						else if (within === "...")
-							return this.parentNode.parentNode;
-						else if (within === "root")
-							return document.body.parentNode;
-						else
-							return $(within)[0];
-					} else {
-						return null
-					}
-				}
-			},
-
-			//what area of draggable should not be outside the restriction area
-			//by default it’s whole draggable rect
-			pin: {
-				default: null,
-				get: function(value){
-					if (!value) return [0,0,this.offsetWidth, this.offsetHeight];
-					else return value;
-				},
-				set: function(value){
-					if (value.length === 2){
-						value = [value[0], value[1], value[0], value[1]];
-					} else if (value.length === 4){
-					} else {
-						throw new Error("Unknown pin area format")
-					}
-
-					return value;
-				},
-				change: function(){
-					this.updateLimits();
-				}
-			},
-
-			group: null,
-
-			ghost: false,
-
-			translate: true,
-
-			//to what extent round position
-			precision: 1,
-
-			sniper: {
-				default: true,
-				global: true
-			},
-			//how much slower sniper drag is
-			sniperSpeed: {
-				default: .15,
-				global: true
-			},
-
-			native: {
-				default: isNativeSupported,
-				global: true,
-				change: function(value){
-					if (value === false && this.state === "native"){
-						this.state = "ready";
-					} else if (this.state !== "init") {
-						this.state = "native";
-					}
-				}
-			},
-
-			//jquery-exactly axis fn: false, x, y
-			axis: false,
-
-			//
-			repeat: {
-				default: null,
-				set: function(repeat){
-					if (repeat === "both" || repeat === "x" || repeat === "y"){
-						//straight value passed
-						return repeat;
-					} else if (repeat instanceof Array){
-						//vector passed
-						if (repeat.length){
-							if (repeat[0] && repeat[1])
-								return "both";
-							else if (repeat[0])
-								return "x";
-							else if (repeat[1])
-								return "y";
-						}
-					} else if (repeat === true){
-						//just repeat any possible way
-						return this.axis ? this.axis : "both"
-					} else {
-						//unrecognized value passed
-						return false;
-					}
-				}
-			},
-
-			//initial position
-			x: {
-				default: 0,
-				set: function(value){
-					if (this.repeat === 'both' || this.repeat === 'x'){
-						//mind repeat
-						if (value < this.limits.left){
-							value += this.limits.right - this.limits.left;
-						} else if (value > this.limits.right){
-							value -= this.limits.right - this.limits.left;
-						}
-					} else if (!this.axis || this.axis === "x"){
-						//mind axis
-						value = between(value,
-							this.limits.left,
-							this.limits.right);
-					} else {
-						//ignore change
-						return this._x;
-					}
-
-					value = round(value, this.precision)
-					return value;
-				},
-				change: function(){
-					updatePosition(this)
-				}
-			},
-			y: {
-				default: 0,
-				set: function(value){
-					if (this.repeat === 'both' || this.repeat === 'y'){
-						//mind repeat
-						if (value < this.limits.top){
-							value += this.limits.bottom - this.limits.top;
-						} else if (value > this.limits.bottom){
-							value -= this.limits.bottom - this.limits.top;
-						}
-					} else if (!this.axis || this.axis === "y"){
-						//mind axis
-						value = between(value,
-							this.limits.top,
-							this.limits.bottom);
-					} else {
-						//ignore change
-						return this._y
-					}
-
-					//console.log("set", value)
-					value = round(value, this.precision)
-					//console.log("→", value)
-					return value;
-				},
-				change: function(){
-					updatePosition(this)
-				}
-			}
-		},
-
-		//-------------------API (verbs)
-		//starts drag from event passed
-		startDrag: function(e){
-			//define limits
-			this.updateLimits();
-
-			var d = this.dragstate;
-
-			//if event is outside the self area
-			//move self to that area
-			//make offsets half of width
-			var offsetX, offsetY,
-				//event absolute coords
-				eAbsoluteX = e.clientX + window.scrollX,
-				eAbsoluteY = e.clientY + window.scrollY;
-
-			//if drag started outside self area - move self to that place
-			if (
-				!isBetween(eAbsoluteX, this.offsets.left, this.offsets.right) ||
-				!isBetween(eAbsoluteY, this.offsets.top, this.offsets.bottom)
-			) {
-				if (d) {
-					//if threshold crossed outside self
-					offsetX = d.offsetX + e.clientX - d.initX
-					offsetY = d.offsetY + e.clientY - d.initY
-				} else {
-					//no threshold state (drag started from outside)
-					//pretend as if offsets within self are ideal
-					offsetX = this.offsets.width * .5;
-					offsetY = this.offsets.height * .5;
-				}
-
-				//move to that new place
-				if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
-				if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
-
-				//pretend as if drag has happened
-				d = initDragstate(this, {
-					offsetX: offsetX,
-					offsetY: offsetY,
-					clientX: e.clientX,
-					clientY: e.clientY
-				})
-
-				this.fire('dragstart', null, true)
-				this.fire('drag', null, true)
+	//null is no restrictions
+	within: {
+		value: root,
+		change: function(within){
+			// console.log("within change", this.parentNode.id, within )
+			if (within instanceof Element){
+				this.within = within
+			} else if (typeof within === "string"){
+				this.within = parseTarget(this,within)
 			} else {
-				offsetX = e.offsetX;
-				offsetY = e.offsetY;
-			}
-
-			//previous mouse vp coords
-			d.clientX = e.clientX;
-			d.clientY = e.clientY;
-
-			//offset within self
-			d.offsetX = offsetX;
-			d.offsetY = offsetY;
-
-			//relative coords (from initial(zero) position)
-			d.x = eAbsoluteX - this.oX;
-			d.y = eAbsoluteY - this.oY;
-
-			//sniper run distances
-			d.sniperRunX = 0;
-			d.sniperRunY = 0;
-
-			if (this.state !== "native") {
-				this.state = "drag";
+				this.within = root
 			}
 		},
+		order: 0
+	},
 
-		drag: function(e) {
-			//console.log("drag", e)
-
-			var d = this.dragstate;
-
-			var difX = e.clientX - d.clientX;
-			var difY = e.clientY - d.clientY;
-
-			d.clientX = e.clientX;
-			d.clientY = e.clientY;
-
-			//capture dragstate
-			d.isCtrl = e.ctrlKey;
-			if (e.ctrlKey && this.sniper) {
-				if (isBetween(this.x, this.limits.left, this.limits.right))
-					d.sniperRunX += difX * (1 - this.sniperSpeed)
-				if (isBetween(this.y, this.limits.top, this.limits.bottom))
-					d.sniperRunY += difY * (1 - this.sniperSpeed)
-			}
-			d.x = e.clientX + window.scrollX - this.oX;
-			d.y = e.clientY + window.scrollY - this.oY;
-
-			//move according to dragstate
-			this.x = d.x - d.offsetX - d.sniperRunX;
-			this.y = d.y - d.offsetY - d.sniperRunY;
-
-			//if within limits - move buy difX
-			// this.x += difX;
-			// this.y += difY;
-		},
-
-		stopDrag: function(e){
-			//console.log("stopDrag")
-			delete this.dragstate;
-		},
-
-
-		//updates movement restrictions
-		updateLimits: function(){
-			//it is here because not always element is in DOM when constructor inits
-			var limOffsets = offsets(this.within);
-
-			this.offsets = offsets(this);
-			var selfPads = paddings(this.within);
-
-			//save relative coord system offsets
-			this.oX = this.offsets.left - this.x;
-			this.oY = this.offsets.top - this.y;
-
-			var pin = this.pin;
-
-			//pinArea-including version
-			this.limits.top = limOffsets.top - this.oY + selfPads.top - pin[1];
-
-			this.limits.bottom = limOffsets.bottom - this.oY - this.offsets.height - selfPads.bottom + (this.offsets.height - pin[3]);
-
-			this.limits.left = limOffsets.left - this.oX + selfPads.left - pin[0];
-
-			this.limits.right = limOffsets.right - this.oX - this.offsets.width - selfPads.right + (this.offsets.width - pin[2]);
-
-		},
-
-		//states: grouped events
-		states: {
-			init: {
-				before: function(){
-					//console.log("draggable before init")
-					//init empty limits
-					this.limits = {};
-
-					disableSelection(this)
-				},
-				after: function(){
-					//console.log("draggable after init")
+	//which area of draggable should not be outside the restriction area
+	//by default it’s whole draggable rect
+	pin: {
+		value: [],
+		change: function(value){
+			// console.log("pin changed", value)
+			try {
+				if (value.length === 2){
+					value = [value[0], value[1], value[0], value[1]];
+				} else if (value.length === 4){
+				} else {
+					throw new Error
 				}
-			},
+			} catch (e){
+				value = [0,0,this.offsetWidth, this.offsetHeight]
+			}
+			// console.log(value)
 
+			this.pin = value;
+
+			this.updateLimits();
+		}
+	},
+
+	//TODO: draggable/droppable match identifier
+	group: null,
+
+	//TODO: clone object for dragging
+	ghost: false,
+
+	//TODO: use translate3d method or position displacement
+	translate3d: true,
+
+	//to what extent round position
+	precision: {
+		value: 1,
+		order: 0
+	},
+
+	//slow down movement by pressing ctrl
+	sniper: true,
+
+	//how much slower sniper drag is
+	sniperSpeed: .15,
+
+	//false, 'x', 'y'
+	axis: false,
+
+	//repeat position by one of axis
+	repeat: {
+		values: {
+			undefined: null,
+			both: null,
+			x: null,
+			y: null,
+			_: function(){
+				//vector passed
+				if (this.repeat instanceof Array){
+					if (this.repeat.length){
+						if (this.repeat[0] && this.repeat[1])
+							return "both";
+						else if (this.repeat[0])
+							return "x";
+						else if (this.repeat[1])
+							return "y";
+					}
+
+				//just repeat any possible way
+				} else if (this.repeat === true){
+					return this.axis ? this.axis : "both"
+
+				//unrecognized value passed
+				} else {
+					return undefined;
+				}
+			}
+		}
+	},
+
+	//position
+	x: {
+		value: 0,
+		change: function(value, old){
+			// console.log("set x", value, old)
+			if (this.repeat === 'both' || this.repeat === 'x'){
+				//mind repeat
+				if (value < this._limits.left){
+					value += this._limits.right - this._limits.left;
+				} else if (value > this._limits.right){
+					value -= this._limits.right - this._limits.left;
+				}
+			} else if (!this.axis || this.axis === "x"){
+				//mind axis
+				value = between(value,
+					this._limits.left,
+					this._limits.right);
+			} else {
+				//ignore change
+				return 0;
+			}
+			this.x = round(value, this.precision)
+
+			updatePosition(this)
+		},
+		order: 1
+	},
+	y: {
+		value: 0,
+		change: function(value, old){
+			// console.log("set y", this._limits)
+			if (this.repeat === 'both' || this.repeat === 'y'){
+				//mind repeat
+				if (value < this._limits.top){
+					value += this._limits.bottom - this._limits.top;
+				} else if (value > this._limits.bottom){
+					value -= this._limits.bottom - this._limits.top;
+				}
+			} else if (!this.axis || this.axis === "y"){
+				//mind axis
+				value = between(value,
+					this._limits.top,
+					this._limits.bottom);
+			} else {
+				//ignore change
+				return 0;
+			}
+
+			this.y = round(value, this.precision)
+
+			updatePosition(this);
+		},
+		order: 1
+	},
+
+	//use native drag
+	native: {
+		//is native drag supported
+		value: (function(){
+			var div = document.createElement("div")
+			var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
+			return isNativeSupported
+		})() && false,
+		change: function(value, oldValue){
+			// console.log("set native to", value, oldValue)
+			if (value === false && this.dragstate === "native"){
+				this.dragstate = "idle";
+			} else if (value === true && this.dragstate !== "init") {
+				this.dragstate = "native";
+			}
+		},
+		order: 8
+	},
+
+
+	//main draggable state reflector
+	dragstate: {
+		value: "idle",
+		values: {
 			//non-native drag
-			ready: {
+			idle: {
 				before: function(){
-					//console.log("draggable before ready")
+					// console.log("before idle")
 					this.updateLimits();
 
 					//go native
-					if (this.native) return "native";
+					if (this.native) this.dragstate = "native";
 				},
-				// after: function(){
-				// 	console.log("ready after")
-				// },
 
 				mousedown: function(e){
-					initDragstate(this, e)
-					this.state = "threshold";
+					// console.log("ready click")
+					initDragparams(this, e);
+					this.dragstate = "threshold";
 				}
-
 			},
 
 			//when element clicked but drag threshold hasn’t passed yet
 			threshold: {
-				// before: function(){
-				// 	console.log("ts before")
-				// },
-				// after: function(){
-				// 	console.log("ts after")
-				// },
+				before: function(){
+					// console.log("ts before")
+					fire(this, "threshold")
+				},
+				after: function(){
+					//console.log("ts after")
+				},
 				'document mousemove': function(e){
 					//console.log("move in", this.threshold)
-					var difX = (e.clientX - this.dragstate.initX);
-					var difY = (e.clientY - this.dragstate.initY);
+					var difX = (e.clientX - this._dragparams.initX);
+					var difY = (e.clientY - this._dragparams.initY);
 
 					//if threshold passed - go drag
 					if (thresholdPassed(difX, difY, this.threshold)) {
-						this.fire('dragstart', null, true)
+						fire(this, 'dragstart', null, true)
 						this.startDrag(e);
 					}
 				},
-				'document mouseup, document mouseleave': function(){
-					this.state = "ready";
+				'document mouseup, document mouseleave': function(e){
+					this.dragstate = "idle";
 				},
 				'document selectstart': preventDefault
 			},
@@ -430,25 +247,28 @@
 				before: function(){
 					//handle CSSs
 					disableSelection(this.within)
+					// console.log("drag before")
 				},
 				after: function(){
 					enableSelection(this.within)
 				},
 				'document selectstart': preventDefault,
 				'document mousemove': function(e){
-					this.drag(e)
-					this.fire('drag', null, true)
+					this.doDrag(e)
+					fire(this, 'drag', null, true)
 				},
 				'document mouseup, document mouseleave': function(e){
 					this.stopDrag(e);
-					this.fire('dragend', null, true);
-					this.state = "ready"
+					fire(this, 'dragend', null, true);
+					this.dragstate = "idle"
 				}
 			},
 
+			//when scrolled to the edge of the screen
 			scroll: {
 
 			},
+			//when hovered on technical elements
 			tech: {
 
 			},
@@ -459,7 +279,7 @@
 			//native drag
 			native: {
 				before: function(){
-					//console.log("draggable before native")
+					// console.log("draggable before native")
 					//hang proper styles
 					css(this, {
 						"user-drag": "element",
@@ -476,8 +296,7 @@
 				},
 
 				dragstart:  function(e){
-					//console.log(e)
-					initDragstate(this, e);
+					//console.log("native dragstart")
 					this.startDrag(e);
 					e.dataTransfer.effectAllowed = 'all';
 
@@ -498,19 +317,205 @@
 					if (e.x === 0 && e.y === 0) return;
 
 					//ignore zero-movement
-					if (this.dragstate.clientX === e.clientX && this.dragstate.clientY === e.clientY) return e.stopImmediatePropagation();
+					if (this._dragparams.clientX === e.clientX && this._dragparams.clientY === e.clientY) return e.stopImmediatePropagation();
 
-					this.drag(e);
+					this.doDrag(e);
 					//this.ondrag && this.ondrag.call(this);
 				},
-				dragover: 'setDropEffect'
+				dragover: setDropEffect
 			}
 		}
-	});
+	},
+
+	//starts drag from event passed
+	startDrag: function(e){
+		//define limits
+		this.updateLimits();
+
+		var d = this._dragparams;
+
+		var offsetX, offsetY,
+			//event absolute coords
+			eAbsoluteX = e.clientX + window.pageXOffset,
+			eAbsoluteY = e.clientY + window.pageYOffset;
+
+		//if drag started outside self area - move self to that place
+		if (
+			!isBetween(eAbsoluteX, this._offsets.left, this._offsets.right) ||
+			!isBetween(eAbsoluteY, this._offsets.top, this._offsets.bottom)
+		) {
+			//d is not always undefined here
+			if (d) {
+				//if threshold crossed outside self
+				offsetX = d.offsetX + e.clientX - d.initX
+				offsetY = d.offsetY + e.clientY - d.initY
+			} else {
+				//no threshold state (drag started from outside)
+				//pretend as if offsets within self are ideal
+				offsetX = this._offsets.width * .5;
+				offsetY = this._offsets.height * .5;
+			}
+			//console.log("outside")
+
+			//move to that new place
+			if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
+			if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
+
+			//pretend as if drag has happened
+			d = initDragparams(this, {
+				offsetX: offsetX,
+				offsetY: offsetY,
+				clientX: e.clientX,
+				clientY: e.clientY
+			})
+			fire(this, 'dragstart', null, true)
+
+			fire(this, 'drag', null, true)
+		} else {
+			//console.log("inside")
+			if (!d) d = initDragparams(this, e);
+			offsetX = e.pageX - this._offsets.left;
+			offsetY = e.pageY - this._offsets.top;
+		}
+
+		//previous mouse vp coords
+		d.clientX = e.clientX;
+		d.clientY = e.clientY;
+
+		//offset within self
+		d.offsetX = offsetX;
+		d.offsetY = offsetY;
+
+		//relative coords (from initial(zero) position)
+		d.x = eAbsoluteX - this.oX;
+		d.y = eAbsoluteY - this.oY;
+
+		//sniper run distances
+		d.sniperRunX = 0;
+		d.sniperRunY = 0;
+
+		if (this.dragstate !== "native") {
+			this.dragstate = "drag";
+		}
+	},
+
+	doDrag: function(e) {
+		//console.log("drag", e)
+		var d = this._dragparams;
+
+		var difX = e.clientX - d.clientX;
+		var difY = e.clientY - d.clientY;
+
+		d.clientX = e.clientX;
+		d.clientY = e.clientY;
+
+		//capture dragstate
+		d.isCtrl = e.ctrlKey;
+		if (e.ctrlKey && this.sniper) {
+			if (isBetween(this.x, this._limits.left, this._limits.right))
+				d.sniperRunX += difX * (1 - this.sniperSpeed)
+			if (isBetween(this.y, this._limits.top, this._limits.bottom))
+				d.sniperRunY += difY * (1 - this.sniperSpeed)
+		}
+		d.x = e.clientX + window.pageXOffset - this.oX;
+		d.y = e.clientY + window.pageYOffset - this.oY;
+
+		//move according to dragstate
+		this.x = d.x - d.offsetX - d.sniperRunX;
+		this.y = d.y - d.offsetY - d.sniperRunY;
+		// console.log(this.x, d.x - d.offsetX - d.sniperRunX)
+
+		//if within limits - move buy difX
+		// this.x += difX;
+		// this.y += difY;
+	},
+
+	stopDrag: function(e){
+		// console.log("stopDrag")
+		delete this._dragparams;
+	},
+
+
+	//updates movement restrictions
+	updateLimits: function(){
+		// console.log("upd limits", this.y)
+		//it is here because not always element is in DOM when constructor inits
+		var limOffsets = offsets(this.within);
+
+		this._offsets = offsets(this);
+
+		var selfPads = paddings(this.within);
+
+		//save relative coord system offsets
+		this.oX = this._offsets.left - this.x;
+		this.oY = this._offsets.top - this.y
+		var pin = this.pin;
+
+		//pinArea-including version
+		this._limits.top = limOffsets.top - this.oY + selfPads.top - pin[1];
+
+		this._limits.bottom = limOffsets.bottom - this.oY - this._offsets.height - selfPads.bottom + (this._offsets.height - pin[3]);
+
+		this._limits.left = limOffsets.left - this.oX + selfPads.left - pin[0];
+
+		this._limits.right = limOffsets.right - this.oX - this._offsets.width - selfPads.right + (this._offsets.width - pin[2]);
+
+	},
+
+	//movement restrictions
+	_limits: {
+		top: 0,
+		left: 0,
+		bottom: 0,
+		right: 0
+	}
+}).register("draggable");
 
 
 
-	//exports
-	global['Draggable'] = Draggable;
 
-})(window)
+
+
+//set displacement according to the x & y
+function updatePosition($el){
+	css($el, "transform", ["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join(""));
+	// console.log(["translate3d(", $el.x, "px,", $el.y, "px, 0)"].join(""))
+}
+
+//native-drag helper
+function setDropEffect(e){
+	e.preventDefault()
+	e.dataTransfer.dropEffect = "move"
+	return false;
+}
+
+//threshold passing checker
+function thresholdPassed(difX, difY, threshold){
+	if (typeof threshold === "number"){
+		//straight number
+		if (Math.abs(difX) > threshold *.5 || Math.abs(difY) > threshold*.5){
+			return true
+		}
+	} else if (threshold.length === 2){
+		//Array(w,h)
+		if (Math.abs(difX) > threshold[0]*.5 || Math.abs(difY) > threshold[1]*.5) return true;
+	} else if(threshold.length === 4){
+		//Array(x1,y1,x2,y2)
+		if (!isBetween(difX, threshold[0], threshold[2]) || !isBetween(difX, threshold[1], threshold[3]))
+			return true;
+	} else if (typeof threshold === "function"){
+		//custom threshold funciton
+		return threshold(difX, difY);
+	}
+	return false;
+}
+
+//dragstate init
+function initDragparams($el, e){
+	if (!$el._dragparams) $el._dragparams = {};
+	$el._dragparams.initX = e.clientX
+	$el._dragparams.initY = e.clientY
+	$el._dragparams.offsetX = e.pageX - $el._offsets.left
+	$el._dragparams.offsetY = e.pageY - $el._offsets.top;
+	return $el._dragparams;
+}
