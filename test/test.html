@@ -1,0 +1,57 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Slidy tests</title>
+	<link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+
+	<style>
+		.slidy{
+			min-height: 4vh;
+			min-width: 4vw;
+			background: #f9f9f9;
+			margin: 10px;
+			box-shadow: inset 0 1px 2px #f0f0f0;
+			border-radius: 3px;
+			position: relative;
+		}
+
+		.slidy > .draggable{
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 20px;
+			height: 20px;
+			background: rgba(30,30,30,.2);
+		}
+	</style>
+</head>
+<body>
+	<div id="mocha"></div>
+
+	<!--<script src="../node_modules/jquery/dist/jquery.min.js"></script>-->
+
+	<script src="../node_modules/mocha/mocha.js"></script>
+	<script src="../node_modules/chai/chai.js"></script>
+
+	<!--[if IE 9]>
+	<script src="../src/polyfill.js"></script>
+	<![endif]-->
+
+	<script src="../src/mod.js"></script>
+	<script src="../src/Draggable.js"></script>
+	<script src="../src/Slidy.js"></script>
+
+	<script>
+		mocha.setup('bdd');
+		assert = chai.assert;
+	</script>
+
+	<script src="testHelpers.js"></script>
+	<script src="test.js"></script>
+
+	<script>
+		mocha.checkLeaks();
+		mocha.run();
+	</script>
+</body>
+</html>
