@@ -56,34 +56,30 @@ var Slidy = Mod.extend({
 		change: function(value, old){
 			var result;
 
-			if (this.min !== undefined && this.max !== undefined) {
-				// console.log("slidy set value", value, old)
-				if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
+			// console.log("slidy set value", value, old)
+			if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
 
 
-				if (value && value.length === 2) {
-					result = [];
-					result[0] = round(between(value[0], this.min[0], this.max[0]), this.step)
-					result[1] = round(between(value[1], this.min[1], this.max[1]), this.step)
-					if (!result[0] && result[0] !== 0) result[0] = old[0];
-					if (!result[1] && result[1] !== 0) result[1] = old[1];
-					value = result;
-				} else {
-					value = parseFloat(value) ? value : 0;
-					result = round(between(value, this.min, this.max), this.step);
-				}
-				if (!result && result !== 0) err("Something went wrong in validating value", result)
-
-				this.value = result;
-
-				// console.log("slidy value changed", value, old, this.value)
-				//TODO: this shitty-gitty shits the bed, bitch
-				this.updatePosition();
-				fire(this, "change")
-
+			if (value && value.length === 2) {
+				result = [];
+				result[0] = round(between(value[0], this.min[0], this.max[0]), this.step)
+				result[1] = round(between(value[1], this.min[1], this.max[1]), this.step)
+				if (!result[0] && result[0] !== 0) result[0] = old[0];
+				if (!result[1] && result[1] !== 0) result[1] = old[1];
+				value = result;
 			} else {
-				// console.log("to0")
+				value = parseFloat(value) ? value : 0;
+				result = round(between(value, this.min, this.max), this.step);
 			}
+			if (!result && result !== 0) err("Something went wrong in validating value", result)
+
+			this.value = result;
+
+			// console.log("slidy value changed", value, old, this.value)
+			//TODO: this shitty-gitty shits the bed, bitch
+			this.updatePosition();
+			fire(this, "change")
+
 		},
 		order: 3
 	},
