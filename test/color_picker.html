@@ -1,0 +1,146 @@
+<!doctype html>
+
+<style>
+	*{
+		box-sizing: border-box;
+	}
+	body{
+		font-family: sans-serif;
+	}
+
+	[slidy]{
+		background: rgba(120,130,140,.5);
+		min-width: 7vw;
+		min-height: 10vh;
+		margin-top: 1vh;
+		/*padding: 5px;*/
+		margin-right: 8vw;
+	}
+	[slidy] > .draggable{
+		width: 20px;
+		height: 20px;
+		/*background: white;*/
+		border-radius: 10px;
+		box-shadow: inset 0 0 1px 1px rgba(240,250,255,.5), 0 0 1px 1px rgba(0,10,20,.25);
+		position: relative;
+	}
+	#hue-lightness{
+		height: 40vh;
+	}
+	#alpha{
+		float: right;
+		height: 51vh;
+		margin-top: 0;
+		margin-right: 0;
+	}
+</style>
+
+<body style="background: hsla({{ hue }}, {{ saturation }}%, {{ lightness }}%, {{ alpha }})">
+
+	<h1>Simple three-component picker</h1>
+
+	<div id="alpha" slidy vertical min="0" max="1" value="1" name="alpha"></div>
+
+	<div id="hue-lightness" slidy min="0,0" max="360,100" value="50,50" repeat="x" snap="both" name="hue,lightness"></div>
+
+	<div id="saturation" slidy min="0" max="100" snap value="50" name="saturation" onchange=""></div>
+
+	<output id="color">hsla({{ hue }}, {{ saturation }}%, {{ lightness }}%, {{ alpha }})</output>
+
+</body>
+
+
+<script src='../src/util.js'></script>
+<script src='../src/databind.js'></script>
+<script src='../src/Component.js'></script>
+<script src='../src/Draggable.js'></script>
+<script src='../src/Exposable.js'></script>
+<script src='../src/components/Slidy.js'></script>
+
+<script>
+	var $saturation = document.getElementById("saturation")
+	var $hl = document.getElementById("hue-lightness")
+	var $alpha = document.getElementById("alpha")
+
+	var $body = document.body;
+
+	var $pickers = $('.draggable')
+
+	//events
+	$saturation.on('change', update)
+	$hl.on('change', update)
+	$alpha.on('change', update)
+
+	//clear pickers
+	//TODO: this is wrong
+	// for (var i = 0; i < $pickers.length; i++){
+	// 	var $p = $pickers[i];
+	// 	$p.on("dragstart", function(){
+	// 		this.style.background = "";
+	// 	}).on("dragend", function(){
+	// 		var c = ['hsl(', $hl.value[0], ",",
+	// 						$saturation.value, "%,",
+	// 						$hl.value[1], "%)"].join("");
+	// 		this.style.background = c;
+	// 	})
+	// }
+
+	//update
+	function update(){
+		var c = ['hsla(', $hl.value[0], ",",
+							$saturation.value, "%,",
+							$hl.value[1], "%,", $alpha.value, ")"].join("");
+		//console.clear();
+		//console.log(c)
+		//console.log(this.value)
+		//$body.style.background = c;
+		updateHL();
+		updateSat();
+	}
+
+	update();
+
+
+	//redraw HL
+	function updateHL(){
+		var sat = $saturation.value + "%";
+
+		//lightness
+		var lightness = [
+			"linear-gradient(to bottom, ",
+			"hsla(0,0%,100%,1) 0%, ",
+			"hsla(0,0%,100%,0) 50%, ",
+			"hsla(0,0%,0%,0) 50%, ",
+			"hsla(0,0%,0%,1) 100%)"
+		].join("")
+
+		//hue
+		var hue = ["linear-gradient(to right,",
+		"hsl(0," + sat + ",50%) 0%,",
+		"hsl(60," + sat + ",50%) 16.666%,",
+		"hsl(120," + sat + ",50%) 33.333%,",
+		"hsl(180," + sat + ",50%) 50%,",
+		"hsl(240," + sat + ",50%) 66.666%,",
+		"hsl(300," + sat + ",50%) 83.333%,",
+		"hsl(360," + sat + ",50%) 100%)"].join("");
+
+		//change 2nd layer opacity
+
+		$hl.style.background = lightness + ", " + hue;
+	}
+
+	//redraw saturation bg
+	function updateSat(){
+		var h = $hl.value[0];
+		var l = $hl.value[1] + "%";
+
+		var sat = [
+			"linear-gradient(to right, ",
+			"hsl(" + h + ", 0%, " + l + ") 0%, ",
+			"hsl(" + h + ", 100%, " + l + ") 100%)"
+		].join("")
+
+		$saturation.style.background = sat
+	}
+
+</script>

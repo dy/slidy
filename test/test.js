@@ -1,17 +1,28 @@
 describe("Basic behaviour", function(){
-	it("should work basic behaviour", function(){
-		var el = document.createElement("div");
-		el.id = "basic"
-		el.innerHTML = "basic"
 
+	function createSlider(name){
+		var el = document.createElement("div");
+		el.title = name;
+		el.innerHTML = [
+			'<span class="min">-</span>',
+			'<span class="value">|</span>',
+			'<span class="max">+</span>',
+		].join("");
 		document.body.appendChild(el);
 
+		return el;
+	}
+
+	it("should work basic behaviour", function(){
+
+		var el = createSlider("basic");
+
 		new Slidy(el, {
-			min: -100,
-			max: 100,
-			value: 50,
+			min: -1,
+			max: 1,
+			value: .5,
 			change: function(){
-				el.firstChild.textContent = this.value
+				el.children[1].innerHTML = this.value
 			}
 		});
 
@@ -23,23 +34,16 @@ describe("Basic behaviour", function(){
 		//drag to somewhere
 	})
 
+	it("become vertical", function(){
+
+	})
+
+	it("become inverted", function(){
+
+	})
+
 	it ("should be able to become vertical & inverted", function(){
-		var el = document.createElement("div");
-		el.id = "vertical"
-		el.innerHTML = "vertical"
 
-		new Slidy(el, {
-			vertical: true,
-			min: 12,
-			max: -12,
-			value: 8
-		});
-
-		el.style.width = "40px";
-		el.style.height = "100px";
-		el.style["word-break"] = "break-all";
-
-		document.body.appendChild(el);
 	})
 
 	describe("should be able to become range slider", function(){

@@ -8,9 +8,9 @@
 		.slidy{
 			min-height: 4vh;
 			min-width: 4vw;
-			background: #f9f9f9;
+			background: #f3f3f3;
 			margin: 10px;
-			box-shadow: inset 0 1px 2px #f0f0f0;
+			box-shadow: inset 0 1px 2px rgba(30,30,30,.2);
 			border-radius: 3px;
 			position: relative;
 		}
@@ -22,6 +22,22 @@
 			width: 20px;
 			height: 20px;
 			background: rgba(30,30,30,.2);
+		}
+
+		.min, .value, .max{
+			position: absolute;
+		}
+		.min{
+			top: 0;
+			left: 0;
+		}
+		.max{
+			bottom: 0;
+			right: 0;
+		}
+		.value{
+			left: 50%;
+			top: 50%;
 		}
 	</style>
 </head>

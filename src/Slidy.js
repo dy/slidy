@@ -193,34 +193,14 @@ var Slidy = Mod.extend({
 		}
 	},
 
-	isInput: {
-		value: false,
-		values: {
-			false: {
-				before: function(){
-				},
-				mousedown: function(e){
-					// console.log("mousedown")
-					this.picker.startDrag(e);
-				},
+	mousedown: function(e){
+		// console.log("mousedown")
+		this.picker.startDrag(e);
+	},
 
-				'window resize': function(){
-					this.picker.updateLimits();
-					this.updatePosition()
-				}
-			},
-
-			true: {
-				before: function(){
-					console.log("input mode", this.min)
-				},
-
-				change: function(e){
-					console.log("slidy change", this.value)
-					e.preventDefault()
-				}
-			}
-		}
+	'window resize': function(){
+		this.picker.updateLimits();
+		this.updatePosition()
 	},
 
 	//moves picker accordind to the value

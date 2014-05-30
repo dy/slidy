@@ -207,7 +207,7 @@ function selector(element) {
 
 //return absolute offsets
 function offsets(el){
-	if (!el) err("Bad offsets target", el);
+	if (!el) throw Error("Bad offsets target", el);
 	try{
 		var rect = el.getBoundingClientRect()
 		return {
@@ -359,7 +359,7 @@ function on($el, evtRefs, fn){
 		})
 
 		//ignore absent property to bind event
-		if (!evtObj.src) err("Bad event target " + evtRef);
+		if (!evtObj.src) throw Error("Bad event target " + evtRef);
 		//bind target fn
 		if ($){
 			//delegate to jquery
@@ -394,6 +394,8 @@ function off($el, evtRefs, fn){
 			targetFn = fn;
 		}
 
+		if (!targetFn) return fn;
+
 		if ($){
 			//delegate to jquery
 			$(evtObj.src).off(evtObj.evt, targetFn);
@@ -424,10 +426,10 @@ var evtModifiers = {
 	//filter keys
 	pass: function(evt, fn, keys){
 		var cb = function(e){
-			// console.log("pass cb", e)
 			var pass = false;
 			keys.forEach(function(key){
-				if ((key in keyDict && keyDict[key] == e.which) || e.which == key){
+				var which = 'originalEvent' in e ? e.originalEvent.which : e.which;
+				if ((key in keyDict && keyDict[key] == which) || which == key){
 					pass = true;
 				}
 			});
@@ -443,9 +445,15 @@ var evtModifiers = {
 	delegate: function(evt, fn, selector){
 		var cb = function(e){
 			// console.log("delegate cb", e.target, selector)
-			if (e.target instanceof HTMLElement && matchSelector.call(e.target, selector)) {
-				return fn.apply(this, arguments);
+			if (!(e.target instanceof HTMLElement)) return DENY_EVT_CODE;
+
+			var target = e.target;
+
+			while (target && target !== this) {
+				if (matchSelector.call(target, selector)) return fn.apply(this, arguments);
+				target = target.parentNode;
 			}
+
 			return DENY_EVT_CODE;
 		}
 		return cb;
@@ -475,12 +483,12 @@ function _parseEvtRef($el, evtRef){
 }
 
 //detect source element from string
-function parseTarget($el, str){
+function parseTarget($el, str) {
 	if (!str){
 		return $el
-	} if (str === 'document'){
+	} if (str === 'document') {
 		return doc;
-	} else if (str === 'window'){
+	} else if (str === 'window') {
 		return win;
 	} else if (str === 'root') {
 		return root
@@ -504,11 +512,12 @@ function preventDefault(e){
 //dispatch event
 function fire(el, eventName, data, bubbles){
 	if ($){
-		//TODO: decide how to pass data & bubbleable to triggerHandler
-		var event = $.Event( eventName );
+		//TODO: decide how to pass data
+		var event = $.Event( eventName, data );
 		event.detail = data;
-		$(el).triggerHandler(event);
+		bubbles ? $(el).trigger(event) : $(el).triggerHandler(event);
 	} else {
+		//NOTE: this doesnot bubble in disattached elements
 		var event;
 		if (!(eventName instanceof Event)) {
 			event =  doc.createEvent("CustomEvent");
@@ -526,7 +535,7 @@ function fire(el, eventName, data, bubbles){
 */
 //limiter
 function between(a, min, max){
-	return Math.max(Math.min(a,max),min);
+	return max > min ? Math.max(Math.min(a,max),min) : Math.max(Math.min(a,min),max)
 }
 function isBetween(a, left, right){
 	if (a <= right && a >= left) return true;
@@ -661,15 +670,6 @@ function stringify(el){
 		return el.toString();
 	}
 }
-
-
-
-//Error
-function err(str){
-	//TODO: concat arguments, wrap non-strings
-	//TODO: recognize typed errors passed
-	throw new Error(str);
-}
 //→
 /**
 * Controller on elements
@@ -702,7 +702,7 @@ function Mod($el, opts){
 		if ($el._mod === CurrentMod || (
 			($el._mod.displayName && CurrentMod.displayName) &&
 			($el._mod.displayName === CurrentMod.displayName))) {
-			throw Error("Double create")
+			return $el;
 		}
 
 		//create new anonymous mod merging passed mod
@@ -745,7 +745,7 @@ function Mod($el, opts){
 					propName in testElement)
 				) {
 				// console.log("Interfering property `" + propName + "` in creating `" + CurrentMod.displayName + "` over `" + ($el._mod && $el._mod.displayName || $el.tagName) + "`")
-				err("Interfering property `" + propName + "` in creating `" + CurrentMod.displayName + "` over `" + ($el._mod && $el._mod.displayName || $el.tagName) + "`")
+				throw Error("Interfering property `" + propName + "` in creating `" + CurrentMod.displayName + "` over `" + ($el._mod && $el._mod.displayName || $el.tagName) + "`")
 			} else {
 				//save predefined element value
 				preinit[propName] = $el[propName];
@@ -755,7 +755,6 @@ function Mod($el, opts){
 		//if no preset value defined - read value from attributes
 		else {
 			var propValue = CurrentMod.properties[propName].value
-
 			var attr = $el.attributes[propName] || $el.attributes["data-" + propName];
 			if (attr) {
 				if (propName.slice(0,2) === "on") preinit[propName] = new Function(attr.value);
@@ -865,7 +864,7 @@ function enterState($el, stateKey, props, initValues){
 
 							//count redirects
 							self.__stateRedirectCount++;
-							if (self.__stateRedirectCount >= Mod._maxRedirects) err("Too many redirects in " + key);
+							if (self.__stateRedirectCount >= Mod._maxRedirects) throw Error("Too many redirects in " + key);
 
 							//leave state routines
 							if (desc.values) {
@@ -917,9 +916,9 @@ function enterState($el, stateKey, props, initValues){
 							var stateValue = desc.values[value] ? value : '_';
 							var state = desc.values[stateValue];
 
-							if (state){
+							if (stateValue in desc.values){
 								//enter state, if there’s any
-								beforeResult = isFn(state) ? state.call($el) : enterState(self, key + capfirst(stateValue), state);
+								beforeResult = isFn(state) ? state.call($el) : isObject(state) ? enterState(self, key + capfirst(stateValue), state) : state;
 							} else {
 								//if there’s no state to enter - attempt to reset values
 
@@ -970,7 +969,16 @@ function enterState($el, stateKey, props, initValues){
 
 			//call init prop, if any
 			if (prop.init) {
-				propValue = prop.init(initValues && initValues[propName])
+				propValue = prop.init.call($el, initValues[propName])
+				if (propValue === undefined) {
+					if (_propName in $el){
+						//if property was changed fromwithin init
+						initValues[propName] = $el[propName];
+					} else {
+						initValues[propName] = prop.value;
+					}
+				}
+				// console.log("after init call", propValue)
 			}
 		}
 
@@ -982,7 +990,7 @@ function enterState($el, stateKey, props, initValues){
 		}
 
 		//set custom value passed/assign value
-		else if (!isFn(propValue) && initValues && (propName in initValues)){
+		else if (!isFn(propValue) && initValues && (propName in initValues)) {
 			// console.log("set init value", propName, propValue)
 			$el[propName] = initValues[propName];
 		}
@@ -1093,7 +1101,7 @@ Mod.register = function(name, settings){
 
 	// console.log("register", name)
 
-	if (!name || self === Mod) err("Bad arguments");
+	if (!name || self === Mod) throw Error("Bad arguments");
 
 	//recognize register options
 	settings = extend({
@@ -1132,7 +1140,14 @@ Mod.register = function(name, settings){
 	}
 
 	//Autoinit present in DOM elements
-	autoinit(self);
+	//init children
+	var targets = document.querySelectorAll(settings.selector);
+	for (var i = 0; i < targets.length; i++) {
+		// console.log("autoinit children")
+
+		new self(targets[i]);
+		fire(targets[i], "attached");
+	}
 
 	return self;
 }
@@ -1170,9 +1185,8 @@ if (MO) {
 
 						if (matchSelector.call(el, mod.settings.selector)){
 							// console.log("autoinit parent", modName, el._isAttached)
-							try {
-								new mod(el);
-							} catch (e) {};
+
+							new mod(el);
 
 							if (!el._isAttached) {
 								fire(el, "attached");
@@ -1191,9 +1205,8 @@ if (MO) {
 						for (var j = 0; j < targets.length; j++){
 							var innerEl = targets[j];
 							// console.log("autoinit child", modName, el._isAttached)
-							try {
-								new mod(innerEl);
-							} catch (e) {};
+
+							new mod(innerEl);
 
 							if (!innerEl._isAttached) {
 								innerEl._isAttached = true;
@@ -1222,27 +1235,6 @@ if (MO) {
 /**
 * helpers
 */
-
-//go by elements, init mods
-function autoinit(mod, parent) {
-	parent = parent || root;
-	var selector = mod.settings.selector, res, res2;
-
-	//init self
-	if (matchSelector.call(parent, selector)) {
-		// console.log("autoinit parent")
-
-		try { new mod(parent); fire(parent, "attached"); } catch (e) {}
-	}
-
-	//init children
-	var targets = parent.querySelectorAll(selector);
-	for (var i = 0; i < targets.length; i++) {
-		// console.log("autoinit children")
-
-		try { new mod(targets[i]); fire(targets[i], "attached"); } catch (e) {}
-	}
-}
 
 
 //reflect passed value in attribute
@@ -1327,7 +1319,7 @@ function normalizeProperties(props){
 			prop.values = flattenListedStates(prop.values);
 
 			//ensure empty state is present
-			if (!prop.values._) prop.values._ = {};
+			if (!("_" in prop.values)) prop.values._ = {};
 
 			//collect the complete set of properties for the state
 			for (var value in prop.values) {
