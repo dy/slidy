@@ -544,7 +544,7 @@ function isBetween(a, left, right){
 
 //precision round
 function round(value, precision){
-	precision = parseInt(precision);
+	precision = parseFloat(precision);
 	if (precision === 0) return value;
 	return Math.round(value / precision) * precision
 }
