@@ -16,7 +16,7 @@
 			font-family: sans-serif;
 			font-size: 12px;
 		}
-		.slidy:after{
+		.slidy.horizontal:after{
 			content: "";
 			position: absolute;
 			top: 50%;
@@ -25,6 +25,20 @@
 			height: 2px;
 			background: black;
 			margin-top: -1px;
+		}
+		.slidy.vertical{
+			width: 40px;
+			height: 200px;
+		}
+		.slidy.vertical:after{
+			content: "";
+			position: absolute;
+			left: 50%;
+			top: 0;
+			bottom: 0;
+			width: 2px;
+			background: black;
+			margin-left: -1px;
 		}
 
 		.slidy > .draggable{
@@ -55,6 +69,10 @@
 		.value{
 			left: 50%;
 			bottom: 0;
+		}
+		.vertical .max{
+			top: 0;
+			bottom: auto;
 		}
 	</style>
 </head>

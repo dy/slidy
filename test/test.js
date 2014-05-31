@@ -3,6 +3,7 @@ describe("Kinds of sliders", function(){
 	function createSlider(name, opts){
 		var el = document.createElement("div");
 		el.title = name;
+		el.className = name;
 		el.innerHTML = [
 			'<span class="min">-</span>',
 			'<span class="max">+</span>',
@@ -27,7 +28,7 @@ describe("Kinds of sliders", function(){
 
 	it("horizonal", function(){
 
-		var el = createSlider("basic", {
+		var el = createSlider("horizontal", {
 			min: -1,
 			max: 1,
 			value: .5
@@ -42,14 +43,23 @@ describe("Kinds of sliders", function(){
 	})
 
 	it("inverted horizonal", function(){
-		var el = createSlider("basic", {
+		var el = createSlider("horizontal", {
 			min: 1,
 			max: -1,
 			value: .5
 		});
 	})
 
-	it("become vertical", function(){
+	it("vertical", function(){
+		var el = createSlider("vertical", {
+			min:-1,
+			max: 1,
+			value: 0,
+			type: 'vertical'
+		})
+	})
+
+	it("inverted vertical", function(){
 
 	})
 

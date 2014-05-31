@@ -3,56 +3,50 @@
 */
 var Slidy = Mod.extend({
 	init: function(){
+		var self = this;
+
+		this.picker = new Draggable({
+			within: this,
+
+			attached: function(e){
+				//correct pin (centrize based on width of picker)
+				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
+				// console.log("picker attached", this.pin, this.y)
+				//set initial position
+				self.updatePosition();
+			},
+
+			dragstart: function(e){
+				//console.log("dstart")
+				disableSelection(document.documentElement);
+				css(document.documentElement, {"cursor": "none"});
+			},
+			dragend: function(e){
+				//console.log("dend")
+				enableSelection(document.documentElement);
+				css(document.documentElement, {"cursor": null});
+			},
+
+			native: false
+		});
+
 		// console.log("init slidy")
 	},
 
 	created: function(){
 		var self = this;
 
-		//create pickers according to the number of thumbs in settings
-		for (var i = 0; i < this.thumbs; i++) {
-			// console.log("slidy created")
-			this.picker = new Draggable({
-				within: this,
-
-				attached: function(e){
-					//correct pin (centrize based on width of picker)
-					this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
-					// console.log("picker attached", this.pin, this.y)
-					//set initial position
-					self.updatePosition();
-				},
-
-				dragstart: function(e){
-					//console.log("dstart")
-					disableSelection(document.documentElement);
-					css(document.documentElement, {"cursor": "none"});
-				},
-				dragend: function(e){
-					//console.log("dend")
-					enableSelection(document.documentElement);
-					css(document.documentElement, {"cursor": null});
-				},
-
-				native: false
-			});
-
-			//additional picker init
-			this.picker.axis = (this.dimensions === 2 ? null : (this.vertical ? 'y' : 'x'));
-			this.appendChild(this.picker);
-		}
+		// console.log("created")
+		this.appendChild(this.picker);
 
 		//fire initial set
 		fire(this, "change");
 	},
 
-	attached: function(){
-		// console.log("slidy attached")
-		// this.updatePosition();
+	attached: function(e){
+		// console.log("slidy attached",e)
+		this.updatePosition();
 	},
-
-	//list of thumblers for range slider
-	thumbs: 1,
 
 	//HTML5 things
 	value: {
@@ -86,46 +80,143 @@ var Slidy = Mod.extend({
 		order: 3
 	},
 
-	dimensions: {
-		value: 1,
-		//mutual with vertical/horizontal
+	type:{
+		value: "horizontal",
 		values: {
-			1: function(){
-				// console.log("set 1")
-			},
-			2: function(){
-				// console.log("set 2")
-				this.vertical = true;
-				this.horizontal = true;
-			},
+			"horizontal": {
+				before: function(){
+					this.picker.axis = "x";
+				},
 
-			_: function(){
-				return false;
-			}
-		},
-		order: 0
-	},
-	vertical: {
-		value: false,
-		values: {
-			true: function(){
-				if (this.dimensions === 1) this.horizontal === false
+				updatePosition: function(){
+					var	lim = this.picker._limits,
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top)
+
+					var hRange = this.max - this.min,
+						ratioX = (this.value - this.min) / hRange;
+						ratioY = .5;
+
+					this.picker.x = ratioX * hScope - this.picker.pin[0];
+					this.picker.y = ratioY * vScope - this.picker.pin[1];
+				},
+
+				drag: function(e){
+					// console.log("drag observed", e.target.dragstate);
+					var thumb = e.target,
+						d = thumb.dragstate,
+						lim = thumb._limits,
+						thumbW = thumb._offsets.width,
+						thumbH = thumb._offsets.height,
+						//scope sizes
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top),
+						self = this;
+
+					var normalValue = (thumb.x - lim.left) / hScope;
+					self.value = normalValue * (self.max - self.min) + self.min;
+
+					//trigger onchange
+					fire(self,"change")
+				}
 			},
-			false: function(){
-				if (this.dimensions === 1) this.horizontal === true
+			"vertical": {
+				before: function(){
+					this.picker.axis = "y"
+				},
+
+				updatePosition: function(){
+					var	lim = this.picker._limits,
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top)
+
+					var vRange = this.max - this.min,
+						ratioX = .5,
+						ratioY = (- this.value + this.max) / vRange
+
+					this.picker.x = ratioX * hScope - this.picker.pin[0];
+					this.picker.y = ratioY * vScope - this.picker.pin[1];
+				},
+
+				drag: function(e){
+					// console.log("drag observed", e.target.dragstate);
+					var thumb = e.target,
+						d = thumb.dragstate,
+						lim = thumb._limits,
+						thumbW = thumb._offsets.width,
+						thumbH = thumb._offsets.height,
+						//scope sizes
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top),
+						self = this;
+
+					var normalValue = (- thumb.y + lim.bottom) / vScope;
+					self.value = normalValue * (self.max - self.min) + self.min;
+
+					//trigger onchange
+					fire(self,"change")
+				}
+			},
+			"circular": {
+				before: function(){
+
+				}
+			},
+			"rectangular": {
+				before: function(){
+					this.picker.axis = "both"
+				},
+
+				updatePosition: function(){
+					var	lim = this.picker._limits,
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top)
+
+					var hRange = this.max[0] - this.min[0],
+						vRange = this.max[1] - this.min[1],
+						ratioX = (this.value[0] - this.min[0]) / hRange,
+						ratioY = (- this.value[1] + this.max[1]) / vRange
+
+					this.picker.x = ratioX * hScope - this.picker.pin[0];
+					this.picker.y = ratioY * vScope - this.picker.pin[1];
+				},
+
+				drag: function(e){
+					// console.log("drag observed", e.target.dragstate);
+					var thumb = e.target,
+						d = thumb.dragstate,
+						lim = thumb._limits,
+						thumbW = thumb._offsets.width,
+						thumbH = thumb._offsets.height,
+						//scope sizes
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top),
+						self = this;
+
+					//TODO: optimize this part
+					//calc value based on dragstate
+					if (self.dimensions === 2){
+						var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
+
+						self.value = [
+							normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
+							normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
+						];
+
+					} else if (self.vertical){
+						var normalValue = (- thumb.y + lim.bottom) / vScope;
+						self.value = normalValue * (self.max - self.min) + self.min;
+					}
+
+					//trigger onchange
+					fire(self,"change")
+				}
 			}
 		}
 	},
-	horizontal: {
-		value: true,
-		values: {
-			true: function(){
-				if (this.dimensions === 1) this.vertical === false
-			},
-			false: function(){
-				if (this.dimensions === 1) this.vertical === true
-			}
-		}
+
+	updatePosition: function(){
+		//undefined position updater
 	},
 
 	//value limits
@@ -199,80 +290,6 @@ var Slidy = Mod.extend({
 	'window resize': function(){
 		this.picker.updateLimits();
 		this.updatePosition()
-	},
-
-	//moves picker accordind to the value
-	updatePosition: function(){
-		var	$el = this,
-			//relative coords to move picker to
-			x = 0,
-			y = 0,
-			picker = $el.picker;
-
-		if(!picker) return;
-
-		var	lim = picker._limits,
-			hScope = (lim.right - lim.left),
-			vScope = (lim.bottom - lim.top)
-
-		// console.log("upd position",$el.getAttribute("name"), $el.value)
-		if ($el.dimensions == 2){
-			var hRange = $el.max[0] - $el.min[0],
-				vRange = $el.max[1] - $el.min[1],
-				ratioX = ($el.value[0] - $el.min[0]) / hRange,
-				ratioY = (- $el.value[1] + $el.max[1]) / vRange
-			// console.log("2dim", ratioY, ratioX)
-		} else if ($el.vertical){
-			var vRange = $el.max - $el.min,
-				ratioY = (- $el.value + $el.max) / vRange;
-				ratioX = .5;
-			// console.log("y", ratioY)
-		} else {
-			var hRange = $el.max - $el.min,
-				ratioX = ($el.value - $el.min) / hRange;
-				ratioY = .5;
-		}
-
-		if (ratioX !== undefined) $el.picker.x = ratioX * hScope - $el.picker.pin[0];
-		if (ratioY !== undefined) $el.picker.y = ratioY * vScope - $el.picker.pin[1];
-	},
-
-	drag: function(e){
-		// console.log("drag observed", e.target.dragstate);
-		var thumb = e.target,
-			d = thumb.dragstate,
-			lim = thumb._limits,
-			thumbW = thumb._offsets.width,
-			thumbH = thumb._offsets.height,
-			//scope sizes
-			hScope = (lim.right - lim.left),
-			vScope = (lim.bottom - lim.top),
-			self = this;
-
-		//TODO: optimize this part
-		//calc value based on dragstate
-		if (self.dimensions === 2){
-			var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
-
-			// console.log([
-			// 	normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
-			// 	normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
-			// ])
-			self.value = [
-				normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
-				normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
-			];
-
-		} else if (self.vertical){
-			var normalValue = (- thumb.y + lim.bottom) / vScope;
-			self.value = normalValue * (self.max - self.min) + self.min;
-		} else {
-			var normalValue = (thumb.x - lim.left) / hScope;
-			self.value = normalValue * (self.max - self.min) + self.min;
-		}
-
-		//trigger onchange
-		fire(self,"change")
 	}
 })
 

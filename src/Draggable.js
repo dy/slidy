@@ -133,11 +133,14 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.right){
 					value -= this._limits.right - this._limits.left;
 				}
-			} else {
+			} else if (!this.axis || this.axis === "x"){
 				//mind axis
 				value = between(value,
 					this._limits.left,
 					this._limits.right);
+			} else {
+				//ignore change
+				return 0;
 			}
 			this.x = round(value, this.precision)
 
@@ -156,15 +159,17 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.bottom){
 					value -= this._limits.bottom - this._limits.top;
 				}
-			} else {
+			} else if (!this.axis || this.axis === "y"){
 				// console.log("axis", this._limits)
 				//mind axis
 				value = between(value,
 					this._limits.top,
 					this._limits.bottom);
+			} else {
+				//ignore change
+				return 0;
 			}
 
-			// console.log(value)
 			this.y = round(value, this.precision)
 
 			updatePosition(this);
@@ -464,6 +469,10 @@ var Draggable = Mod.extend({
 		left: 0,
 		bottom: 0,
 		right: 0
+	},
+
+	'window resize': function(){
+		this.updateLimits();
 	}
 }).register("draggable");
 
