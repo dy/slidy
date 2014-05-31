@@ -1,29 +1,36 @@
-describe("Basic behaviour", function(){
+describe("Kinds of sliders", function(){
 
-	function createSlider(name){
+	function createSlider(name, opts){
 		var el = document.createElement("div");
 		el.title = name;
 		el.innerHTML = [
 			'<span class="min">-</span>',
-			'<span class="value">|</span>',
 			'<span class="max">+</span>',
 		].join("");
 		document.body.appendChild(el);
 
+		//update value
+		on(el, "change", function(){
+			if (this.picker) this.picker.innerHTML = this.value;
+		})
+
+		//create slidy
+		new Slidy(el, opts);
+
+		//show min/max
+		el.children[0].innerHTML = el.min;
+		el.children[1].innerHTML = el.max;
+
+
 		return el;
 	}
 
-	it("should work basic behaviour", function(){
+	it("horizonal", function(){
 
-		var el = createSlider("basic");
-
-		new Slidy(el, {
+		var el = createSlider("basic", {
 			min: -1,
 			max: 1,
-			value: .5,
-			change: function(){
-				el.children[1].innerHTML = this.value
-			}
+			value: .5
 		});
 
 		//click somewhere in between area
@@ -34,13 +41,18 @@ describe("Basic behaviour", function(){
 		//drag to somewhere
 	})
 
+	it("inverted horizonal", function(){
+		var el = createSlider("basic", {
+			min: 1,
+			max: -1,
+			value: .5
+		});
+	})
+
 	it("become vertical", function(){
 
 	})
 
-	it("become inverted", function(){
-
-	})
 
 	it ("should be able to become vertical & inverted", function(){
 

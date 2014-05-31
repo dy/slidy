@@ -41,6 +41,9 @@ var Slidy = Mod.extend({
 			this.picker.axis = (this.dimensions === 2 ? null : (this.vertical ? 'y' : 'x'));
 			this.appendChild(this.picker);
 		}
+
+		//fire initial set
+		fire(this, "change");
 	},
 
 	attached: function(){
@@ -76,7 +79,6 @@ var Slidy = Mod.extend({
 			this.value = result;
 
 			// console.log("slidy value changed", value, old, this.value)
-			//TODO: this shitty-gitty shits the bed, bitch
 			this.updatePosition();
 			fire(this, "change")
 
@@ -213,24 +215,24 @@ var Slidy = Mod.extend({
 			hScope = (lim.right - lim.left),
 			vScope = (lim.bottom - lim.top)
 
-		//console.log("upd position",$el.getAttribute("name"), $el.value)
+		// console.log("upd position",$el.getAttribute("name"), $el.value)
 		if ($el.dimensions == 2){
 			var hRange = $el.max[0] - $el.min[0],
 				vRange = $el.max[1] - $el.min[1],
 				ratioX = ($el.value[0] - $el.min[0]) / hRange,
 				ratioY = (- $el.value[1] + $el.max[1]) / vRange
-			//console.log("2dim", ratioY, ratioX)
+			// console.log("2dim", ratioY, ratioX)
 		} else if ($el.vertical){
 			var vRange = $el.max - $el.min,
 				ratioY = (- $el.value + $el.max) / vRange;
 				ratioX = .5;
-			//console.log("y", ratioY)
+			// console.log("y", ratioY)
 		} else {
 			var hRange = $el.max - $el.min,
 				ratioX = ($el.value - $el.min) / hRange;
 				ratioY = .5;
-			//console.log("x", ratioX)
 		}
+
 		if (ratioX !== undefined) $el.picker.x = ratioX * hScope - $el.picker.pin[0];
 		if (ratioY !== undefined) $el.picker.y = ratioY * vScope - $el.picker.pin[1];
 	},

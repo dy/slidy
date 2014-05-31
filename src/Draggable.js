@@ -133,14 +133,11 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.right){
 					value -= this._limits.right - this._limits.left;
 				}
-			} else if (!this.axis || this.axis === "x"){
+			} else {
 				//mind axis
 				value = between(value,
 					this._limits.left,
 					this._limits.right);
-			} else {
-				//ignore change
-				return 0;
 			}
 			this.x = round(value, this.precision)
 
@@ -151,7 +148,7 @@ var Draggable = Mod.extend({
 	y: {
 		value: 0,
 		change: function(value, old){
-			// console.log("set y", this._limits)
+			// console.log("set y", value, this._limits)
 			if (this.repeat === 'both' || this.repeat === 'y'){
 				//mind repeat
 				if (value < this._limits.top){
@@ -159,16 +156,15 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.bottom){
 					value -= this._limits.bottom - this._limits.top;
 				}
-			} else if (!this.axis || this.axis === "y"){
+			} else {
+				// console.log("axis", this._limits)
 				//mind axis
 				value = between(value,
 					this._limits.top,
 					this._limits.bottom);
-			} else {
-				//ignore change
-				return 0;
 			}
 
+			// console.log(value)
 			this.y = round(value, this.precision)
 
 			updatePosition(this);

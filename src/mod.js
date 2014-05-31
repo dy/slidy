@@ -161,13 +161,18 @@ function isEqual(a, b){
 var _commaSplitRe = /\s*,\s*/;
 
 //match every comma-separated element ignoring 1-level parenthesis, like `1,2(3,4),5`
-var _commaMatchRe = /([^,]+?(?:\([^()]+\))?)(?=,|$)/g
+// var _commaMatchRe = /([^,]*?(?:\([^()]+\))?)(?=,)|,([^,]*?(?:\([^()]+\))?)(?=$)/g
+var _commaMatchRe = /(,[^,]*?(?:\([^()]+\))?)(?=,|$)/g
 
 //iterate over every item in string
 function each(str, fn){
-	var list = str.match(_commaMatchRe) || [''];
-	for(var i = 0; i < list.length; i++){
-		fn(list[i].trim(), i)
+	var list = ("," + str).match(_commaMatchRe) || [''];
+	for (var i = 0; i < list.length; i++) {
+		// console.log(matchStr)
+		var matchStr = list[i].trim();
+		if (matchStr[0] === ",") matchStr = matchStr.slice(1);
+		matchStr = matchStr.trim();
+		fn(matchStr, i);
 	}
 }
 
@@ -609,10 +614,11 @@ function parseArray(str){
 	if (str.length > 1 && str[str.length - 1] === "]") str = str.slice(0,-1);
 
 	var result = [];
-	each(str, function(value){
+	each(str, function(value) {
 		result.push(parseAttr(value))
 	})
-	return result
+
+	return result;
 }
 
 //camel-case → CamelCase
@@ -808,11 +814,10 @@ function Mod($el, opts){
 function enterState($el, stateKey, props, initValues){
 	if (!props) return;
 
-	// console.group("to state:", stateKey)
-
 	//sort properties
 	var orderedProps = sortPropsByOrder(Object.keys(props), props);
-	// console.log(orderedProps)
+
+	// console.group("enterState:", stateKey, orderedProps)
 
 	//save after method
 	if (props.after) $el.__after = props.after.value;
@@ -1003,7 +1008,7 @@ function enterState($el, stateKey, props, initValues){
 
 		//set straigt method callback (always by method reference, not the real fn)
 		if (isFn(propValue)) {
-			// console.log("on method", propName, propValue);
+			// console.log("on", propName, propValue);
 			on($el, propName, propName)
 		}
 
@@ -1024,7 +1029,7 @@ function enterState($el, stateKey, props, initValues){
 * undefine state properties passed with the name passed
 */
 function leaveState($el, stateKey, props){
-	// console.group("leave state", stateKey)
+	// console.group("leave state", stateKey, props)
 	var afterCbResult;
 
 	//fire leaving state
@@ -1038,9 +1043,13 @@ function leaveState($el, stateKey, props){
 	//unbind all previously bound callbacks/methods
 	for(var evtRef in props) {
 		if (techCbRe.test(evtRef) || props[evtRef] === undefined) continue;
-		// console.log("off", evtRef)
-		if ($el[props[evtRef].value]) off($el, evtRef, props[evtRef].value);
-		else off($el, evtRef, evtRef);
+		if ($el[props[evtRef].value]) {
+			// console.log("off ref", evtRef, props[evtRef].value)
+			off($el, evtRef, props[evtRef].value);
+		} else {
+			// console.log("off", evtRef)
+			off($el, evtRef, evtRef);
+		}
 	}
 
 	//discard active events
@@ -1116,7 +1125,7 @@ Mod.register = function(name, settings){
 	self.settings = settings;
 
 	//provide jQuery plugin
-	if ($ && settings.jQuery && !(settings.jQuery in $)){
+	if ($ && settings.jQuery && !(settings.jQuery in $)) {
 		$['fn'][name] = (function(mod){
 			return function (arg) {
 				return this['each'](function(i,e){
@@ -1307,52 +1316,43 @@ function normalizeProperties(props){
 		if (propName[0] !== "_") props[propName] = getPropDesc(props[propName]);
 	}
 
+	//flatten
+	props = flattenValues(props);
+
 	//normalize properties quantity
 	for (var propName in props){
 		var prop = props[propName];
 
 		//normalize states
 		if (prop.values){
-			var allProps = {};
-
 			//disentangle listed properties
-			prop.values = flattenListedStates(prop.values);
+			prop.values = flattenValues(prop.values);
+
+			//ensure descriptors
+			for (var value in prop.values) {
+				for (var subPropName in prop.values[value]) {
+					if (subPropName[0] !== "_") {
+						prop.values[value][subPropName] = getPropDesc(prop.values[value][subPropName])
+					}
+				}
+			}
 
 			//ensure empty state is present
 			if (!("_" in prop.values)) prop.values._ = {};
 
 			//collect the complete set of properties for the state
+			var mutualProps = {};
 			for (var value in prop.values) {
+				if (value === "_") continue;
 				for (var subPropName in prop.values[value]) {
-					//ensure descriptor for non-rest properties
-					if (subPropName[0] !== "_") {
-						prop.values[value][subPropName] = getPropDesc(prop.values[value][subPropName])
-					}
-
-					//save not collected value
-					if (!(subPropName in allProps)){
-						//save default property value
-						if (value === "_") {
-							if (!techCbRe.test(subPropName)){
-								allProps[subPropName] = prop.values._[subPropName]
-							} else {
-								allProps[subPropName] = null;
-							}
-						} else {
-							//ensure element’s property exists
-							// if (!techCbRe.test(subPropName) && !(subPropName in props)){
-							// 	props[subPropName] = {value: undefined}
-							// }
-							allProps[subPropName] = props[subPropName];
-						}
+					if (!(subPropName in mutualProps) && !techCbRe.test(subPropName)){
+						mutualProps[subPropName] = props[subPropName];
 					}
 				}
 			}
 
-			//ensure every state's fullness
-			for (var value in prop.values){
-				prop.values[value] = extend({}, allProps, prop.values[value]);
-			}
+			//fulfill rest value state to overlap every property covered by states
+			extend(prop.values._, mutualProps);
 		}
 	}
 
@@ -1362,8 +1362,8 @@ function normalizeProperties(props){
 }
 
 
-//disentangle listed state values
-function flattenListedStates(values){
+//disentangle listed values
+function flattenValues(values){
 
 	// console.log("before", values)
 
