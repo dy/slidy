@@ -30,21 +30,21 @@ var Slidy = Mod.extend({
 			native: false
 		});
 
-		// console.log("init slidy")
+		console.log("slidy init")
 	},
 
 	created: function(){
 		var self = this;
 
-		// console.log("created")
+		console.log("slidy created")
 		this.appendChild(this.picker);
 
 		//fire initial set
-		fire(this, "change");
+		// fire(this, "change");
 	},
 
 	attached: function(e){
-		// console.log("slidy attached",e)
+		console.log("slidy attached")
 		this.updatePosition();
 	},
 

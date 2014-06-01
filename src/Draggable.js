@@ -30,7 +30,7 @@ var Draggable = Mod.extend({
 	within: {
 		value: root,
 		change: function(within){
-			// console.log("within change", this.parentNode.id, within )
+			// console.log("within change", within )
 			if (within instanceof Element){
 				this.within = within
 			} else if (typeof within === "string"){
@@ -439,9 +439,12 @@ var Draggable = Mod.extend({
 
 	//updates movement restrictions
 	updateLimits: function(){
-		// console.log("upd limits", this.y)
+
+		if (!this.isAttached) return;
+
 		//it is here because not always element is in DOM when constructor inits
 		var limOffsets = offsets(this.within);
+		// console.log("upd limits", limOffsets)
 
 		this._offsets = offsets(this);
 

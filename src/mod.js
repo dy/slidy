@@ -763,7 +763,7 @@ function Mod($el, opts){
 			var propValue = CurrentMod.properties[propName].value
 			var attr = $el.attributes[propName] || $el.attributes["data-" + propName];
 			if (attr) {
-				if (propName.slice(0,2) === "on") preinit[propName] = new Function(attr.value);
+				if (/^on/.test(propName)) preinit[propName] = new Function(attr.value);
 				else preinit[propName] = parseTypedAttr(attr.value, propValue);
 			}
 		}
@@ -780,18 +780,23 @@ function Mod($el, opts){
 
 	//enter default state (1st level attributes)
 	$el.__stateRedirectCount = 0;
-	enterState($el, "create", CurrentMod.properties, opts);
 
-	//init additional passed options
+	//init passed listeners beforehead
 	for (var propName in opts){
 		var value = opts[propName];
-		//additional callback
-		if (isFn(value) && !/^(created|init)$/.test(propName)) {
+		if (isFn(value)) {
 			// console.log("additional callback", propName)
 			on($el, propName, value.bind($el));
+			opts[propName] = null
 		}
-		//additional property
-		else if (value !== undefined && !(propName in $el)) {
+	}
+
+	enterState($el, "create", CurrentMod.properties, opts);
+
+	//init passed values
+	for (var propName in opts){
+		var value = opts[propName];
+		if (value !== undefined && !(propName in $el)) {
 			// console.log("additional property", propName)
 			$el[propName] = value;
 		}
@@ -1184,7 +1189,10 @@ if (MO) {
 
 					//check whether element added is noname mod
 					if (el._mod && !el._mod.displayName) {
-						fire(el, "attached");
+						if (!el.isAttached) {
+							el.isAttached = true;
+							fire(el, "attached");
+						}
 					}
 					//NOTE: noname mods within elements wont fire `attached`
 
@@ -1193,13 +1201,13 @@ if (MO) {
 						var mod = Mod.registry[modName];
 
 						if (matchSelector.call(el, mod.settings.selector)){
-							// console.log("autoinit parent", modName, el._isAttached)
+							// console.log("autoinit parent", modName, el.isAttached)
 
 							new mod(el);
 
-							if (!el._isAttached) {
+							if (!el.isAttached) {
+								el.isAttached = true;
 								fire(el, "attached");
-								el._isAttached = true;
 							}
 						}
 					}
@@ -1213,12 +1221,12 @@ if (MO) {
 
 						for (var j = 0; j < targets.length; j++){
 							var innerEl = targets[j];
-							// console.log("autoinit child", modName, el._isAttached)
+							// console.log("autoinit child", modName, el.isAttached)
 
 							new mod(innerEl);
 
-							if (!innerEl._isAttached) {
-								innerEl._isAttached = true;
+							if (!innerEl.isAttached) {
+								innerEl.isAttached = true;
 								fire(innerEl, "attached");
 							}
 						}
