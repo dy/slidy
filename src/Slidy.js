@@ -67,15 +67,13 @@ var Slidy = Mod.extend({
 			} else {
 				value = parseFloat(value) ? value : 0;
 				result = round(between(value, this.min, this.max), this.step);
-				// console.log("slidy value changed", result);
 			}
-			if (!result && result !== 0) err("Something went wrong in validating value", result)
-
+			if (!result && result !== 0) throw Error("Something went wrong in validating value", result)
 			this.value = result;
 
 			this.updatePosition();
-			fire(this, "change")
 
+			fire(this, "change")
 		},
 		order: 3
 	},
@@ -193,20 +191,12 @@ var Slidy = Mod.extend({
 						vScope = (lim.bottom - lim.top),
 						self = this;
 
-					//TODO: optimize this part
-					//calc value based on dragstate
-					if (self.dimensions === 2){
-						var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
+					var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
 
-						self.value = [
-							normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
-							normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
-						];
-
-					} else if (self.vertical){
-						var normalValue = (- thumb.y + lim.bottom) / vScope;
-						self.value = normalValue * (self.max - self.min) + self.min;
-					}
+					self.value = [
+						normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
+						normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
+					];
 
 					//trigger onchange
 					fire(self,"change")

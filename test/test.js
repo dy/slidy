@@ -1,4 +1,4 @@
-describe("Kinds of sliders", function(){
+describe("Slidy", function(){
 
 	function createSlider(name, opts){
 		var el = document.createElement("div");
@@ -42,7 +42,7 @@ describe("Kinds of sliders", function(){
 		//drag to somewhere
 	})
 
-	it("inverted horizonal", function(){
+	it("horizonal inverted", function(){
 		var el = createSlider("horizontal", {
 			min: 1,
 			max: -1,
@@ -59,7 +59,7 @@ describe("Kinds of sliders", function(){
 		})
 	})
 
-	it("inverted vertical", function(){
+	it("vertical inverted", function(){
 		var el = createSlider("vertical", {
 			min:1,
 			max:-1,
@@ -68,55 +68,44 @@ describe("Kinds of sliders", function(){
 		})
 	})
 
-	describe("able to become range slider", function(){
-		// var a = new Slidy({
-		// 	thumbs: 2
-		// });
-
-		// document.body.appendChild(a);
-
-		it("should support inverted selection", function(){
-
+	it("rectangular", function(){
+		var el = createSlider("rectangular", {
+			min:[0,0],
+			max:[100,100],
+			value: [40,70],
+			type: 'rectangular'
 		})
+	})
 
-		it("should support multiple thumbs", function(){
+	it("multiple thumbs", function(){
 
-		})
+	})
+
+	it("rectangular multiple thumbs", function(){
+
 	})
 
 	it("focusable", function(){
 
 	})
 
-	it("key-controllable when focused", function(){
+	it("focused keyboard control", function(){
 
 	})
 
-	it("should expose data under the name", function(){
+	it("expose data", function(){
 
 	})
 
-	it("should support gestures", function(){
+	it("mobile touch", function(){
 
 	})
 
-	it("should init multidimensional properties", function(){
-		// var a = new Slidy({
-		// 	dimensions: 2
-		// });
-
-//		console.log(a.value)
-	})
-
-	it("able to be multidimensional range", function(){
+	it("circular", function(){
 
 	})
 
-	it("able to be circular", function(){
-
-	})
-
-	it("able to support any move shape", function(){
+	it("svg shape", function(){
 
 	})
 })

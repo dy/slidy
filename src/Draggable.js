@@ -133,7 +133,7 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.right){
 					value -= this._limits.right - this._limits.left;
 				}
-			} else if (!this.axis || this.axis === "x"){
+			} else if (!this.axis || this.axis === "x" || this.axis === "both"){
 				//mind axis
 				value = between(value,
 					this._limits.left,
@@ -159,7 +159,7 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.bottom){
 					value -= this._limits.bottom - this._limits.top;
 				}
-			} else if (!this.axis || this.axis === "y"){
+			} else if (!this.axis || this.axis === "y" || this.axis === "both"){
 				// console.log("axis", this._limits)
 				//mind axis
 				value = between(value,
