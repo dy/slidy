@@ -30,13 +30,13 @@ var Slidy = Mod.extend({
 			native: false
 		});
 
-		console.log("slidy init")
+		// console.log("slidy init")
 	},
 
 	created: function(){
 		var self = this;
 
-		console.log("slidy created")
+		// console.log("slidy created")
 		this.appendChild(this.picker);
 
 		//fire initial set
@@ -44,7 +44,7 @@ var Slidy = Mod.extend({
 	},
 
 	attached: function(e){
-		console.log("slidy attached")
+		// console.log("slidy attached")
 		this.updatePosition();
 	},
 
@@ -67,12 +67,12 @@ var Slidy = Mod.extend({
 			} else {
 				value = parseFloat(value) ? value : 0;
 				result = round(between(value, this.min, this.max), this.step);
+				// console.log("slidy value changed", result);
 			}
 			if (!result && result !== 0) err("Something went wrong in validating value", result)
 
 			this.value = result;
 
-			// console.log("slidy value changed", value, old, this.value)
 			this.updatePosition();
 			fire(this, "change")
 

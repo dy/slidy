@@ -548,12 +548,20 @@ function isBetween(a, left, right){
 }
 
 //precision round
-function round(value, precision){
-	precision = parseFloat(precision);
-	if (precision === 0) return value;
-	return Math.round(value / precision) * precision
+function round(value, step) {
+	step = parseFloat(step);
+	if (step === 0) return value;
+	value = Math.round(value / step) * step
+	return parseFloat(value.toFixed(getPrecision(step)));
 }
 
+//get precision from float: 1.1 → 1, 1234 → 0, .1234 → 4
+function getPrecision(n){
+	 var s = n + "",
+        d = s.indexOf('.') + 1;
+
+    return !d ? 0 : s.length - d;
+}
 
 
 /**

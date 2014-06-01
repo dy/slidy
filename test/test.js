@@ -60,15 +60,15 @@ describe("Kinds of sliders", function(){
 	})
 
 	it("inverted vertical", function(){
-
+		var el = createSlider("vertical", {
+			min:1,
+			max:-1,
+			value: 0,
+			type: 'vertical'
+		})
 	})
 
-
-	it ("should be able to become vertical & inverted", function(){
-
-	})
-
-	describe("should be able to become range slider", function(){
+	describe("able to become range slider", function(){
 		// var a = new Slidy({
 		// 	thumbs: 2
 		// });
@@ -84,11 +84,11 @@ describe("Kinds of sliders", function(){
 		})
 	})
 
-	it("should be focusable", function(){
+	it("focusable", function(){
 
 	})
 
-	it("should be key-controllable when focused", function(){
+	it("key-controllable when focused", function(){
 
 	})
 
@@ -108,15 +108,15 @@ describe("Kinds of sliders", function(){
 //		console.log(a.value)
 	})
 
-	it("should be able to be multidimensional range", function(){
+	it("able to be multidimensional range", function(){
 
 	})
 
-	it("should be able to be circular", function(){
+	it("able to be circular", function(){
 
 	})
 
-	it("should be able to support any move shape", function(){
+	it("able to support any move shape", function(){
 
 	})
 })
