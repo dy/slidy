@@ -162,7 +162,7 @@ var _commaSplitRe = /\s*,\s*/;
 
 //match every comma-separated element ignoring 1-level parenthesis, like `1,2(3,4),5`
 // var _commaMatchRe = /([^,]*?(?:\([^()]+\))?)(?=,)|,([^,]*?(?:\([^()]+\))?)(?=$)/g
-var _commaMatchRe = /(,[^,]*?(?:\([^()]+\))?)(?=,|$)/g
+var _commaMatchRe = /(,[^,]*?(?:\([^()]+\)[^,]*)?)(?=,|$)/g
 
 //iterate over every item in string
 function each(str, fn){
@@ -431,16 +431,15 @@ var evtModifiers = {
 	//filter keys
 	pass: function(evt, fn, keys){
 		var cb = function(e){
-			var pass = false;
-			keys.forEach(function(key){
+			var pass = false, key;
+			for (var i = keys.length; i--;){
+				key = keys[i]
 				var which = 'originalEvent' in e ? e.originalEvent.which : e.which;
 				if ((key in keyDict && keyDict[key] == which) || which == key){
 					pass = true;
+					return fn.apply(this, arguments);
 				}
-			});
-			if (pass) {
-				return fn.apply(this, arguments);
-			}
+			};
 			return DENY_EVT_CODE;
 		}
 		return cb
@@ -467,8 +466,9 @@ var evtModifiers = {
 
 //returns parsed event object from event reference
 function _parseEvtRef($el, evtRef){
-	// console.log("parse reference", '`' + evtRef + '`')
+	// console.group("parse reference", '`' + evtRef + '`')
 	var evtDecl = evtRef.match(/\w+(?:\:\w+(?:\(.+\))?)*$/)[0];
+	// console.log(evtDecl)
 	var evtObj = {};
 	evtRef = evtRef.slice(0, -evtDecl.length).trim()
 	// console.log("result ref", evtRef)
@@ -484,6 +484,7 @@ function _parseEvtRef($el, evtRef){
 	});
 
 	// console.log(evtObj)
+	// console.groupEnd();
 	return evtObj;
 }
 

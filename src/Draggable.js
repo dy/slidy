@@ -88,7 +88,15 @@ var Draggable = Mod.extend({
 	sniperSpeed: .15,
 
 	//false, 'x', 'y'
-	axis: false,
+	axis: {
+		value: null,
+		values: {
+			x: 'x',
+			y: 'y',
+			null: null,
+			_: null
+		}
+	},
 
 	//repeat position by one of axis
 	repeat: {
@@ -98,6 +106,7 @@ var Draggable = Mod.extend({
 			x: null,
 			y: null,
 			_: function(){
+				//TODO
 				//vector passed
 				if (this.repeat instanceof Array){
 					if (this.repeat.length){
@@ -111,7 +120,7 @@ var Draggable = Mod.extend({
 
 				//just repeat any possible way
 				} else if (this.repeat === true){
-					return this.axis ? this.axis : "both"
+					return this.axis
 
 				//unrecognized value passed
 				} else {
@@ -133,7 +142,7 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.right){
 					value -= this._limits.right - this._limits.left;
 				}
-			} else if (!this.axis || this.axis === "x" || this.axis === "both"){
+			} else if (!this.axis || this.axis === "x"){
 				//mind axis
 				value = between(value,
 					this._limits.left,
@@ -159,7 +168,7 @@ var Draggable = Mod.extend({
 				} else if (value > this._limits.bottom){
 					value -= this._limits.bottom - this._limits.top;
 				}
-			} else if (!this.axis || this.axis === "y" || this.axis === "both"){
+			} else if (!this.axis || this.axis === "y"){
 				// console.log("axis", this._limits)
 				//mind axis
 				value = between(value,
@@ -359,8 +368,10 @@ var Draggable = Mod.extend({
 			//console.log("outside")
 
 			//move to that new place
-			if (!this.axis || this.axis === "x") this.x = eAbsoluteX - this.oX - offsetX;
-			if (!this.axis || this.axis === "y") this.y = eAbsoluteY - this.oY - offsetY;
+			if (!this.axis || this.axis === "x")
+				this.x = eAbsoluteX - this.oX - offsetX;
+			if (!this.axis || this.axis === "y")
+				this.y = eAbsoluteY - this.oY - offsetY;
 
 			//pretend as if drag has happened
 			d = initDragparams(this, {
@@ -373,7 +384,7 @@ var Draggable = Mod.extend({
 
 			fire(this, 'drag', null, true)
 		} else {
-			//console.log("inside")
+			// console.log("inside")
 			if (!d) d = initDragparams(this, e);
 			offsetX = e.pageX - this._offsets.left;
 			offsetY = e.pageY - this._offsets.top;
@@ -390,6 +401,7 @@ var Draggable = Mod.extend({
 		//relative coords (from initial(zero) position)
 		d.x = eAbsoluteX - this.oX;
 		d.y = eAbsoluteY - this.oY;
+		// console.log(d.x)
 
 		//sniper run distances
 		d.sniperRunX = 0;

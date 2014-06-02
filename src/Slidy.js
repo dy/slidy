@@ -48,14 +48,12 @@ var Slidy = Mod.extend({
 		this.updatePosition();
 	},
 
-	//HTML5 things
 	value: {
 		change: function(value, old){
 			var result;
 
 			// console.log("slidy set value", value, old)
 			if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
-
 
 			if (value && value.length === 2) {
 				result = [];
@@ -78,6 +76,7 @@ var Slidy = Mod.extend({
 		order: 3
 	},
 
+	//placing type
 	type:{
 		value: "horizontal",
 		values: {
@@ -155,11 +154,6 @@ var Slidy = Mod.extend({
 					fire(self,"change")
 				}
 			},
-			"circular": {
-				before: function(){
-
-				}
-			},
 			"rectangular": {
 				before: function(){
 					this.picker.axis = "both"
@@ -200,6 +194,60 @@ var Slidy = Mod.extend({
 
 					//trigger onchange
 					fire(self,"change")
+				}
+			},
+			"circular": {
+				before: function(){
+					this.picker.axis = "both"
+				},
+
+				updatePosition: function(){
+					var	lim = this.picker._limits,
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top),
+						centerX = hScope / 2,
+						centerY = vScope / 2;
+
+					var range = this.max - this.min;
+					var	normalValue = (this.value - this.min) / range;
+					var angle = (normalValue - .5) * 2 * Math.PI;
+
+					//TODO: set coords from value
+					// console.log("update position", normalValue)
+
+					this.picker.x = Math.cos(angle) * hScope/2 + hScope/2 - this.picker.pin[0];
+					this.picker.y = Math.sin(angle) * vScope/2 + vScope/2 - this.picker.pin[1];
+				},
+
+				drag: function(e){
+					// console.log("drag observed", e.target.dragstate);
+					var thumb = e.target,
+						d = thumb.dragstate,
+						lim = thumb._limits,
+						thumbW = thumb._offsets.width,
+						thumbH = thumb._offsets.height,
+						//scope sizes
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top),
+						self = this;
+
+					var x = thumb.x - hScope / 2;
+					var y = thumb.y - vScope / 2;
+
+					//get angle
+					var angle = Math.atan2( y, x )
+
+					//get normal value
+					var normalValue = (angle / 2 / Math.PI + .5);
+					// console.log(normalValue)
+
+					//get value from coords
+					self.value = normalValue * (self.max - self.min) + self.min
+
+					// console.log("value changed", normalValue)
+
+					//trigger onchange
+					fire(self,"change", angle * 180 / Math.PI)
 				}
 			}
 		}
