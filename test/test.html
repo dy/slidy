@@ -5,6 +5,31 @@
 	<link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
 
 	<style>
+	/*------------- Draggable stuff ----------*/
+	.draggable-container{
+		/*position: relative;*/
+		padding:2vh 2vw;
+		background: #f3f3f3;
+		/*min-height: 300px;*/
+		margin: 2vh 0;
+		position: relative;
+	}
+
+	.draggable-container > .draggable{
+		background: rgba(120,130,140,1);
+		width: 10vh;
+		height: 10vh;
+		color: white;
+		font-size: 13px;
+		padding: 1vh 1vw;
+		text-align: center;
+		position: relative;
+		cursor: move;
+	}
+
+
+
+	/*------------- Slidy stuff -------------*/
 		.slidy{
 			min-height: 6vh;
 			min-width: 4vw;
@@ -95,9 +120,8 @@
 			top: 50%;
 			left: 50%;
 			margin-top: -1px;
-			margin-left: -1px;
 			height: 2px;
-			width: 200px;
+			width: 100px;
 			background: black;
 			-webkit-transform-origin: 0 0;
 		}
@@ -125,7 +149,8 @@
 	</script>
 
 	<script src="testHelpers.js"></script>
-	<script src="test.js"></script>
+	<script src="draggable.js"></script>
+	<script src="slidy.js"></script>
 
 	<script>
 		mocha.checkLeaks();

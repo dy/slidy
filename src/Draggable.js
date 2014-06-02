@@ -31,6 +31,7 @@ var Draggable = Mod.extend({
 		value: root,
 		change: function(within){
 			// console.log("within change", within )
+			// console.log(within, this.within, this.parentNode)
 			if (within instanceof Element){
 				this.within = within
 			} else if (typeof within === "string"){
@@ -213,15 +214,13 @@ var Draggable = Mod.extend({
 			//non-native drag
 			idle: {
 				before: function(){
-					// console.log("before idle")
-					this.updateLimits();
-
 					//go native
 					if (this.native) this.dragstate = "native";
 				},
 
 				mousedown: function(e){
 					// console.log("ready click")
+					this.updateLimits();
 					initDragparams(this, e);
 					this.dragstate = "threshold";
 				}
@@ -480,6 +479,13 @@ var Draggable = Mod.extend({
 
 	//movement restrictions
 	_limits: {
+		top: 0,
+		left: 0,
+		bottom: 0,
+		right: 0
+	},
+
+	_offsets: {
 		top: 0,
 		left: 0,
 		bottom: 0,

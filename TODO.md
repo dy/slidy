@@ -1,7 +1,8 @@
+* Make real behavioral tests, not just demo
+
 # Draggalbe
 * Draggaable border drag
 * Expose data
-* Circular
 * Tests
 * Demo page
 
@@ -23,3 +24,7 @@
 
 * get/set value API for case of one picker
 	* reversive transfer, mapping & placing fn's
+
+
+//TODO: Implement all jquery-UI’s
+//TODO: all dragdealer’s stuff
