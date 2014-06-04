@@ -97,19 +97,31 @@ describe("Slidy", function(){
 			})
 
 			el.appendChild(pointer);
-
 		})
 
 		it("round", function(){
-			// var el = createSlider("round", {
-			// 	min:[0,0],
-			// 	max:[100,100],
-			// 	value: [40,70],
-			// 	type: 'round'
-			// })
+			var pointer = document.createElement("div");
+			pointer.className = "pointer";
+
+			xxx
+			var el = createSlider("circular", {
+				min: [0, 0],
+				max: [360, 100],
+				value: [0, 10],
+				type: 'round',
+				change: function(e){
+					// console.log(e.detail);
+					css(pointer, {
+						"-webkit-transform": "rotate(" + e.detail + "deg)"
+					})
+				}
+			})
+
+			el.appendChild(pointer);
 		})
 
 		it("svg shape", function(){
+			xxx
 			// var el = createSlider("rectangular", {
 			// 	min:[0,0],
 			// 	max:[100,100],
@@ -123,7 +135,13 @@ describe("Slidy", function(){
 
 	describe("features", function(){
 		it("multiple thumbs", function(){
-
+			var el = createSlider("multi horizontal", {
+				type: "horizontal",
+				min: 100,
+				max: 0,
+				value: 50,
+				thumbs: 3
+			})
 		})
 
 		it("rectangular multiple thumbs", function(){

@@ -4,47 +4,24 @@
 var Slidy = Mod.extend({
 	init: function(){
 		var self = this;
-
-		this.picker = new Draggable({
-			within: this,
-
-			attached: function(e){
-				//correct pin (centrize based on width of picker)
-				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
-				// console.log("picker attached", this.pin, this.y)
-				//set initial position
-				self.updatePosition();
-			},
-
-			dragstart: function(e){
-				//console.log("dstart")
-				disableSelection(document.documentElement);
-				css(document.documentElement, {"cursor": "none"});
-			},
-			dragend: function(e){
-				//console.log("dend")
-				enableSelection(document.documentElement);
-				css(document.documentElement, {"cursor": null});
-			},
-
-			native: false
-		});
-
-		// console.log("slidy init")
+		console.log("slidy init")
 	},
 
-	created: function(){
-		var self = this;
+	pickers: [],
+	//number of thumbs
+	thumbs: 1,
 
-		// console.log("slidy created")
-		this.appendChild(this.picker);
+	created: function(){
+		var self = this, picker;
+
+		console.log("slidy created");
 
 		//fire initial set
 		// fire(this, "change");
 	},
 
 	attached: function(e){
-		// console.log("slidy attached")
+		console.log("slidy attached")
 		this.updatePosition();
 	},
 
@@ -79,14 +56,27 @@ var Slidy = Mod.extend({
 	//placing type
 	type:{
 		value: "horizontal",
+
+		init: function(){
+			var self = this;
+
+			// console.log("init type", this.thumbs)
+			//create pickers according to the thumbs
+			for (var i = 0; i < this.thumbs; i++){
+				// console.log("add picker", i)
+				this.createPicker();
+			}
+		},
+
 		values: {
 			"horizontal": {
 				before: function(){
-					this.picker.axis = "x";
+					// console.log(this.activePicker)
+					this.setPickersOption("axis", "x");
 				},
 
 				updatePosition: function(){
-					var	lim = this.picker._limits,
+					var	lim = this.activePicker._limits,
 						hScope = (lim.right - lim.left),
 						vScope = (lim.bottom - lim.top)
 
@@ -94,8 +84,8 @@ var Slidy = Mod.extend({
 						ratioX = (this.value - this.min) / hRange;
 						ratioY = .5;
 
-					this.picker.x = ratioX * hScope - this.picker.pin[0];
-					this.picker.y = ratioY * vScope - this.picker.pin[1];
+					this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
+					this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
 				},
 
 				drag: function(e){
@@ -119,11 +109,11 @@ var Slidy = Mod.extend({
 			},
 			"vertical": {
 				before: function(){
-					this.picker.axis = "y"
+					this.setPickersOption("axis", "y");
 				},
 
 				updatePosition: function(){
-					var	lim = this.picker._limits,
+					var	lim = this.activePicker._limits,
 						hScope = (lim.right - lim.left),
 						vScope = (lim.bottom - lim.top)
 
@@ -131,8 +121,8 @@ var Slidy = Mod.extend({
 						ratioX = .5,
 						ratioY = (- this.value + this.max) / vRange
 
-					this.picker.x = ratioX * hScope - this.picker.pin[0];
-					this.picker.y = ratioY * vScope - this.picker.pin[1];
+					this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
+					this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
 				},
 
 				drag: function(e){
@@ -156,11 +146,11 @@ var Slidy = Mod.extend({
 			},
 			"rectangular": {
 				before: function(){
-					this.picker.axis = "both"
+					this.setPickersOption("axis", null);
 				},
 
 				updatePosition: function(){
-					var	lim = this.picker._limits,
+					var	lim = this.activePicker._limits,
 						hScope = (lim.right - lim.left),
 						vScope = (lim.bottom - lim.top)
 
@@ -169,8 +159,8 @@ var Slidy = Mod.extend({
 						ratioX = (this.value[0] - this.min[0]) / hRange,
 						ratioY = (- this.value[1] + this.max[1]) / vRange
 
-					this.picker.x = ratioX * hScope - this.picker.pin[0];
-					this.picker.y = ratioY * vScope - this.picker.pin[1];
+					this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
+					this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
 				},
 
 				drag: function(e){
@@ -198,11 +188,11 @@ var Slidy = Mod.extend({
 			},
 			"circular": {
 				before: function(){
-					this.picker.axis = "both"
+					this.setPickersOption("axis", null);
 				},
 
 				updatePosition: function(){
-					var	lim = this.picker._limits,
+					var	lim = this.activePicker._limits,
 						hScope = (lim.right - lim.left),
 						vScope = (lim.bottom - lim.top),
 						centerX = hScope / 2,
@@ -215,8 +205,8 @@ var Slidy = Mod.extend({
 					//TODO: set coords from value
 					// console.log("update position", normalValue)
 
-					this.picker.x = Math.cos(angle) * hScope/2 + hScope/2 - this.picker.pin[0];
-					this.picker.y = Math.sin(angle) * vScope/2 + vScope/2 - this.picker.pin[1];
+					this.activePicker.x = Math.cos(angle) * hScope/2 + hScope/2 - this.activePicker.pin[0];
+					this.activePicker.y = Math.sin(angle) * vScope/2 + vScope/2 - this.activePicker.pin[1];
 				},
 
 				drag: function(e){
@@ -249,12 +239,120 @@ var Slidy = Mod.extend({
 					//trigger onchange
 					fire(self,"change", angle * 180 / Math.PI)
 				}
+			},
+			"round": {
+				before: function(){
+					this.setPickersOption("axis", null);
+				},
+
+				updatePosition: function(){
+					var	lim = this.activePicker._limits,
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top),
+						centerX = hScope / 2,
+						centerY = vScope / 2;
+
+					//get angle normal value
+					var aRange = this.max[0] - this.min[0];
+					var	normalAngleValue = (this.value[0] - this.min[0]) / aRange;
+					var angle = (normalAngleValue - .5) * 2 * Math.PI;
+
+					//get radius normal value
+					var rRange = this.max[1] - this.min[1];
+					var normalRadiusValue = (this.value[1] - this.min[1]) / rRange;
+					// console.log(this.value[1])
+					var xRadius = hScope * normalRadiusValue
+					var yRadius = vScope * normalRadiusValue
+
+					//TODO: set coords from value
+					// console.log("update position", normalValue)
+
+					this.activePicker.x = Math.cos(angle) * xRadius + hScope * .5 - this.activePicker.pin[0];
+					this.activePicker.y = Math.sin(angle) * yRadius + hScope * .5 - this.activePicker.pin[1];
+				},
+
+				drag: function(e){
+					// console.log("drag observed", e.target.dragstate);
+					var thumb = e.target,
+						d = thumb.dragstate,
+						lim = thumb._limits,
+						thumbW = thumb._offsets.width,
+						thumbH = thumb._offsets.height,
+						//scope sizes
+						hScope = (lim.right - lim.left),
+						vScope = (lim.bottom - lim.top),
+						self = this;
+
+					var x = thumb.x - hScope / 2;
+					var y = thumb.y - vScope / 2;
+
+					//get angle
+					var angle = Math.atan2( y, x )
+
+					//get normal value
+					var normalAngleValue = (angle / 2 / Math.PI + .5);
+					var normalRadiusValue = Math.sqrt( x*x + y*y ) / hScope;
+					// console.log(normalRadiusValue)
+
+					//get value from coords
+					self.value = [
+						normalAngleValue * (self.max[0] - self.min[0]) + self.min[0],
+						normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1]
+					]
+
+					// console.log("value changed", normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1])
+
+					//trigger onchange
+					fire(self,"change", angle * 180 / Math.PI)
+				}
 			}
 		}
 	},
 
 	updatePosition: function(){
 		//undefined position updater
+	},
+
+	//set option for all pickers instances
+	setPickersOption: function(name, value){
+		for (var i = 0; i < this.pickers.length; i++){
+			this.pickers[i][name] = value
+		}
+	},
+
+	//create new picker
+	createPicker: function(){
+		var self = this;
+
+		this.activePicker = new Draggable({
+			within: this,
+
+			attached: function(e){
+				// console.log("picker attached", this.pin, this.y)
+				//correct pin (centrize based on width of picker)
+				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
+				//set initial position
+				self.updatePosition();
+			},
+
+			dragstart: function(e){
+				//console.log("dstart")
+				disableSelection(document.documentElement);
+				css(document.documentElement, {"cursor": "none"});
+			},
+			dragend: function(e){
+				//console.log("dend")
+				enableSelection(document.documentElement);
+				css(document.documentElement, {"cursor": null});
+			},
+
+			native: false
+		});
+
+		this.pickers.push(this.activePicker);
+
+		// console.log("slidy created")
+		this.appendChild(this.activePicker);
 	},
 
 	//value limits
@@ -316,17 +414,37 @@ var Slidy = Mod.extend({
 	repeat: {
 		value: false,
 		change: function(repeat){
-			if (this.picker) this.picker.repeat = repeat;
+			if (this.activePicker) this.activePicker.repeat = repeat;
 		}
 	},
 
+	//get closest picker to the place of event
+	getClosestPicker: function(x,y){
+		//between all pickers choose the one with closest x,y
+		var minX, minY, minR = 9999, picker, minPicker;
+
+		for (var i = 0; i < this.pickers.length; i++){
+			picker = this.pickers[i];
+			r = Math.sqrt( (x-picker.x)*(x-picker.x) + (y-picker.y)*(y-picker.y) );
+			if (r < minR) {
+				minR = r;
+				minPicker = picker;
+			}
+		}
+
+		return minPicker;
+	},
+
+	//-------interaction
 	mousedown: function(e){
-		// console.log("mousedown")
-		this.picker.startDrag(e);
+		var offsets = this.getBoundingClientRect();
+		// console.log("mousedown", e.clientX - offsets.left, e.clientY - offsets.top)
+		this.activePicker = this.getClosestPicker(e.clientX - offsets.left, e.clientY - offsets.top);
+		this.activePicker.startDrag(e);
 	},
 
 	'window resize': function(){
-		this.picker.updateLimits();
+		this.activePicker.updateLimits();
 		this.updatePosition()
 	}
 })
