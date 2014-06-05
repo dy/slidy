@@ -236,7 +236,7 @@ var Draggable = Mod.extend({
 					//console.log("ts after")
 				},
 				'document mousemove': function(e){
-					//console.log("move in", this.threshold)
+					// console.log("move in", this.threshold)
 					var difX = (e.clientX - this._dragparams.initX);
 					var difY = (e.clientY - this._dragparams.initY);
 

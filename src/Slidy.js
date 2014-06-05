@@ -21,7 +21,7 @@ var Slidy = Mod.extend({
 	},
 
 	attached: function(e){
-		// console.log("slidy attached")
+		console.log("slidy attached")
 		//set proper positioning for all pickers
 	},
 
@@ -30,7 +30,7 @@ var Slidy = Mod.extend({
 		change: function(value, old){
 			var result;
 
-			// console.log("slidy set value", value, old)
+			// console.log("slidy set value", value, old, this.values)
 			// if (!this.activePicker.isAttached) return false;
 
 			if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
@@ -67,7 +67,7 @@ var Slidy = Mod.extend({
 
 		init: function(value){
 			var self = this;
-			// console.log("init type", this.thumbs)
+			// console.log("init type", this.values)
 			//create pickers according to the thumbs
 			for (var i = 0; i < this.thumbs; i++){
 				// console.log("add picker", i)
@@ -422,6 +422,8 @@ var Slidy = Mod.extend({
 				css(document.documentElement, {"cursor": null});
 			},
 
+			threshold: 0,
+
 			native: false
 		});
 
@@ -453,7 +455,7 @@ var Slidy = Mod.extend({
 	activePicker: {
 		value: null,
 		change: function(number){
-			// console.log("set active picker", number)
+			// console.log("set active picker", number, this.pickers)
 			if (typeof number === "number"){
 				this.activePicker = this.pickers[number];
 				//set value to the active picker’s value
@@ -468,10 +470,18 @@ var Slidy = Mod.extend({
 	//-------interaction
 	mousedown: function(e){
 		//make closest picker active
-		// console.log("mousedown", e.clientX - offsets.left, e.clientY - offsets.top)
 		var offsets = this.getBoundingClientRect();
+		// console.log("mousedown", e.clientX - offsets.left, e.clientY - offsets.top)
 		var number = this.getClosestPickerNumber(e.clientX - offsets.left, e.clientY - offsets.top);
 		this.activePicker = number;
+
+		//disable every picker but active
+		var picker;
+		for (var i = 0; i < this.pickers.length; i++){
+			picker = this.pickers[i];
+			if (picker === this.activePicker) continue;
+			picker.dragstate = "idle"
+		}
 
 		//make new picker drag
 		this.activePicker.startDrag(e);
