@@ -12,7 +12,8 @@ describe("Slidy", function(){
 
 		//update value
 		on(el, "change", function(){
-			if (this.picker) this.picker.innerHTML = this.value;
+			// console.log("value changed", this.value)
+			if (this.activePicker) this.activePicker.innerHTML = this.value;
 		})
 
 		//create slidy
@@ -44,7 +45,7 @@ describe("Slidy", function(){
 			//drag to somewhere
 		})
 
-		it("horizonal inverted", function(){
+		it("h inverted", function(){
 			var el = createSlider("horizontal", {
 				min: 1,
 				max: -1,
@@ -61,7 +62,7 @@ describe("Slidy", function(){
 			})
 		})
 
-		it("vertical inverted", function(){
+		it("v inverted", function(){
 			var el = createSlider("vertical", {
 				min:1,
 				max:-1,

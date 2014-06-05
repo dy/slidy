@@ -4,7 +4,7 @@
 var Slidy = Mod.extend({
 	init: function(){
 		var self = this;
-		console.log("slidy init")
+		// console.log("slidy init")
 	},
 
 	pickers: [],
@@ -14,14 +14,14 @@ var Slidy = Mod.extend({
 	created: function(){
 		var self = this, picker;
 
-		console.log("slidy created");
+		// console.log("slidy created");
 
 		//fire initial set
 		// fire(this, "change");
 	},
 
 	attached: function(e){
-		console.log("slidy attached")
+		// console.log("slidy attached")
 		//set proper positioning for all pickers
 	},
 
@@ -31,6 +31,8 @@ var Slidy = Mod.extend({
 			var result;
 
 			// console.log("slidy set value", value, old)
+			// if (!this.activePicker.isAttached) return false;
+
 			if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
 
 			if (value && value.length === 2) {
@@ -47,13 +49,13 @@ var Slidy = Mod.extend({
 			if (!result && result !== 0) throw Error("Something went wrong in validating value", result);
 
 			this.value = result;
-			if (this.activePicker !== undefined) this.values[this.activePicker.number] =result;
+			if (this.activePicker) this.values[this.activePicker.number] = result;
+			else this.values[0] = result;
 
 			this.updatePosition();
 
 			fire(this, "change")
-		},
-		order: 3
+		}
 	},
 
 	//set of values for each picker
@@ -63,7 +65,7 @@ var Slidy = Mod.extend({
 	type:{
 		value: "horizontal",
 
-		init: function(){
+		init: function(value){
 			var self = this;
 			// console.log("init type", this.thumbs)
 			//create pickers according to the thumbs
@@ -76,7 +78,7 @@ var Slidy = Mod.extend({
 		values: {
 			"horizontal": {
 				before: function(){
-					// console.log(this.activePicker)
+					// console.log("before horiz", this.activePicker)
 					this.setPickersOption("axis", "x");
 				},
 
@@ -118,6 +120,7 @@ var Slidy = Mod.extend({
 				},
 
 				updatePosition: function(){
+					// console.log("upd position")
 					var	lim = this.activePicker._limits,
 						hScope = (lim.right - lim.left),
 						vScope = (lim.bottom - lim.top)
@@ -152,9 +155,11 @@ var Slidy = Mod.extend({
 			"rectangular": {
 				before: function(){
 					this.setPickersOption("axis", null);
+					// console.log("before rectangular", this.activePicker)
 				},
 
 				updatePosition: function(){
+					// console.log("updatePosition", this.activePicker)
 					var	lim = this.activePicker._limits,
 						hScope = (lim.right - lim.left),
 						vScope = (lim.bottom - lim.top)
@@ -326,7 +331,7 @@ var Slidy = Mod.extend({
 			// console.log("set min", value, /,/.test(value))
 			if (typeof value === 'string' && /,/.test(value)) return parseArray(value);
 		},
-		order: 0
+		order: 1
 	},
 	max: {
 		value: 100,
@@ -334,7 +339,7 @@ var Slidy = Mod.extend({
 			// console.log("set max", value)
 			if (typeof value === 'string' && /,/.test(value)) return parseArray(value);
 		},
-		order: 0
+		order: 1
 	},
 	step: {
 		value: 1,
@@ -391,17 +396,19 @@ var Slidy = Mod.extend({
 
 	//create new picker
 	createPicker: function(){
-		var self = this, picker
+		var self = this, picker;
 
 		this.activePicker = new Draggable({
 			within: this,
 
 			attached: function(e){
-				// console.log("picker attached", this.number)
+				console.log("picker attached", this.number)
 				//correct pin (centrize based on width of picker)
 				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
 				//set initial position
 				self.activePicker = this.number;
+				self.updatePosition();
+				// console.groupEnd()
 			},
 
 			dragstart: function(e){
@@ -422,7 +429,7 @@ var Slidy = Mod.extend({
 
 		this.pickers.push(this.activePicker);
 
-		// console.log("slidy created")
+		// console.log("slidy created", this.activePicker)
 		this.appendChild(this.activePicker);
 	},
 
@@ -450,6 +457,7 @@ var Slidy = Mod.extend({
 			if (typeof number === "number"){
 				this.activePicker = this.pickers[number];
 				//set value to the active picker’s value
+				// console.log(this.values)
 				this.value = this.values[number];
 			} else {
 				return number

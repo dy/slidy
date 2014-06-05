@@ -119,6 +119,17 @@ function deepExtend(a){
 	return a;
 }
 
+//sinple clone of any value passed (mod instance init)
+function clone(a){
+	if (a instanceof Array) {
+		return a.slice();
+	}
+	if (isObject(a)){
+		return deepExtend({}, a);
+	}
+	return a;
+}
+
 function isObject(a){
 	return (a && a !== null && typeof a === "object" && !(a instanceof Array ) && !(a.nodeType))
 }
@@ -315,9 +326,7 @@ function css($el, style, value){
 
 
 //Binds event declaration
-//TODO: make delegate as event-property `:delegate(selector)`
-//TODO: pass array of functions to bind
-//TODO: bind evtObj passed {evt, src, fn}
+//could be method reference passed
 var _modifierParamsRe = /\(([^)]*)\)/;
 function on($el, evtRefs, fn){
 	var methName;
@@ -492,13 +501,13 @@ function _parseEvtRef($el, evtRef){
 function parseTarget($el, str) {
 	if (!str){
 		return $el
-	} if (str === 'document') {
+	} if (/^document/i.test(str)) {
 		return doc;
-	} else if (str === 'window') {
+	} else if (/^window/i.test(str)) {
 		return win;
-	} else if (str === 'root') {
+	} else if (/^root/i.test(str)) {
 		return root
-	}  else if (str === 'parent') {
+	}  else if (/parent/i.test(str) || '..' === str) {
 		return $el.parentNode
 	} else if (str[0] === '@') {
 		//`this` reference
@@ -845,7 +854,7 @@ function enterState($el, stateKey, props, initValues){
 		//ignore empty props
 		if (prop === undefined) return;
 
-		var initValue, propValue = prop.value;
+		var initValue, propValue = clone(prop.value);
 
 		//set private/defined/non-descriptor property
 		if (propName[0] === "_"){
@@ -872,7 +881,7 @@ function enterState($el, stateKey, props, initValues){
 					return function(value){
 						var self = this;
 
-						//LOG && console.log("set value", key, '`' + value + '` from', self[ _key ])
+						// console.log("set value", key, '`' + value + '` from', self[ _key ])
 
 						//save old value
 						var oldValue = self[_key];
@@ -932,7 +941,7 @@ function enterState($el, stateKey, props, initValues){
 						//enter state routines
 						var beforeResult;
 						if (desc.values) {
-							var stateValue = desc.values[value] ? value : '_';
+							var stateValue = value in desc.values ? value : '_';
 							var state = desc.values[stateValue];
 
 							if (stateValue in desc.values){
@@ -988,14 +997,17 @@ function enterState($el, stateKey, props, initValues){
 
 			//call init prop, if any
 			if (prop.init) {
-				propValue = prop.init.call($el, initValues[propName])
+				propValue = prop.init.call($el, (propName in initValues) ? initValues[propName] : prop.value);
 				if (propValue === undefined) {
 					if (_propName in $el){
 						//if property was changed fromwithin init
 						initValues[propName] = $el[propName];
 					} else {
-						initValues[propName] = prop.value;
+						//if property hasn’t been changed - get back to value init
+						initValues[propName] = (propName in initValues) ? initValues[propName] : prop.value;
 					}
+				} else {
+					//if undefined returned
 				}
 				// console.log("after init call", propValue)
 			}
@@ -1024,6 +1036,15 @@ function enterState($el, stateKey, props, initValues){
 		if (isFn(propValue)) {
 			// console.log("on", propName, propValue);
 			on($el, propName, propName)
+		} else {
+			//TODO: bind property redirector
+			// var redirectCb = function(){
+			// 	return function(){
+			// 		this[stateKey] = ???
+			// 	}
+			// }
+			// $el[_propName + 'RedirectCb'] = redirectCb;
+			// on($el, propName, redirectCb)
 		}
 
 	});
@@ -1057,11 +1078,13 @@ function leaveState($el, stateKey, props){
 	//unbind all previously bound callbacks/methods
 	for(var evtRef in props) {
 		if (techCbRe.test(evtRef) || props[evtRef] === undefined) continue;
-		if ($el[props[evtRef].value]) {
+		if (isFn($el[props[evtRef].value])) {
 			// console.log("off ref", evtRef, props[evtRef].value)
+			//unbind reference
 			off($el, evtRef, props[evtRef].value);
 		} else {
 			// console.log("off", evtRef)
+			//unbind method
 			off($el, evtRef, evtRef);
 		}
 	}
@@ -1289,30 +1312,72 @@ function sortPropsByOrder(keys, props){
 
 
 //property init priority assessor
+//TODO: test whether order is ok
 function getPropOrder(name, prop){
-	if (name[0] === "_") return 0;
-	if (!prop) {
-		//non-descriptors are first-priority
-		return 1;
-	} else if (prop.order !== undefined){
-		//predefined order
-		return prop.order;
-	} else if (isFn(prop.value)) {
-		//methods
-		return 1;
-	} else if (prop.change){
-		//descriptors with change fn
-		return 4;
-	} else if (prop.values){
-		//stateful descriptors: most dependable
-		return 5;
-	} else if (!isObject(prop.value)){
-		//plain values, including stringy fn declarations
-		return 2;
-	} else {
-		//simple descriptors
-		return 3;
+	var order = 0;
+
+	//private things are non-depending
+	if (name[0] === "_") {
+		return -10;
 	}
+
+	//non-descriptors are first-priority
+	if (!prop) {
+		return -9;
+	}
+
+	//predefined order is out of question
+	if (prop.order !== undefined){
+		return prop.order;
+	}
+
+	//if plain prop (no meta-things) - second priority
+	//NOTE: stringy can be fn references
+	if (!prop.init && !prop.change && !prop.values){
+		//methods - second priority
+		if (isFn(prop.value)) {
+			return -8;
+		}
+
+		//plain values, including stringy fn declarations - second priority
+		else if (!isObject(prop.value)) {
+			return -7;
+		}
+
+		//object descriptors
+		else {
+			return -6;
+		}
+	}
+
+	//descriptors with meta-things
+	else {
+		//methods - before references
+		if (isFn(prop.value)) {
+			order = 10;
+		} else if (typeof prop.value === "string"){
+			order = 13;
+		} else {
+			order = 11;
+		}
+	}
+
+	//descriptors with init fn
+	if (prop.init) {
+		order += 1;
+	}
+
+	//descriptors with change fn
+	if (prop.change) {
+		order += 2;
+	}
+
+	//stateful descriptors: most dependable
+	if (prop.values) {
+		order += 4;
+	}
+
+	return order;
 }
 
 //return ensured property descriptor
