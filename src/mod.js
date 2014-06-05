@@ -1007,7 +1007,8 @@ function enterState($el, stateKey, props, initValues){
 						initValues[propName] = (propName in initValues) ? initValues[propName] : prop.value;
 					}
 				} else {
-					//if undefined returned
+					//if returned value
+					initValues[propName] = propValue;
 				}
 				// console.log("after init call", propValue)
 			}
@@ -1022,7 +1023,7 @@ function enterState($el, stateKey, props, initValues){
 
 		//set custom value passed/assign value
 		else if (!isFn(propValue) && initValues && (propName in initValues)) {
-			// console.log("set init value", propName, propValue)
+			// console.log("set init value", propName, propValue, initValues[propName])
 			$el[propName] = initValues[propName];
 		}
 

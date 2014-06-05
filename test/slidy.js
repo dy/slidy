@@ -66,7 +66,7 @@ describe("Slidy", function(){
 			var el = createSlider("vertical", {
 				min:1,
 				max:-1,
-				value: 0,
+				value: 0.2,
 				type: 'vertical'
 			})
 		})

@@ -21,14 +21,24 @@ var Slidy = Mod.extend({
 	},
 
 	attached: function(e){
-		console.log("slidy attached")
+		// console.log("slidy attached")
 		//set proper positioning for all pickers
 	},
 
 	//active picker value
 	value: {
+		init: function(v){
+			//predefine single value
+			if (!this.values.length) this.values.push(v);
+
+			//do not set value before pickers created
+			return null;
+		},
 		change: function(value, old){
 			var result;
+
+			//ignore undefined pickers
+			if (!this.pickers.length) return;
 
 			// console.log("slidy set value", value, old, this.values)
 			// if (!this.activePicker.isAttached) return false;
@@ -398,11 +408,15 @@ var Slidy = Mod.extend({
 	createPicker: function(){
 		var self = this, picker;
 
-		this.activePicker = new Draggable({
+		picker = new Draggable({
 			within: this,
 
+			created: function(){
+				// console.log("picker created")
+			},
+
 			attached: function(e){
-				console.log("picker attached", this.number)
+				// console.log("picker attached", this.number)
 				//correct pin (centrize based on width of picker)
 				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
 				//set initial position
@@ -427,12 +441,12 @@ var Slidy = Mod.extend({
 			native: false
 		});
 
-		this.activePicker.number = this.pickers.length;
+		picker.number = this.pickers.length;
 
-		this.pickers.push(this.activePicker);
+		this.pickers.push(picker);
 
 		// console.log("slidy created", this.activePicker)
-		this.appendChild(this.activePicker);
+		this.appendChild(picker);
 	},
 
 	//get closest picker to the place of event
@@ -455,11 +469,11 @@ var Slidy = Mod.extend({
 	activePicker: {
 		value: null,
 		change: function(number){
-			// console.log("set active picker", number, this.pickers)
+			// console.log("set active picker", number)
 			if (typeof number === "number"){
 				this.activePicker = this.pickers[number];
 				//set value to the active picker’s value
-				// console.log(this.values)
+				// console.log(this.values, this.value)
 				this.value = this.values[number];
 			} else {
 				return number
