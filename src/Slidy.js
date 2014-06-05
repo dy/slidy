@@ -22,9 +22,10 @@ var Slidy = Mod.extend({
 
 	attached: function(e){
 		console.log("slidy attached")
-		this.updatePosition();
+		//set proper positioning for all pickers
 	},
 
+	//active picker value
 	value: {
 		change: function(value, old){
 			var result;
@@ -43,8 +44,10 @@ var Slidy = Mod.extend({
 				value = parseFloat(value) ? value : 0;
 				result = round(between(value, this.min, this.max), this.step);
 			}
-			if (!result && result !== 0) throw Error("Something went wrong in validating value", result)
+			if (!result && result !== 0) throw Error("Something went wrong in validating value", result);
+
 			this.value = result;
+			if (this.activePicker !== undefined) this.values[this.activePicker.number] =result;
 
 			this.updatePosition();
 
@@ -53,13 +56,15 @@ var Slidy = Mod.extend({
 		order: 3
 	},
 
+	//set of values for each picker
+	values: [],
+
 	//placing type
 	type:{
 		value: "horizontal",
 
 		init: function(){
 			var self = this;
-
 			// console.log("init type", this.thumbs)
 			//create pickers according to the thumbs
 			for (var i = 0; i < this.thumbs; i++){
@@ -83,7 +88,7 @@ var Slidy = Mod.extend({
 					var hRange = this.max - this.min,
 						ratioX = (this.value - this.min) / hRange;
 						ratioY = .5;
-
+					// console.log("upd pos", hScope, vScope)
 					this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
 					this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
 				},
@@ -313,48 +318,6 @@ var Slidy = Mod.extend({
 		//undefined position updater
 	},
 
-	//set option for all pickers instances
-	setPickersOption: function(name, value){
-		for (var i = 0; i < this.pickers.length; i++){
-			this.pickers[i][name] = value
-		}
-	},
-
-	//create new picker
-	createPicker: function(){
-		var self = this;
-
-		this.activePicker = new Draggable({
-			within: this,
-
-			attached: function(e){
-				// console.log("picker attached", this.pin, this.y)
-				//correct pin (centrize based on width of picker)
-				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
-				//set initial position
-				self.updatePosition();
-			},
-
-			dragstart: function(e){
-				//console.log("dstart")
-				disableSelection(document.documentElement);
-				css(document.documentElement, {"cursor": "none"});
-			},
-			dragend: function(e){
-				//console.log("dend")
-				enableSelection(document.documentElement);
-				css(document.documentElement, {"cursor": null});
-			},
-
-			native: false
-		});
-
-		this.pickers.push(this.activePicker);
-
-		// console.log("slidy created")
-		this.appendChild(this.activePicker);
-	},
-
 	//value limits
 	min: {
 		//predefined value type obliges parsing recognition as a value
@@ -418,8 +381,53 @@ var Slidy = Mod.extend({
 		}
 	},
 
+
+	//set option for all pickers instances
+	setPickersOption: function(name, value){
+		for (var i = 0; i < this.pickers.length; i++){
+			this.pickers[i][name] = value
+		}
+	},
+
+	//create new picker
+	createPicker: function(){
+		var self = this, picker
+
+		this.activePicker = new Draggable({
+			within: this,
+
+			attached: function(e){
+				// console.log("picker attached", this.number)
+				//correct pin (centrize based on width of picker)
+				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
+				//set initial position
+				self.activePicker = this.number;
+			},
+
+			dragstart: function(e){
+				//console.log("dstart")
+				disableSelection(document.documentElement);
+				css(document.documentElement, {"cursor": "none"});
+			},
+			dragend: function(e){
+				//console.log("dend")
+				enableSelection(document.documentElement);
+				css(document.documentElement, {"cursor": null});
+			},
+
+			native: false
+		});
+
+		this.activePicker.number = this.pickers.length;
+
+		this.pickers.push(this.activePicker);
+
+		// console.log("slidy created")
+		this.appendChild(this.activePicker);
+	},
+
 	//get closest picker to the place of event
-	getClosestPicker: function(x,y){
+	getClosestPickerNumber: function(x,y){
 		//between all pickers choose the one with closest x,y
 		var minX, minY, minR = 9999, picker, minPicker;
 
@@ -428,18 +436,36 @@ var Slidy = Mod.extend({
 			r = Math.sqrt( (x-picker.x)*(x-picker.x) + (y-picker.y)*(y-picker.y) );
 			if (r < minR) {
 				minR = r;
-				minPicker = picker;
+				minPicker = i;
 			}
 		}
 
 		return minPicker;
 	},
 
+	activePicker: {
+		value: null,
+		change: function(number){
+			// console.log("set active picker", number)
+			if (typeof number === "number"){
+				this.activePicker = this.pickers[number];
+				//set value to the active picker’s value
+				this.value = this.values[number];
+			} else {
+				return number
+			}
+		}
+	},
+
 	//-------interaction
 	mousedown: function(e){
-		var offsets = this.getBoundingClientRect();
+		//make closest picker active
 		// console.log("mousedown", e.clientX - offsets.left, e.clientY - offsets.top)
-		this.activePicker = this.getClosestPicker(e.clientX - offsets.left, e.clientY - offsets.top);
+		var offsets = this.getBoundingClientRect();
+		var number = this.getClosestPickerNumber(e.clientX - offsets.left, e.clientY - offsets.top);
+		this.activePicker = number;
+
+		//make new picker drag
 		this.activePicker.startDrag(e);
 	},
 

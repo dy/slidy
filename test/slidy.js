@@ -140,6 +140,7 @@ describe("Slidy", function(){
 				min: 100,
 				max: 0,
 				value: 50,
+				values: [10, 50, 80],
 				thumbs: 3
 			})
 		})
