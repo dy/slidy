@@ -433,7 +433,7 @@ var Slidy = Mod.extend({
 
 		for (var i = 0; i < this.pickers.length; i++){
 			picker = this.pickers[i];
-			r = Math.sqrt( (x-picker.x)*(x-picker.x) + (y-picker.y)*(y-picker.y) );
+			r = Math.sqrt( (x-picker.x-picker.pin[0])*(x-picker.x-picker.pin[0]) + (y-picker.y-picker.pin[1])*(y-picker.y-picker.pin[1]) );
 			if (r < minR) {
 				minR = r;
 				minPicker = i;
