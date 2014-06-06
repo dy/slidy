@@ -1,9 +1,7 @@
 * Make real behavioral tests, not just demo
 
 # Draggalbe
-* Draggaable border drag
 * Expose data
-* Tests
 * Demo page
 
 # Slidy
@@ -12,8 +10,8 @@
 * Keyboard
 * HTML5 input range compliance page
 
-* Demo page
-* Debug touches
+* Demo
+* Touches
 
 * Define pickers DOM-way
 	* Avoid classes & dom-attrs declarations = avoid styling problems
@@ -26,5 +24,5 @@
 	* reversive transfer, mapping & placing fn's
 
 
-//TODO: Implement all jquery-UI’s
-//TODO: all dragdealer’s stuff
+* Implement all jquery-UI’s
+* All dragdealer’s stuff
