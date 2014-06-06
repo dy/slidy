@@ -1,5 +1,7 @@
 describe("Slidy", function(){
 
+	//TODO: handle same-value case for 2&more pickers
+
 	function createSlider(name, opts){
 		var el = document.createElement("div");
 		el.title = name;
@@ -104,11 +106,10 @@ describe("Slidy", function(){
 			var pointer = document.createElement("div");
 			pointer.className = "pointer";
 
-			xxx
 			var el = createSlider("circular", {
 				min: [0, 0],
 				max: [360, 100],
-				value: [0, 10],
+				value: [0, 40],
 				type: 'round',
 				change: function(e){
 					// console.log(e.detail);

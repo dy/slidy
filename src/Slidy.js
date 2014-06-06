@@ -281,14 +281,14 @@ var Slidy = Mod.extend({
 					var rRange = this.max[1] - this.min[1];
 					var normalRadiusValue = (this.value[1] - this.min[1]) / rRange;
 					// console.log(this.value[1])
-					var xRadius = hScope * normalRadiusValue
-					var yRadius = vScope * normalRadiusValue
+					var xRadius = hScope * normalRadiusValue / 2
+					var yRadius = vScope * normalRadiusValue / 2
 
 					//TODO: set coords from value
-					// console.log("update position", normalValue)
+					// console.log("update position", xRadius)
 
 					this.activePicker.x = Math.cos(angle) * xRadius + hScope * .5 - this.activePicker.pin[0];
-					this.activePicker.y = Math.sin(angle) * yRadius + hScope * .5 - this.activePicker.pin[1];
+					this.activePicker.y = Math.sin(angle) * yRadius + vScope * .5 - this.activePicker.pin[1];
 				},
 
 				drag: function(e){
@@ -303,16 +303,16 @@ var Slidy = Mod.extend({
 						vScope = (lim.bottom - lim.top),
 						self = this;
 
-					var x = thumb.x - hScope / 2;
-					var y = thumb.y - vScope / 2;
+					var x = thumb.x + thumb.pin[0] - hScope / 2;
+					var y = thumb.y + thumb.pin[1] - vScope / 2;
 
 					//get angle
 					var angle = Math.atan2( y, x )
 
 					//get normal value
 					var normalAngleValue = (angle / 2 / Math.PI + .5);
-					var normalRadiusValue = Math.sqrt( x*x + y*y ) / hScope;
-					// console.log(normalRadiusValue)
+					var normalRadiusValue = Math.sqrt( x*x + y*y ) / hScope * 2;
+					// console.log(normalAngleValue, normalRadiusValue)
 
 					//get value from coords
 					self.value = [
@@ -320,7 +320,7 @@ var Slidy = Mod.extend({
 						normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1]
 					]
 
-					// console.log("value changed", normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1])
+					// console.log("value changed", self.value)
 
 					//trigger onchange
 					fire(self,"change", angle * 180 / Math.PI)
