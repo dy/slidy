@@ -114,12 +114,17 @@ describe("Slidy", function(){
 				change: function(e){
 					// console.log(e.detail);
 					css(pointer, {
-						"-webkit-transform": "rotate(" + e.detail + "deg)"
+						"-webkit-transform": "rotate(" + ((this.value[0]) + 180) + "deg)",
+						"width": this.value[1] + "px"
 					})
 				}
 			})
 
 			el.appendChild(pointer);
+		})
+
+		it("sector", function(){
+			xxx
 		})
 
 		it("svg shape", function(){
@@ -142,47 +147,67 @@ describe("Slidy", function(){
 				min: 100,
 				max: 0,
 				value: 50,
-				values: [10, 50, 80],
-				thumbs: 3
+				values: [10, 50, 80]
 			})
 		})
 
 		it("rectangular multiple thumbs", function(){
-
+			var el = createSlider("multi rectangular", {
+				type: "rectangular",
+				min: [100, -100],
+				max: [-100, 100],
+				value: 50,
+				values: [[-10, 50], [80, -10], [10,20], [-100,-100]]
+			})
 		})
 
 		it("repeat x", function(){
-
+			xxx
 		})
 
 		it("repeat y", function(){
-
+			xxx
 		})
 
 		it("repeat rect", function(){
-
+			xxx
 		})
 		it("expose data", function(){
+			xxx
+		})
 
+		it("snapping", function(){
+			xxx
+		})
+
+		it("loose limits", function(){
+			xxx
 		})
 	})
 
 
 	describe("interaction", function(){
 		it("focusable", function(){
-
+			xxx
 		})
 
 		it("focused keyboard control", function(){
-
+			xxx
 		})
 
-		it("mobile touch", function(){
-
+		it("touches", function(){
+			xxx
 		})
 
 		it("scroll", function(){
+			xxx
+		})
+	})
 
+
+	describe("corner cases", function(){
+		it("out of bounds values", function(){
+			xxx
 		})
 	})
 

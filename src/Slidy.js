@@ -8,8 +8,6 @@ var Slidy = Mod.extend({
 	},
 
 	pickers: [],
-	//number of thumbs
-	thumbs: 1,
 
 	created: function(){
 		var self = this, picker;
@@ -79,7 +77,7 @@ var Slidy = Mod.extend({
 			var self = this;
 			// console.log("init type", this.values)
 			//create pickers according to the thumbs
-			for (var i = 0; i < this.thumbs; i++){
+			for (var i = 0; i < this.values.length; i++){
 				// console.log("add picker", i)
 				this.createPicker();
 			}
@@ -323,7 +321,7 @@ var Slidy = Mod.extend({
 					// console.log("value changed", self.value)
 
 					//trigger onchange
-					fire(self,"change", angle * 180 / Math.PI)
+					fire(self,"change")
 				}
 			}
 		}
