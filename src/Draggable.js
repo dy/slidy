@@ -1,11 +1,13 @@
 ﻿//TODO: make ghost insteadof moving self
-var Draggable = Mod.extend({
-	init: function(){
+var Draggable = Mod({
+	init: function(opts){
+		// console.group("init", opts)
 	},
 
 	created: function(){
 		disableSelection(this);
-		// console.log("draggable created")
+		// console.log("created", this.pin)
+		// console.groupEnd();
 	},
 
 	attached: function(){
@@ -20,7 +22,7 @@ var Draggable = Mod.extend({
 	//how many pixels to omit before switching to drag state
 	threshold: {
 		//Number/Array[w,h]/Array[x,y,x,y]/function (custom shape)
-		value: 12
+		init: 12
 	},
 
 	//whether to autoscroll on reaching the border of the screen
@@ -28,42 +30,41 @@ var Draggable = Mod.extend({
 
 	//null is no restrictions
 	within: {
-		value: root,
-		change: function(within){
+		init: root,
+		set: function(within){
 			// console.log("within change", within )
 			// console.log(within, this.within, this.parentNode)
-			if (within instanceof Element){
-				this.within = within
+			if (isElement(within)){
+				return within
 			} else if (typeof within === "string"){
-				this.within = parseTarget(this,within)
+				return parseTarget(this, within)
 			} else {
-				this.within = root
+				return root
 			}
 		},
-		order: 0
 	},
 
 	//which area of draggable should not be outside the restriction area
 	//by default it’s whole draggable rect
 	pin: {
-		value: [],
-		change: function(value){
+		set: function(value){
 			// console.log("pin changed", value)
 			try {
 				if (value.length === 2){
-					value = [value[0], value[1], value[0], value[1]];
+					return [value[0], value[1], value[0], value[1]];
 				} else if (value.length === 4){
+					return value;
 				} else {
-					throw new Error
+					throw Error
 				}
 			} catch (e){
-				value = [0,0,this.offsetWidth, this.offsetHeight]
+				return [0,0,this.offsetWidth, this.offsetHeight]
 			}
-			// console.log(value)
 
-			this.pin = value;
-
-			this.updateLimits();
+			return value;
+		},
+		changed: function(){
+			this._updateLimits();
 		}
 	},
 
@@ -78,8 +79,7 @@ var Draggable = Mod.extend({
 
 	//to what extent round position
 	precision: {
-		value: 1,
-		order: 0
+		init: 1
 	},
 
 	//slow down movement by pressing ctrl
@@ -90,51 +90,50 @@ var Draggable = Mod.extend({
 
 	//false, 'x', 'y'
 	axis: {
-		value: null,
-		values: {
-			x: 'x',
-			y: 'y',
-			null: null,
-			_: null
-		}
+		init: null,
+
+		x: {},
+		y: {},
+		null: {},
+		_: null
+
 	},
 
 	//repeat position by one of axis
 	repeat: {
-		values: {
-			undefined: null,
-			both: null,
-			x: null,
-			y: null,
-			_: function(){
-				//TODO
-				//vector passed
-				if (this.repeat instanceof Array){
-					if (this.repeat.length){
-						if (this.repeat[0] && this.repeat[1])
-							return "both";
-						else if (this.repeat[0])
-							return "x";
-						else if (this.repeat[1])
-							return "y";
-					}
-
-				//just repeat any possible way
-				} else if (this.repeat === true){
-					return this.axis
-
-				//unrecognized value passed
-				} else {
-					return undefined;
+		undefined: null,
+		both: null,
+		x: null,
+		y: null,
+		_: function(){
+			//TODO
+			//vector passed
+			if (this.repeat instanceof Array){
+				if (this.repeat.length){
+					if (this.repeat[0] && this.repeat[1])
+						return "both";
+					else if (this.repeat[0])
+						return "x";
+					else if (this.repeat[1])
+						return "y";
 				}
+
+			//just repeat any possible way
+			} else if (this.repeat === true){
+				return this.axis
+
+			//unrecognized value passed
+			} else {
+				return undefined;
 			}
 		}
+
 	},
 
 	//position
 	x: {
-		value: 0,
-		change: function(value, old){
+		init: 0,
+		set: function(value, old){
 			// console.log("set x", value, old)
 			if (this.repeat === 'both' || this.repeat === 'x'){
 				//mind repeat
@@ -152,15 +151,17 @@ var Draggable = Mod.extend({
 				//ignore change
 				return 0;
 			}
-			this.x = round(value, this.precision)
-
-			updatePosition(this)
+			return round(value, this.precision)
 		},
-		order: 1
+
+		changed: function(){
+			updatePosition(this)
+
+		}
 	},
 	y: {
-		value: 0,
-		change: function(value, old){
+		init: 0,
+		set: function(value, old){
 			// console.log("set y", value, this._limits)
 			if (this.repeat === 'both' || this.repeat === 'y'){
 				//mind repeat
@@ -180,22 +181,25 @@ var Draggable = Mod.extend({
 				return 0;
 			}
 
-			this.y = round(value, this.precision)
+			return round(value, this.precision)
 
-			updatePosition(this);
 		},
-		order: 1
+
+		changed: function(){
+			updatePosition(this);
+		}
 	},
 
 	//use native drag
 	native: {
 		//is native drag supported
-		value: (function(){
+		init: (function(){
 			var div = document.createElement("div")
 			var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
 			return isNativeSupported
 		})() && false,
-		change: function(value, oldValue){
+
+		changed: function(value, oldValue){
 			// console.log("set native to", value, oldValue)
 			if (value === false && this.dragstate === "native"){
 				this.dragstate = "idle";
@@ -203,143 +207,144 @@ var Draggable = Mod.extend({
 				this.dragstate = "native";
 			}
 		},
-		order: 8
+
 	},
 
 
 	//main draggable state reflector
 	dragstate: {
-		value: "idle",
-		values: {
-			//non-native drag
-			idle: {
-				before: function(){
-					//go native
-					if (this.native) this.dragstate = "native";
-				},
+		init: "idle",
 
-				mousedown: function(e){
-					// console.log("ready click")
-					this.updateLimits();
-					initDragparams(this, e);
-					this.dragstate = "threshold";
-				}
+		//non-native drag
+		idle: {
+			before: function(){
+				//go native
+				// console.log("idle before")
+				if (this.native) this.dragstate = "native";
 			},
 
-			//when element clicked but drag threshold hasn’t passed yet
-			threshold: {
-				before: function(){
-					// console.log("ts before")
-					fire(this, "threshold")
-				},
-				after: function(){
-					//console.log("ts after")
-				},
-				'document mousemove': function(e){
-					// console.log("move in", this.threshold)
-					var difX = (e.clientX - this._dragparams.initX);
-					var difY = (e.clientY - this._dragparams.initY);
-
-					//if threshold passed - go drag
-					if (thresholdPassed(difX, difY, this.threshold)) {
-						fire(this, 'dragstart', null, true)
-						this.startDrag(e);
-					}
-				},
-				'document mouseup, document mouseleave': function(e){
-					this.dragstate = "idle";
-				},
-				'document selectstart': preventDefault
-			},
-
-			drag: {
-				before: function(){
-					//handle CSSs
-					disableSelection(this.within)
-					// console.log("drag before")
-				},
-				after: function(){
-					enableSelection(this.within)
-				},
-				'document selectstart': preventDefault,
-				'document mousemove': function(e){
-					this.doDrag(e)
-					fire(this, 'drag', null, true)
-				},
-				'document mouseup, document mouseleave': function(e){
-					this.stopDrag(e);
-					fire(this, 'dragend', null, true);
-					this.dragstate = "idle"
-				}
-			},
-
-			//when scrolled to the edge of the screen
-			scroll: {
-
-			},
-			//when hovered on technical elements
-			tech: {
-
-			},
-			out: {
-
-			},
-
-			//native drag
-			native: {
-				before: function(){
-					// console.log("draggable before native")
-					//hang proper styles
-					css(this, {
-						"user-drag": "element",
-						"cursor": "pointer!important"
-					})
-
-					//make restricting area allowable to drop
-					on(this.within, 'dragover', setDropEffect)
-				},
-				after: function(){
-					//console.log("after native")
-					css(this, "user-drag", "none");
-					off(this.within, 'dragover', setDropEffect)
-				},
-
-				dragstart:  function(e){
-					//console.log("native dragstart")
-					this.startDrag(e);
-					e.dataTransfer.effectAllowed = 'all';
-
-					//hook drag image stub (native image is invisible)
-					this.$dragImageStub = document.createElement('div');
-					this.parentNode.insertBefore(this.$dragImageStub, this);
-					e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
-				},
-				dragend:  function(e){
-					this.stopDrag(e);
-
-					//remove drag image stub
-					this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
-					delete this.$dragImageStub;
-				},
-				drag:  function(e){
-					//ignore final native drag event
-					if (e.x === 0 && e.y === 0) return;
-
-					//ignore zero-movement
-					if (this._dragparams.clientX === e.clientX && this._dragparams.clientY === e.clientY) return e.stopImmediatePropagation();
-
-					this.doDrag(e);
-					//this.ondrag && this.ondrag.call(this);
-				},
-				dragover: setDropEffect
+			mousedown: function(e){
+				this._updateLimits();
+				initDragparams(this, e);
+				this.dragstate = "threshold";
 			}
+		},
+
+		//when element clicked but drag threshold hasn’t passed yet
+		threshold: {
+			before: function(){
+				// console.log("ts before")
+				fire(this, "threshold")
+			},
+			after: function(){
+				//console.log("ts after")
+			},
+			'document mousemove': function(e){
+				// console.log("move in", this.threshold)
+				var difX = (e.clientX - this._dragparams.initX);
+				var difY = (e.clientY - this._dragparams.initY);
+
+				//if threshold passed - go drag
+				if (thresholdPassed(difX, difY, this.threshold)) {
+					fire(this, 'dragstart', null, true)
+					this._startDrag(e);
+				}
+			},
+			'document mouseup, document mouseleave': function(e){
+				this.dragstate = "idle";
+			},
+			'document selectstart': preventDefault
+		},
+
+		drag: {
+			before: function(){
+				//handle CSSs
+				disableSelection(this.within)
+				// console.log("drag before")
+			},
+			after: function(){
+				// console.log("drag after")
+				enableSelection(this.within)
+			},
+			'document selectstart': preventDefault,
+			'document mousemove': function(e){
+				this._doDrag(e)
+				fire(this, 'drag', null, true)
+			},
+			'document mouseup, document mouseleave': function(e){
+				this._stopDrag(e);
+				fire(this, 'dragend', null, true);
+				this.dragstate = "idle"
+			}
+		},
+
+		//when scrolled to the edge of the screen
+		scroll: {
+
+		},
+		//when hovered on technical elements
+		tech: {
+
+		},
+		out: {
+
+		},
+
+		//native drag
+		native: {
+			before: function(){
+				// console.log("draggable before native")
+				//hang proper styles
+				css(this, {
+					"user-drag": "element",
+					"cursor": "pointer!important"
+				})
+
+				//make restricting area allowable to drop
+				on(this.within, 'dragover', setDropEffect)
+			},
+			after: function(){
+				//console.log("after native")
+				css(this, "user-drag", "none");
+				off(this.within, 'dragover', setDropEffect)
+			},
+
+			dragstart:  function(e){
+				//console.log("native dragstart")
+				this._startDrag(e);
+				e.dataTransfer.effectAllowed = 'all';
+
+				//hook drag image stub (native image is invisible)
+				this.$dragImageStub = document.createElement('div');
+				this.parentNode.insertBefore(this.$dragImageStub, this);
+				e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
+			},
+			dragend:  function(e){
+				this._stopDrag(e);
+
+				//remove drag image stub
+				this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
+				delete this.$dragImageStub;
+			},
+			drag:  function(e){
+				//ignore final native drag event
+				if (e.x === 0 && e.y === 0) return;
+
+				//ignore zero-movement
+				if (this._dragparams.clientX === e.clientX && this._dragparams.clientY === e.clientY) return e.stopImmediatePropagation();
+
+				this._doDrag(e);
+				//this.ondrag && this.ondrag.call(this);
+			},
+			dragover: setDropEffect
 		}
+
 	},
 
 	//starts drag from event passed
-	startDrag: function(e){
+	_startDrag: function(e){
 		//define limits
-		this.updateLimits();
+		this._updateLimits();
 
 		var d = this._dragparams;
 
@@ -411,7 +416,7 @@ var Draggable = Mod.extend({
 		}
 	},
 
-	doDrag: function(e) {
+	_doDrag: function(e) {
 		//console.log("drag", e)
 		var d = this._dragparams;
 
@@ -442,15 +447,14 @@ var Draggable = Mod.extend({
 		// this.y += difY;
 	},
 
-	stopDrag: function(e){
-		// console.log("stopDrag")
+	_stopDrag: function(e){
+		// console.log("_stopDrag")
 		delete this._dragparams;
 	},
 
 
 	//updates movement restrictions
-	updateLimits: function(){
-
+	_updateLimits: function(){
 		if (!this.isAttached) return;
 
 		//it is here because not always element is in DOM when constructor inits
@@ -474,7 +478,6 @@ var Draggable = Mod.extend({
 		this._limits.left = limOffsets.left - this.oX + selfPads.left - pin[0];
 
 		this._limits.right = limOffsets.right - this.oX - this._offsets.width - selfPads.right + (this._offsets.width - pin[2]);
-
 	},
 
 	//movement restrictions
@@ -493,7 +496,7 @@ var Draggable = Mod.extend({
 	},
 
 	'window resize': function(){
-		this.updateLimits();
+		this._updateLimits();
 	}
 }).register("draggable");
 

@@ -1,7 +1,7 @@
 ﻿/**
 * Range input mod
 */
-var Slidy = Mod.extend({
+var Slidy = Mod({
 	init: function(){
 		var self = this;
 		// console.log("slidy init")
@@ -24,7 +24,7 @@ var Slidy = Mod.extend({
 	},
 
 	//active picker value
-	value: {
+	init: {
 		init: function(v){
 			//predefine single value
 			if (!this.values.length) this.values.push(v);
@@ -32,7 +32,7 @@ var Slidy = Mod.extend({
 			//do not set value before pickers created
 			return null;
 		},
-		change: function(value, old){
+		changed: function(value, old){
 			var result;
 
 			//ignore undefined pickers
@@ -71,7 +71,7 @@ var Slidy = Mod.extend({
 
 	//placing type
 	type:{
-		value: "horizontal",
+		init: "horizontal",
 
 		init: function(value){
 			var self = this;
@@ -334,23 +334,23 @@ var Slidy = Mod.extend({
 	//value limits
 	min: {
 		//predefined value type obliges parsing recognition as a value
-		value: 0,
-		change: function(value){
+		init: 0,
+		changed: function(value){
 			// console.log("set min", value, /,/.test(value))
 			if (typeof value === 'string' && /,/.test(value)) return parseArray(value);
 		},
 		order: 1
 	},
 	max: {
-		value: 100,
-		change: function(value){
+		init: 100,
+		changed: function(value){
 			// console.log("set max", value)
 			if (typeof value === 'string' && /,/.test(value)) return parseArray(value);
 		},
 		order: 1
 	},
 	step: {
-		value: 1,
+		init: 1,
 
 		//detect step automatically based on min/max range (1/100 by default)
 		init: function(value){
@@ -388,8 +388,8 @@ var Slidy = Mod.extend({
 	//TODO whether to repeat either by one axis if one dimension or by both axis or one pointed if two dimensions
 	//false, true, [bool, bool]
 	repeat: {
-		value: false,
-		change: function(repeat){
+		init: false,
+		changed: function(repeat){
 			if (this.activePicker) this.activePicker.repeat = repeat;
 		}
 	},
@@ -465,8 +465,8 @@ var Slidy = Mod.extend({
 	},
 
 	activePicker: {
-		value: null,
-		change: function(number){
+		init: null,
+		changed: function(number){
 			// console.log("set active picker", number)
 			if (typeof number === "number"){
 				this.activePicker = this.pickers[number];

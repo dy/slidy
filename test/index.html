@@ -1,10 +1,9 @@
-<html>
-<head>
-	<meta charset="utf-8">
-	<title>Slidy tests</title>
-	<link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+<!doctype html>
+<meta charset="utf-8">
+<title>Slidy tests</title>
+<link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
 
-	<style>
+<style>
 	/* Interactions painter layer*/
 	canvas{
 		position: absolute;
@@ -39,131 +38,128 @@
 
 
 	/*------------- Slidy stuff -------------*/
-		.slidy{
-			min-height: 6vh;
-			min-width: 4vw;
-			/*background: #f3f3f3;*/
-			margin: 10px;
-			/*box-shadow: inset 0 1px 2px rgba(30,30,30,.2);*/
-			/*border-radius: 3px;*/
-			position: relative;
-			font-family: sans-serif;
-			font-size: 12px;
-			float: left;
-		}
-		.slidy.horizontal{
-			width: 200px;
-		}
-		.slidy.horizontal:after{
-			content: "";
-			position: absolute;
-			top: 50%;
-			left: 0;
-			right: 0;
-			height: 2px;
-			background: black;
-			margin-top: -1px;
-		}
-		.slidy.vertical{
-			width: 40px;
-			height: 200px;
-		}
-		.slidy.vertical:after{
-			content: "";
-			position: absolute;
-			left: 50%;
-			top: 0;
-			bottom: 0;
-			width: 2px;
-			background: black;
-			margin-left: -1px;
-		}
-		.slidy.rectangular{
-			width: 200px;
-			height: 200px;
-			box-shadow: inset 0 0 0 2px black;
-		}
-		.slidy.circular{
-			width: 200px;
-			height: 200px;
-			border-radius: 100px;
-			box-shadow: inset 0 0 0 2px black;
-		}
+	.slidy{
+		min-height: 6vh;
+		min-width: 4vw;
+		/*background: #f3f3f3;*/
+		margin: 10px;
+		/*box-shadow: inset 0 1px 2px rgba(30,30,30,.2);*/
+		/*border-radius: 3px;*/
+		position: relative;
+		font-family: sans-serif;
+		font-size: 12px;
+		float: left;
+	}
+	.slidy.horizontal{
+		width: 200px;
+	}
+	.slidy.horizontal:after{
+		content: "";
+		position: absolute;
+		top: 50%;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: black;
+		margin-top: -1px;
+	}
+	.slidy.vertical{
+		width: 40px;
+		height: 200px;
+	}
+	.slidy.vertical:after{
+		content: "";
+		position: absolute;
+		left: 50%;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: black;
+		margin-left: -1px;
+	}
+	.slidy.rectangular{
+		width: 200px;
+		height: 200px;
+		box-shadow: inset 0 0 0 2px black;
+	}
+	.slidy.circular{
+		width: 200px;
+		height: 200px;
+		border-radius: 100px;
+		box-shadow: inset 0 0 0 2px black;
+	}
 
-		.slidy > .draggable{
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 32px;
-			height: 32px;
-			background: white;
-			z-index: 1;
-			border-radius: 20px;
-			box-shadow: inset 0 0 0 2px black;
-			text-align: center;
-			line-height: 32px;
-		}
+	.slidy > .draggable{
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 32px;
+		height: 32px;
+		background: white;
+		z-index: 1;
+		border-radius: 20px;
+		box-shadow: inset 0 0 0 2px black;
+		text-align: center;
+		line-height: 32px;
+	}
 
-		.min, .value, .max{
-			position: absolute;
-		}
-		.min{
-			bottom: 0;
-			left: 0;
-		}
-		.max{
-			bottom: 0;
-			right: 0;
-		}
-		.value{
-			left: 50%;
-			bottom: 0;
-		}
-		.vertical .max{
-			top: 0;
-			bottom: auto;
-		}
+	.min, .value, .max{
+		position: absolute;
+	}
+	.min{
+		bottom: 0;
+		left: 0;
+	}
+	.max{
+		bottom: 0;
+		right: 0;
+	}
+	.value{
+		left: 50%;
+		bottom: 0;
+	}
+	.vertical .max{
+		top: 0;
+		bottom: auto;
+	}
 
-		.pointer {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			margin-top: -1px;
-			height: 2px;
-			width: 100px;
-			background: black;
-			-webkit-transform-origin: 0 0;
-		}
-	</style>
-</head>
-<body>
-	<div id="mocha"></div>
+	.pointer {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		margin-top: -1px;
+		height: 2px;
+		width: 100px;
+		background: black;
+		-webkit-transform-origin: 0 0;
+	}
+</style>
 
-	<!--<script src="../node_modules/jquery/dist/jquery.min.js"></script>-->
+<div id="mocha"></div>
 
-	<script src="../node_modules/mocha/mocha.js"></script>
-	<script src="../node_modules/chai/chai.js"></script>
+<!--<script src="../node_modules/jquery/dist/jquery.min.js"></script>-->
 
-	<!--[if IE 9]>
-	<script src="../src/polyfill.js"></script>
-	<![endif]-->
+<script src="../node_modules/mocha/mocha.js"></script>
+<script src="../node_modules/chai/chai.js"></script>
 
-	<script src="../src/mod.js"></script>
-	<script src="../src/Draggable.js"></script>
-	<script src="../src/Slidy.js"></script>
+<!--[if IE 9]>
+<script src="../src/polyfill.js"></script>
+<![endif]-->
 
-	<script>
-		mocha.setup('bdd');
-		assert = chai.assert;
-	</script>
+<script src="../src/mod.js"></script>
+<script src="../src/Draggable.js"></script>
+<script src="../src/Slidy.js"></script>
 
-	<script src="testHelpers.js"></script>
-	<script src="draggable.js"></script>
-	<script src="slidy.js"></script>
+<script>
+	mocha.setup('bdd');
+	assert = chai.assert;
+</script>
 
-	<script>
-		mocha.checkLeaks();
-		mocha.run();
-	</script>
-</body>
-</html>
+<script src="testHelpers.js"></script>
+<script src="draggable.js"></script>
+<!-- <script src="slidy.js"></script> -->
+
+<script>
+	mocha.checkLeaks();
+	mocha.run();
+</script>

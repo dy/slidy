@@ -73,6 +73,7 @@ describe("Draggable", function(){
 		var drEl = document.createElement("div");
 		drEl.innerHTML = name;
 		el.appendChild(drEl);
+
 		new Draggable(drEl, opts);
 
 		on(drEl, 'threshold', paintThreshold);
@@ -83,6 +84,7 @@ describe("Draggable", function(){
 
 		return drEl;
 	}
+
 
 	//canvas painters
 	function renderHelpers(){
