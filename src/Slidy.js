@@ -2,12 +2,17 @@
 * Range input mod
 */
 var Slidy = Mod({
+	name: 'slidy',
+
 	init: function(){
 		var self = this;
 		// console.log("slidy init")
 	},
 
-	pickers: [],
+	//list of pickers
+	pickers: {
+		init: function(){return []}
+	},
 
 	created: function(){
 		var self = this, picker;
@@ -24,7 +29,7 @@ var Slidy = Mod({
 	},
 
 	//active picker value
-	init: {
+	value: {
 		init: function(v){
 			//predefine single value
 			if (!this.values.length) this.values.push(v);
@@ -504,5 +509,3 @@ var Slidy = Mod({
 		this.updatePosition()
 	}
 })
-
-Slidy.register("slidy");

@@ -181,6 +181,10 @@ function isFn(a){
 	return !!(a && a.apply);
 }
 
+function isString(a){
+	return typeof a === "string"
+}
+
 //compares 2 values properly: arrays, objects
 //TODO: simplify
 function isEqual(a, b){
@@ -319,39 +323,13 @@ var _modifierParamsRe = /\(([^)]*)\)/;
 
 var selfPropertyKey = "@";
 
-function on($el, evtRefs, holder, fn){
+function on($el, evtRefs, fn){
 	// console.log("on", evtRefs)
 	var methName, scope;
 
 	//FIXME: make eventful
 	//ignore non-event-targets
 	// if (!isEventTarget($el)) return false;
-
-	//resolve arguments
-	if (!fn) {
-		if (!holder) return false;
-		else {
-			fn = holder;
-			holder = $el;
-		}
-	}
-
-	//create method caller for stringy method reference
-	if (typeof fn === "string") {
-		methName = fn;
-		scope = getScope($el);
-
-		//substitute event listener, if method reference passed
-		fn = (function(emitter, holder, fn){
-			return function(e){
-				var prop = holder[fn];
-				if (prop) {
-					if (isFn(prop)) return prop.call(emitter, e);
-					else if (isFn(holder[prop])) holder[prop].call(emitter, e);
-				}
-			}
-		})($el, holder, methName);
-	}
 
 	each(evtRefs, function(evtRef){
 		var evtObj = _parseEvtRef($el, evtRef), targetFn = fn;
@@ -384,22 +362,6 @@ function on($el, evtRefs, holder, fn){
 			}
 		})
 
-		//save property event target to bind in a deferred way
-		//TODO: get rid of
-		// console.log("on", evtObj)
-		if (evtObj.src[0] === selfPropertyKey){
-			var targetEl = $el[evtObj.src.slice(1)];
-			// console.log("not existing property event reference", evtObj)
-			//ignore not existing reference
-			if (!targetEl) {
-				return false;
-			} else evtObj.src = targetEl;
-
-			//save evt target to unbind
-			targetFn._evtTarget = targetEl;
-			// throw Error("Bad event target " + evtRef);
-		}
-
 		//bind target fn
 		if ($){
 			//delegate to jquery
@@ -408,55 +370,23 @@ function on($el, evtRefs, holder, fn){
 			//listen element
 			evtObj.src.addEventListener(evtObj.evt, targetFn)
 		}
-
-		//save method reference
-		if (methName) {
-			scope['_' + evtRef + methName] = targetFn;
-			// console.log("save ref", evtRef + methName)
-		}
 	})
 
 	return fn;
 }
 
-function off($el, evtRefs, holder, fn){
-	//resolve arguments
-	if (!fn) {
-		//TODO: think abount unbinding all
-		if (!holder) return false;
-		else {
-			fn = holder;
-			holder = $el;
-		}
-	}
-
+function off($el, evtRefs, fn){
 	each(evtRefs, function(evtRef){
-		var evtObj = _parseEvtRef($el, evtRef), targetFn;
+		var evtObj = _parseEvtRef($el, evtRef);
 
-		//unbind method reference
-		if (typeof fn === "string"){
-			// console.log("off", $el.__mRefs__)
-			var scope = getScope($el);
-			targetFn = scope["_" + evtRef + fn];
-			scope["_" + evtRef + fn] = null;
-		} else {
-			targetFn = fn;
-		}
-
-		if (!targetFn) return fn;
-
-		if (evtObj.src[0] === selfPropertyKey) {
-			//get saved evt target
-			if (targetFn._evtTarget) evtObj.src = targetFn._evtTarget;
-			else return false;
-		}
+		if (!fn) return;
 
 		if ($){
 			//delegate to jquery
-			$(evtObj.src).off(evtObj.evt, targetFn);
+			$(evtObj.src).off(evtObj.evt, fn);
 		} else {
 			//listen element
-			evtObj.src.removeEventListener(evtObj.evt, targetFn)
+			evtObj.src.removeEventListener(evtObj.evt, fn)
 		}
 	})
 
@@ -696,7 +626,7 @@ function parseTypedAttr(value, type){
 		res = !/^(false|off|0)$/.test(value);
 	} else if (isFn(type)){
 		res = new Function(value);
-	} else if (typeof type === "string"){
+	} else if (isString(type)){
 		res = value;
 	} else if (isObject(type)) {
 		res = parseObject(value)
@@ -718,7 +648,7 @@ function parseObject(str){
 
 //returns array parsed from string
 function parseArray(str){
-	if (typeof str !== "string") return [parseAttr(str)]
+	if (!isString(str)) return [parseAttr(str)]
 
 	//clean str from spaces/array rudiments
 	str = str.trim();
@@ -938,622 +868,11 @@ function createLiveStyle(cssObject){
 	return style
 }
 /**
-* Custom Mod constructor
-*/
-function Mod(a,b,c,d){
-	return Mod.create.call(this, a,b,c,d);
-};
-
-/**
-* Custom Mod creator
-*/
-Mod.create = function(name, props, settings, parentMod){
-	// console.group("create", name, props, settings, parentMod)
-	var target;
-
-	//optional name
-	if (isObject(name)) {
-		settings = props;
-		props = name;
-		name = undefined;
-	}
-	//anonymous mod
-	else if (isElement(name)) {
-		target = name;
-		name = undefined;
-	}
-
-	//optional params
-	settings = settings || {};
-	props = props || {};
-
-	//create mod class
-	//NOTE: this is the fastest way to clone an fn
-	function mod(a,b){return instantiateMod.call(mod,a,b)};
-
-	if (!parentMod) {
-		mod.instances = {};
-		mod.register = registerMod;
-		mod.extend = extendMod;
-	} else {
-		mod.parent = parentMod;
-	}
-
-	//set mod properties
-	defineProperty(mod, "properties", {
-		configurable: false,
-		enumerable: false,
-		get: getProperties,
-		set: setProperties
-	})
-	mod.properties = props;
-	mod.propNames = getOrderedPropNames(mod);
-
-	//register, if name passed
-	if (!parentMod) {
-		mod.register(name, settings);
-	}
-
-	//apply anonimous mod
-	if (target) {
-		mod(target);
-	}
-
-	//do not allow configure mod anymore
-	// Object.seal(mod);
-
-	// console.groupNameEnd();
-	return mod
-}
-
-/**
-* Default target for selected environment caster
-*/
-Mod.createDefaultTarget = function(){
-	return doc && doc.createElement("div") || {};
-}
-
-/**
-* Mod registrar (`this` is CustomMod)
-*/
-Mod.registry = {};
-function registerMod(name, settings){
-	// console.log("register", name)
-
-	//FIXME: whats this??
-	if (!name) {
-		if (settings && settings.name) name = settings.name;
-		else return false;
-	}
-
-	//settings only passed
-	if (isObject(name)) {
-		settings = name;
-		name = name.name;
-	}
-
-	//TODO: trap bad (digital) names
-
-	var mod = this;
-
-	//recognize register options
-	settings = extend({
-		jQuery: name,
-		customElement: name,
-		selector: "." + name,
-		name: name,
-		autoinit: true,
-		css: {}
-	}, settings);
-
-	if (settings.style) settings.css = settings.style;
-
-	//save to the registry
-	Mod.registry[name] = mod;
-	mod.displayName = name;
-	mod.settings = settings;
-
-	//provide jQuery plugin
-	if ($ && settings.jQuery && !(settings.jQuery in $)) {
-		$['fn'][name] = (function(mod){
-			return function (arg) {
-				return this['each'](function(i,e){
-					var $e = $(e);
-					var instance = mod($e[0], arg);
-					$e.data(name, instance);
-				})
-			};
-		})(mod);
-		$[name] = mod;
-	}
-
-	//provide customelement
-	else if(register && settings.customElement){
-		var ceProps = {
-			//TODO: use custom proto element passed
-			// 'prototype': Object.create(HTMLElement.prototype),
-
-			//TODO: use proper tag passed to extend
-			// 'extends': 'div',
-
-			//TODO: transfer mod settings to the custom element settings
-			//NOTE: they’re transformed the way simple properties defined on element
-
-			// createdCallback: function(){},
-			// attachedCallback: function(){},
-			// detachedCallback: function(){},
-			// attributeChangedCallback: function(attrName, oldVal, newVal){}
-		};
-
-		// var CustomElement = register(settings.customelement, ceProps)
-	}
-
-	//TODO: provide global class?
-	else {
-
-	}
-
-	//create style tag on the document
-	if (settings.css && doc){
-		var styleTag = createLiveStyle(settings.css);
-		head.appendChild(styleTag);
-	}
-
-	//Autoinit present in DOM elements
-	//TODO: optimize attached hooks
-	if (settings.autoinit) {
-		var targets = doc.querySelectorAll(settings.selector);
-		for (var i = 0; i < targets.length; i++) {
-			new mod(targets[i]);
-			if (!targets[i].isAttached) {
-				targets[i].isAttached = true;
-				fire(targets[i], "attached");
-			}
-		}
-	}
-
-	return mod;
-}
-
-/**
-* List of prop names to avoid
-*/
-var techNames = {
-	init: true,
-	changed: true,
-	set: true,
-	get: true,
-	attribute: true,
-	order: true,
-	before: true,
-	after: true,
-	// attached: true,
-	created: true,
-}
-//FIXME: extend these properties based on constructor values, automatically
-var reservedNames = {
-	instances: true,
-	// name: true,
-	constructor: true,
-	settings: true,
-	register: true,
-	extend: true,
-	create: true,
-	parent: true,
-	length: true,
-	prototype: true,
-	properties: true,
-	propNames: true,
-	toJSON: true,
-
-	bind: true,
-
-	//mod identifiers
-	displayName: true,
-	groupName: true
-}
-
-/**
-* Mod properties getter
-*/
-function getProperties(){
-	var resultProps = {}, resultProp;
-	var mod = this;
-
-	for (var propName in mod){
-		if (reservedNames[propName]) continue;
-
-		var prop = mod[propName];
-
-		if (isObject(prop)){
-			// console.group();
-			resultProp = {};
-			for (var name in prop){
-				// console.log(name, prop[name])
-				if (techNames[name]) {
-					resultProp[name] = prop[name];
-				} else if (isMod(prop[name])) {
-					resultProp[name] = prop[name].properties;
-				} else {
-					resultProp[name] = prop[name];
-				}
-			}
-			resultProps[propName] = resultProp;
-			// console.groupEnd();
-		} else {
-			resultProps[propName] = prop;
-		}
-
-	}
-	//TODO: avoid collecting mutual props, eval them alive
-
-	// console.log(resultProps)
-	return resultProps;
-}
-
-/**
-* Mod properties setter
-*/
-function setProperties(props){
-	var mod = this;
-
-	//flatten listed props
-	flattenKeys(props);
-
-	//handle passed properties
-	for (var propName in props){
-		//clean reserved names
-		if (reservedNames[propName]) {
-			//FIXME: why i need to do so?
-			delete props[propName];
-			continue;
-		}
-
-		//ignore private properties
-		if (propName[0] === "_") continue;
-
-		var prop = props[propName];
-
-		//handle prop descriptors
-		if (isObject(prop)){
-			//flatten listed states
-			flattenKeys(prop);
-
-			//FIXME: fake remainder mods shouldn't be accessible on constructor
-			// ensure remainder mods
-			// if (!has(prop, '_')) prop._ = {};
-
-			//handle states & descriptor
-			for (var modName in prop){
-				if (reservedNames[modName] || techNames[modName]) continue;
-
-				//make sure mutual fn properties are stubbed as noop fns
-				var innerMod = prop[modName];
-
-				//create mod based on state props, in case if it’s not mod already
-				if (!isMod(innerMod) && isObject(innerMod)) {
-					prop[modName] = Mod(modName, innerMod, null, mod);
-
-					//save name to identify mod by it
-					//FIXME: move it to constructor
-					prop[modName].displayName = modName;
-					prop[modName].groupName = propName;
-				}
-			}
-		}
-	}
-
-	//FIXME: `name` property misses here, due to mod is a function, indeed
-	extend(mod, props);
-	return props;
-}
-
-//mods should init last, as well as string references
-function getOrderedPropNames(props){
-	var propNames = [];
-	for (var propName in props){
-		if (reservedNames[propName] || techNames[propName]) continue;
-		propNames.push(propName)
-	}
-
-	propNames.sort(function(a,b){
-		if (a[0] === "_") return -1;
-		if (b[0] === "_") return 1;
-		if (isObject(props[a])) return 1;
-		if (typeof props[a] === "string") return 1;
-		return -1;
-	})
-
-	return propNames;
-}
-
-/**
-* Mod extender - creates clone of a mod extended with props passed
-*/
-function extendMod(name,props,settings){
-	//TODO: enhance extension method, i.e. a:2 + a:{change:fn...} → a:{init:2, change:fn...}
-	var oldMod = this;
-	var oldProps = oldMod.properties;
-	// console.log(oldProps)
-
-	//optional name - props/mod passed
-	if (isObject(name) || isFn(name)) {
-		settings = props;
-		props = isFn(name) ? name.properties : name;
-		name = undefined;
-	} else {
-		props = props || {};
-	}
-	// console.log("extend", name, oldProps, props)
-
-	//transfer old properties
-	for (var propName in oldProps){
-		//transfer plain values
-		props[propName] = mergeProperty(props[propName], oldProps[propName]);
-	}
-
-	var newMod = Mod(name,props,settings);
-
-	// console.groupEnd();
-	return newMod
-}
-
-/**
-* returns new property descriptor, merging both old and new descriptors
-*/
-function mergeProperty(newProp, oldProp){
-	if (oldProp === undefined) return newProp;
-	if (newProp === undefined) return oldProp;
-
-	//supposation that natural behaviour is extension of all oldProps
-	// console.log(oldProp, newProp, isObject(oldProp), isObject(newProp))
-	if (isObject(newProp)){
-		if (isObject(oldProp)){
-			return deepExtend(oldProp, newProp);
-		} else {
-			return extend({init: oldProp}, newProp);
-		}
-	} else {
-		if (isObject(oldProp)){
-			//TODO: are you sure don’t want to extend old property’s `init` value?
-			return newProp
-		} else {
-			return newProp
-		}
-	}
-}
-
-
-
-/**
-* Custom mod instance constructor
-*/
-function instantiateMod(target, options){
-	var mod = this;
-
-	// console.log("instantiate", target, options)
-
-	//TODO: ensure this conditions routine is optimal
-	//if no target passed - create default target
-	if (target === undefined) {
-		//TODO: count on parent (prototypal) element, like `extends` in CustomElements
-		target = Mod.createDefaultTarget();
-	}
-
-	//if empty target passed - ignore mod
-	else if (target === null || ( target.length === 0 && target.nodeType === undefined )) {
-		return {};
-	}
-
-	//only options passed as a target - create target
-	else if (!options && isObject(target)) {
-		options = target;
-		target = Mod.createDefaultTarget();
-	}
-
-	//list of targets passed - impossible to redefine targets in init
-	if (target.length && target.nodeType === undefined) {
-		var l = target.length;
-		for (var i = 0; i < l; i++){
-			initMod(target[i], mod, options);
-		}
-		return target;
-	}
-
-	//one target passed
-	else {
-		return initMod(target, mod, options);
-	}
-}
-
-/**
-* Apply parent mod to a target
-* define all properties etc
-*/
-function initMod(target, mod, options){
-	// console.group("init mod", mod.groupName + ":" + mod.displayName)
-	// console.dir(mod)
-	var targetId, presettings;
-
-	//save whether initial target is applied mod
-	var isTargetAMod = isModInstance(target);
-
-	//get uniq target id
-	targetId = getId(target);
-
-	//ignore double instantiation
-	if (mod.instances && mod.instances[targetId]){
-		// console.groupEnd();
-		return target;
-	}
-
-	presettings = parsePresettings(target, mod);
-
-	//init callback
-	var initResult = isFn(mod.init) ? mod.init.call(target, options) : isObject(mod.init) ? clone(mod.init) : isElement(mod.init) ? mod.init.cloneNode(true) : mod.init;
-
-	//redefine target, if needed
-	if (initResult !== undefined) {
-		setId(initResult, targetId);
-		target = initResult;
-
-		//append presettings, if target changed
-		extend(presettings, parsePresettings(target, mod));
-	}
-
-	//form options
-	options = extend(presettings, options);
-
-	//init extended options
-	for (var optName in options){
-		var option = options[optName];
-
-		//add extra listener
-		if (isFn(option)){
-			on(target, optName, option.bind(target));
-			delete options[optName]
-		}
-		//take over extra-property
-		else if (!has(mod, optName)) {
-			target[optName] = option
-		}
-	}
-
-	//init event
-	fire(target, "init");
-
-	//track instances
-	if (mod.instances) {
-		mod.instances[targetId] = target;
-	}
-
-	//add class
-	if (mod.displayName) target.classList.add(mod.displayName);
-
-	//mark as DOM-inclusion observable
-	//TODO: move isAttached to scope
-	if (target.isAttached === undefined && isElement(target)){
-		target.isAttached = false;
-	}
-
-	var scope = target._, propName, prop, propNames = mod.propNames;
-	//FIXME: create mod propeties iterator
-
-	//create toJSON for target
-	if (!target.toJSON){
-		target.toJSON = modInstanceToJSON;
-	}
-
-	//create properties controllers
-	//NOTE: `get`s have to be defined before values being inited
-	//TODO: flag this code in order to avoid double define
-	for (var i = 0; i < propNames.length; i++) {
-		propName = propNames[i];
-		prop = mod[propName];
-		// if (reservedNames[propName] || techNames[propName]) continue;
-		// console.log("create property", propName, mod[propName])
-
-		//transfuse private properties to target
-		if (propName[0] === "_") defineProperty(target, propName,{
-			value: clone(prop),
-			writable: true,
-			enumerable: false,
-			configurable: false
-		});
-
-		//property descriptor
-		else {
-			//FIXME: get rid of this condition
-			if (options) {
-				prop = new Prop(target, propName, mod, options[propName]);
-			} else {
-				prop = new Prop(target, propName, mod);
-			}
-		}
-	}
-
-	//go to initial mod
-	applyMod(target, mod);
-
-	//created callback (can’t be called on nested mods)
-	mod.created && mod.created.call(target);
-	fire(target, "created");
-
-	//fire attached
-	// console.log(target, mod.displayName, root.contains(target))
-	if (root.contains(target)){
-		target.isAttached = true;
-		fire(target, "attached");
-	}
-
-	// console.groupEnd()
-
-	return target;
-}
-
-
-/**
-* Set new (inner) mod on target
-*/
-function applyMod(target, mod){
-	if (!mod) return;
-
-	// console.group("applyMod", mod.groupName, mod.displayName)
-
-	var	scope = target._;
-	var propNames = mod.propNames,
-		propName,
-		prop;
-
-	//for each old mod property - switch it to a new mod
-	for (var i = 0; i < propNames.length; i++) {
-		propName = propNames[i];
-
-		//omit private props
-		if (propName[0] === "_") continue;
-
-		scope[propName].setMod(mod);
-	}
-
-	// console.groupEnd()
-}
-
-
-/**
-* Reset active mod
-*/
-function unapplyMod(target, mod){
-	if (!mod) return;
-
-	// console.group("unapply Mod", mod.groupName, mod.propName)
-
-	var propNames = mod.propNames
-	var scope = target._, propName, prop;
-
-	//for each old mod property - switch it to a new mod
-	for (var i = 0; i < propNames.length; i++) {
-		var propName = propNames[i];
-		// if (reservedNames[propName] || techNames[propName]) continue;
-
-		//FIXME: make sure private properties are kept untaught
-		if (propName[0] === "_") continue;
-
-		prop = scope[propName];
-
-		//extend property from the new mod
-		prop.setMod(prop.initialMod);
-	}
-
-	// console.groupEnd();
-}
-
-/**
-* Property controller
+* Property controller (sorry, but it has to go first)
 */
 function Prop(target, propName, mod, option) {
 	var scope = target._;
 	var self = this;
-
 	//property exists - avoid creation
 	if (scope[propName]) {
 		return scope[propName];
@@ -1565,15 +884,13 @@ function Prop(target, propName, mod, option) {
 		var prop = mod[propName]
 		if (isObject(prop)) {
 			for (var modName in prop){
-				if (reservedNames[modName] || techNames[modName]) continue;
+				if (propTechNames[modName]) continue;
 
 				var innerMod = prop[modName];
-				for (var subPropName in innerMod) {
-					if (!reservedNames[subPropName] && !techNames[subPropName] &&
-						!has(mod, subPropName)) {
-						new Prop(target, subPropName, mod);
-					}
-				}
+
+				isMod(innerMod) && innerMod.eachProp(function(subPropName, subProp){
+					if (!has(mod, subPropName)) new Prop(target, subPropName, mod);
+				})
 			}
 		}
 
@@ -1588,7 +905,7 @@ function Prop(target, propName, mod, option) {
 		}
 	}
 
-	// console.log("new propety", propName, target[propName], option)
+	// console.log('new propety', propName, target[propName], option)
 
 	//save self name, target, mod, optValue, initializer
 	self.displayName = propName;
@@ -1610,7 +927,7 @@ function Prop(target, propName, mod, option) {
 		});
 	} else {
 		//property exists on target: treat it as native property
-		// console.log("existing property", propName)
+		// console.log('existing property', propName)
 		//FIXME: handle defined properties properly
 		self.isNative = true;
 	}
@@ -1618,14 +935,14 @@ function Prop(target, propName, mod, option) {
 	return self;
 }
 
-//FIXME: refactor fully property workflow
+//NOTE: constructor reference misses in prototype redefinition
 Prop.prototype = {
 	//TODO: get rid of initValue, use setValue() instead
 	//mixes passed property descriptor to self
 	setMod: function(mod){
 		var self = this,
-			proto = self.constructor.prototype,
 			scope = self.target._,
+			proto = self.constructor.prototype,
 			prop;
 
 		//if mod passed has property to redefine - redefine it
@@ -1640,7 +957,7 @@ Prop.prototype = {
 			return;
 		}
 
-		// console.log("applyProp", self.displayName)
+		// console.log('applyProp', self.displayName)
 
 		//FIXME: optimize this condition tree
 
@@ -1658,7 +975,7 @@ Prop.prototype = {
 		//plain value
 		else if (!isObject(prop)) {
 			//init fn reference beforehead
-			if (typeof prop === "string"){
+			if (isString(prop)){
 				var refProp = scope[prop];
 				if (refProp && !refProp.isInited) refProp.setValue();
 			}
@@ -1673,7 +990,6 @@ Prop.prototype = {
 			//extend states
 			//FIXME: unextend states on unapply descriptor
 			for (var name in prop) {
-				if (has(proto, name) && !techNames(name)) continue;
 				self[name] = prop[name];
 			}
 
@@ -1691,9 +1007,9 @@ Prop.prototype = {
 		//try to set native value
 		//FIXME: move this code to proper place
 		if (self.isNative){
-			// console.log("set native", self.displayName, self.value);
+			// console.log('set native', self.displayName, self.value);
 			//FIXME: collect behavioral cases, maybe you need to create StyleProp, EtcProp classes instead of this
-			if (self.displayName === "style") {
+			if (self.displayName === 'style') {
 				self.target.style.cssText = self.value;
 			} else {
 				self.target[self.displayName] = self.value;
@@ -1710,6 +1026,10 @@ Prop.prototype = {
 	set: function(value) {
 		return value;
 	},
+	init: undefined,
+	changed: undefined,
+	attribute: false,
+
 
 	//whether property has been inited already
 	isInited: null,
@@ -1722,7 +1042,6 @@ Prop.prototype = {
 
 	//main prop value keeper
 	value: undefined,
-	valueOf: function(){return this.value},
 
 	//init caller
 	//TODO: try to merge `optValue` with `init`
@@ -1735,7 +1054,7 @@ Prop.prototype = {
 
 		self.isInited = true;
 
-		// console.log("call init", self.displayName, value);
+		// console.log('call init', self.displayName, value);
 
 		//fn
 		if (isFn(self.initialMod[propName])) {
@@ -1744,9 +1063,9 @@ Prop.prototype = {
 
 		//initializer fn
 		else if (isFn(self.init)) {
-			// console.log("call init", value)
+			// console.log('call init', value)
 			var resultValue = self.init.call(self.target, value);
-			// console.log("init res", resultValue)
+			// console.log('init res', resultValue)
 
 			if (resultValue !== undefined){
 				value = resultValue;
@@ -1778,26 +1097,27 @@ Prop.prototype = {
 	unbindValue: function(){
 		var self = this, target = self.target, scope = target._;
 		//FIXME: reftarget & refpointer should be handled in a similar way
+		// console.log('unbind', self.displayName, self.value, self.isRefPointer)
 		//unbind inner ref pointer
 		if (self.isRefTarget && self.value) {
 			var pointer = scope[self.refPointer];
-			// console.log("rebind inner ref target", pointer.refEvt, pointer.value)
+			// console.log('rebind inner ref target', pointer.refEvt, pointer.value)
 			off(self.value, pointer.refEvt, pointer.value);
 		}
 		//unbind inner reference
 		else if (self.isRefPointer) {
-			// console.log("set inner ref fn", self.refProp, '`' + self.refEvt + '`')
+			// console.log('unbind inner ref fn', self.refProp, '`' + self.refEvt + '`')
 			off(target[self.refProp], self.refEvt, self.value);
 		}
 		//unbind fnref
-		else if (typeof self.value === "string" && isPossiblyFnRef(self.value)) {
+		else if (isString(self.value) && isPossiblyFnRef(self.value)) {
 			//TODO: there cb reference is of the new state one
-			// console.log("unbind", self.displayName, self.value, scope[self.value].value)
+			// console.log('unbind', self.displayName, self.value, scope[self.value].value)
 			off(target, self.displayName, self.callValueReference);
 		}
 		//unbind fn
 		else if (isFn(self.value)) {
-			// console.log("off fn", self.callValueReference)
+			// console.log('off fn', self.callValueReference)
 			off(target, self.displayName, self.callValueReference);
 		}
 	},
@@ -1812,12 +1132,12 @@ Prop.prototype = {
 		}
 		//bind inner reference
 		else if (self.isRefPointer) {
-			// console.log("bind refPointer",target[self.refProp], self.refEvt, self.value)
+			// console.log('bind refPointer',target[self.refProp], self.refEvt, self.value)
 			on(target[self.refProp], self.refEvt, self.value);
 		}
 		//bind fnref
-		else if (typeof self.value === "string" && has(scope, self.value) && isPossiblyFnRef(self.value)){
-			// console.log("bind fnref")
+		else if (isString(self.value) && has(scope, self.value) && isPossiblyFnRef(self.value)){
+			// console.log('bind fnref')
 			on(target, self.displayName, self.callValueReference);
 		}
 		//bind fn
@@ -1828,7 +1148,7 @@ Prop.prototype = {
 
 	//getter & setter
 	getValue: function(){
-		// console.log("get", this.displayName, this.isInited)
+		// console.log('get', this.displayName, this.isInited)
 		//init, if not inited
 		if (!this.isInited) this.setValue();
 
@@ -1845,12 +1165,12 @@ Prop.prototype = {
 
 		//init, if not inited
 		if (!self.isInited) {
-			// console.group("set firstly", self.displayName, value, 'from', oldValue);
+			// console.group('set firstly', self.displayName, value, 'from', oldValue);
 
 			value = self.callInit(value);
 
 			//call set
-			var isSetLock = "isSet" + value;
+			var isSetLock = 'isSet' + value;
 			if (!self[isSetLock]) {
 				self[isSetLock] = true;
 
@@ -1872,12 +1192,12 @@ Prop.prototype = {
 			}
 		}
 		else {
-			// console.group("set", self.displayName, value, 'from', oldValue);
+			// console.group('set', self.displayName, value, 'from', oldValue);
 
 			//FIXME: make sure it’s the best decision to detect inner sets (too much of code duplication)
 			if (!self.isInSet) {
 				//call set
-				var isSetLock = "isSet" + value
+				var isSetLock = 'isSet' + value
 				if (!self[isSetLock]) {
 					self[isSetLock] = true;
 
@@ -1895,7 +1215,7 @@ Prop.prototype = {
 					//self.value couldve changed here because of inner set calls
 					if (self.inSetValue !== undefined) {
 						setResult = self.inSetValue;
-						// console.log("redirected value", setResult)
+						// console.log('redirected value', setResult)
 						self.inSetValue = undefined;
 					}
 
@@ -1915,7 +1235,7 @@ Prop.prototype = {
 
 				}
 			} else {
-				// console.log("isSet", value)
+				// console.log('isSet', value)
 				self.inSetValue = value;
 				// console.groupEnd();
 				return;
@@ -1923,7 +1243,7 @@ Prop.prototype = {
 
 			//ignore not changed value
 			if (value === self.value) {
-				// console.log("ignore absense of change", self.value)
+				// console.log('ignore absense of change', self.value)
 				// console.groupEnd();
 				return;
 			}
@@ -1934,7 +1254,7 @@ Prop.prototype = {
 
 			if (isMod(oldState)){
 				//after callback
-				var isAfterLock = "isAfter" + oldStateName
+				var isAfterLock = 'isAfter' + oldStateName
 				if (!self[isAfterLock]) {
 					self[isAfterLock] = true;
 
@@ -1975,7 +1295,7 @@ Prop.prototype = {
 			//TODO: place before/after callbacks to apply/unapply mods
 		}
 
-		// console.log("set", self.displayName, value, "from", self.value)
+		// console.log('set', self.displayName, value, 'from', self.value)
 		self.unbindValue();
 
 		self.value = value;
@@ -1990,12 +1310,12 @@ Prop.prototype = {
 		if (has(self, stateName)) {
 			state = self[stateName];
 
-			// console.log(stateName, state)
+			// console.log("enter", stateName, state, isMod(state))
 			if (isMod(state)) applyMod(target, state);
 
 			//before callback
 			var beforeResult;
-			var isBeforeLock = "isBefore" + stateName;
+			var isBeforeLock = 'isBefore' + stateName;
 			if (!self[isBeforeLock]){
 				self[isBeforeLock] = true;
 
@@ -2042,7 +1362,7 @@ Prop.prototype = {
 
 		//changed callback
 		//TODO: refuse changed callback to change self value by returning anything
-		var isChangedLock = "isChangedTo" + value;
+		var isChangedLock = 'isChangedTo' + value;
 		if (!self[isChangedLock]) {
 			self[isChangedLock] = true;
 
@@ -2105,24 +1425,640 @@ Prop.prototype = {
 			target.setAttribute(self.displayName, stringify(self.value));
 		}
 
-		fire(target, "attributeChanged");
+		fire(target, 'attributeChanged');
 	}
 }
 
+
+
+
+/**
+* List of prop names to avoid
+*/
+var propTechNames = {};
+for (var propName in Prop.prototype) propTechNames[propName] = true;
+
+
+//FIXME: extend these properties based on constructor values, automatically
+var reservedNames = {
+	// constructor: true,
+	// length: true,
+	// prototype: true,
+	// name: true,
+	instances: true,
+	extend: true,
+	parent: true,
+	toJSON: true,
+	bind: true,
+	eachProp: true,
+	displayName: true,
+	selector: true,
+}
+
+var registerNames = {
+	jQuery: true,
+	customElement: true,
+	autoinit: true,
+	css: true,
+}
+
+var lifecycleNames = {
+	created: true,
+	init: true,
+	before: true,
+	after: true
+	// attached: true,
+}
+
+
+
+/**
+* Mod constructor
+*/
+function Mod(a,b,c){
+	return Mod.create.call(this, a,b,c);
+};
+
+/**
+* Default target for selected environment caster
+*/
+Mod.createDefaultTarget = function(){
+	return doc && doc.createElement('div') || {};
+}
+
+/**
+* Mod registrar (`this` is CustomMod)
+*/
+Mod.registry = {};
+
+/**
+* Custom Mod creator
+*/
+Mod.create = function(target, props, parentMod){
+	// console.group('create', target, props, parentMod)
+	//resolve arguments
+	if (!props || isMod(props)){
+		parentMod = props;
+		props = target;
+		target = null;
+	}
+	props = props || {};
+
+	//create mod class
+	//NOTE: this is the fastest way to clone an fn
+	/** @constructor */
+	function mod(a,b){
+		return instantiateMod.call(mod,a,b)
+	};
+
+	//provide mod name
+	var name = props.name || props.displayName;
+	if (!name) name = 'mod-' + getUniqueId();
+	mod.displayName = name;
+
+
+	//nested mod - ignore registration
+	if (parentMod) {
+		mod.parent = parentMod;
+	}
+	//outer mod
+	else {
+		mod.instances = {};
+		mod.extend = extendMod;
+
+		//register mod
+		//FIXME: make sure `displayName` is the best property name to register
+		if (Mod.registry[name]) throw Error('Mod `' + name + '` is already registered');
+		Mod.registry[name] = mod;
+		if (!props.selector) mod.selector = '.' + name;
+		//TODO: provide global class with `name`?
+
+		//provide jQuery plugin
+		if ($ && props.jQuery && !(props.jQuery in $)) {
+			$['fn'][name] = (function(mod){
+				return function (arg) {
+					return this['each'](function(i,e){
+						var $e = $(e);
+						var instance = mod($e[0], arg);
+						$e.data(name, instance);
+					})
+				};
+			})(mod);
+			$[name] = mod;
+		}
+
+		//TODO: provide customElement
+		if(props.customElement){
+			var ceProps = {
+				//TODO: use custom proto element passed
+				// 'prototype': Object.create(HTMLElement.prototype),
+
+				//TODO: use proper tag passed to extend
+				// 'extends': 'div',
+
+				//TODO: transfer mod settings to the custom element settings
+				//NOTE: they’re transformed the way simple properties defined on element
+
+				// createdCallback: function(){},
+				// attachedCallback: function(){},
+				// detachedCallback: function(){},
+				// attributeChangedCallback: function(attrName, oldVal, newVal){}
+			};
+
+			// var CustomElement = register(settings.customelement, ceProps)
+		}
+
+		//TODO: create style tag on the document
+		if (props.css && doc) {
+			var styleTag = createLiveStyle(props.css);
+			head.appendChild(styleTag);
+		}
+	}
+
+	//save iterator & getter
+	mod.eachProp = iterateOverProps;
+	mod.toJSON = modToJSON;
+
+
+	//flatten listed props
+	flattenKeys(props);
+
+	//handle prop descriptors - create mods in place of states
+	for (var propName in props){
+		var prop = props[propName];
+		if (!isPrivateName(propName) && isObject(prop)){
+			flattenKeys(prop);
+
+			//handle states & descriptor
+			for (var stateName in prop){
+				if (propTechNames[stateName]) continue;
+
+				//create mod based on state props, in case if it’s not mod already
+				if (!isMod(prop[stateName]) && isObject(prop[stateName])) {
+					//save name to identify mod by it
+					//FIXME: move it to constructor
+					prop[stateName].displayName = propName + stateName;
+					prop[stateName] = Mod(prop[stateName], mod);
+				}
+			}
+		}
+
+		//transfuse property
+		mod[propName] = prop;
+	}
+
+
+	//apply anonimous mod
+	if (target) {
+		mod(target);
+	}
+
+	//Autoinit present in DOM elements
+	if (!has(props,'autoinit') || props.autoinit) {
+		var targets = doc.querySelectorAll(mod.selector);
+		for (var i = 0; i < targets.length; i++) {
+			fireAttached(mod(targets[i]));
+		}
+	}
+
+	//FIXME: do not allow configuring mod anymore
+	// Object.seal(mod);
+
+	// console.groupEnd();
+	return mod
+}
+
+
+/**
+* Mod prototypal things
+*/
+/**
+* Properties iterator
+*/
+function iterateOverProps(fn, showAll){
+	var mod = this, result,
+		propNames = Object.keys(mod)
+		//TODO: get rid of this?
+		.filter(function(a){
+			if (!showAll){
+				if (isPrivateName(a) || registerNames[a] || lifecycleNames[a]) return false;
+			}
+			if (reservedNames[a]) return false;
+			return true;
+		})
+		.sort(function(a,b){
+			// if (a[0] === '_') return -1;
+			// if (b[0] === '_') return 1;
+			if (isObject(mod[a])) return 1;
+			if (isString(mod[a])) return 1;
+			return -1;
+		});
+
+	for (var i = 0; i < propNames.length; i++){
+		result = fn(propNames[i], mod[propNames[i]]);
+		if (result === false) return;
+	}
+}
+
+/**
+* Mod extender - creates clone of a mod extended with props passed
+*/
+function extendMod(props){
+	//TODO: enhance extension method, i.e. a:2 + a:{change:fn...} → a:{init:2, change:fn...}
+	var oldMod = this;
+	var oldProps = oldMod.toJSON();
+
+	if (isMod(props)) props = props.toJSON();
+	props = props || {};
+
+	// console.group("extend", oldMod.displayName)
+	// console.log("new props",props)
+	// console.log("old props",oldProps)
+
+	//transfer old properties
+	for (var propName in oldProps){
+		//transfer plain values
+		props[propName] = mergeProperty(props[propName], oldProps[propName]);
+	}
+	// console.dir(props)
+	var newMod = Mod(props);
+
+	// console.groupEnd();
+	return newMod
+}
+
+/**
+* returns new property descriptor, merging both old and new descriptors
+*/
+function mergeProperty(newProp, oldProp){
+	if (oldProp === undefined) return newProp;
+	if (newProp === undefined) return oldProp;
+
+	//supposation that natural behaviour is extension of all oldProps
+	// console.log(oldProp, newProp, isObject(oldProp), isObject(newProp))
+	if (isObject(newProp)){
+		if (isObject(oldProp)){
+			// var resProp = clone(oldProp);
+			return deepExtend(oldProp, newProp);
+		} else {
+			return extend({init: oldProp}, newProp);
+		}
+	} else {
+		if (isObject(oldProp)){
+			//TODO: are you sure don’t want to extend old property’s `init` value?
+			return newProp
+		} else {
+			return newProp
+		}
+	}
+}
+
+
+//-----------iterator
+/**
+* Mod property descriptor controller
+* Doesn’t replaces real passed mod descriptor, but takes control over it & provides methods
+*//*
+function PropDescriptor(propName, prop, mod){
+	var self = this;
+
+	//ignore double init
+	if (prop instanceof PropDescriptor) return prop;
+
+	//save name & initial prop
+	self.propName = propName;
+	self.prop = prop;
+	self.mod = mod;
+
+	//clean reserved names
+	if (reservedNames[propName]) self.isReserved = true;
+
+	//ignore private properties
+	else if (propName[0] !== '_') self.isPrivate = true;
+
+	//handle prop descriptors
+	else if (isObject(prop)) {
+		self.isDescriptor = true;
+
+		//flatten listed states
+		flattenKeys(prop);
+
+		//handle states & descriptor
+		for (var stateName in prop){
+			if (reservedNames[stateName] || techNames[stateName]) continue;
+
+			//make sure mutual fn properties are stubbed as noop fns
+			var innerProps = prop[stateName];
+
+			//create mod based on state props, in case if it’s not mod already
+			if (!isMod(innerProps) && isObject(innerProps)) {
+				innerProps.name = propName + stateName;
+				prop[stateName] = Mod(innerProps, mod);
+			}
+		}
+	} else {
+		self.isPlain = true;
+	}
+}
+
+PropDescriptor.prototype = {
+	//return new prop (not PropDescriptor instance)
+	getExtendedProp: function(newProp){
+		var self = this;
+
+		if (self.prop === undefined) return newProp;
+		if (newProp === undefined) return self;
+
+		//supposation that natural behaviour is extension of all oldProps
+		// console.log(oldProp, newProp, isObject(oldProp), isObject(newProp))
+		if (isObject(newProp)){
+			if (self.isDescriptor){
+				return deepExtend(clone(self.prop), newProp.prop);
+			} else {
+				return extend({init: self.prop}, newProp.prop);
+			}
+			return self;
+		} else {
+			if (self.isDescriptor){
+				//TODO: are you sure don’t want to extend old property’s `init` value?
+				return newProp
+			} else {
+				return newProp
+			}
+		}
+	},
+	toJSON: function(){return this.prop},
+
+	//iterate over each inner state declared
+	eachState: function(fn){
+		var self = this, result;
+		if (self.isDescriptor){
+			for (var stateName in self.prop) {
+				if (reservedNames[stateName] || techNames[stateName]) continue;
+				result = fn(stateName, self.prop[stateName]);
+				if (result === false) return;
+			}
+		}
+	},
+
+	//spawns `Prop` instance on target
+	spawn: function(target, options){
+		var self = this;
+
+		//transfuse private properties to target
+		if (self.isPrivate) defineProperty(target, self.propName, {
+			value: clone(self.prop),
+			writable: true,
+			enumerable: false,
+			configurable: false
+		});
+
+		//property descriptor
+		else {
+			//FIXME: get rid of this condition
+			if (options) {
+				prop = new Prop(target, self.propName, self.mod, options[self.propName]);
+			} else {
+				prop = new Prop(target, self.propName, self.mod);
+			}
+		}
+	}
+}*/
+
+
+/**
+* Mod extender - creates clone of a mod extended with props passed
+*/
+// function extendMod(props){
+// 	var oldMod = this;
+
+// 	props = props || {};
+
+// 	//transfer old properties
+// 	oldMod.eachProp(function(name, oldProp){
+// 		props[name] = oldProp.getExtendedProp(props[name]);
+// 	})
+
+// 	var newMod = Mod(props);
+
+// 	// console.groupEnd();
+// 	return newMod
+// }
+
+
+
+
+
+
+
+
+
+/**
+* Custom mod instance constructor
+*/
+function instantiateMod(target, options){
+	var mod = this;
+
+	// console.log('instantiate', target, options)
+
+	//TODO: ensure this conditions routine is optimal
+	//if no target passed - create default target
+	if (target === undefined) {
+		//TODO: count on parent (prototypal) element, like `extends` in CustomElements
+		target = Mod.createDefaultTarget();
+	}
+
+	//if empty target passed - ignore mod
+	else if (target === null || ( target.length === 0 && target.nodeType === undefined )) {
+		return {};
+	}
+
+	//only options passed as a target - create target
+	else if (!options && isObject(target)) {
+		options = target;
+		target = Mod.createDefaultTarget();
+	}
+	//list of targets passed - impossible to redefine targets in init
+	if (target.length && target.nodeType === undefined) {
+		var l = target.length;
+		for (var i = 0; i < l; i++){
+			initMod(target[i], mod, options);
+		}
+		return target;
+	}
+
+	//one target passed
+	else {
+		return initMod(target, mod, options);
+	}
+}
+
+/**
+* Apply parent mod to a target
+* define all properties etc
+*/
+function initMod(target, mod, options){
+	// console.group('init mod', mod.displayName, target)
+	var targetId, presettings;
+
+	//save whether initial target is applied mod
+	var isTargetAMod = isModInstance(target);
+
+	//get uniq target id
+	targetId = getId(target);
+
+	//ignore double instantiation
+	if (mod.instances && mod.instances[targetId]){
+		// console.groupEnd();
+		return target;
+	}
+
+	presettings = parsePresettings(target, mod);
+
+	//init callback
+	var initResult = isFn(mod.init) ? mod.init.call(target, options) : isObject(mod.init) ? clone(mod.init) : isElement(mod.init) ? mod.init.cloneNode(true) : mod.init;
+
+	//redefine target, if needed
+	if (initResult !== undefined) {
+		setId(initResult, targetId);
+		target = initResult;
+
+		//append presettings, if target changed
+		extend(presettings, parsePresettings(target, mod));
+	}
+
+	//form options
+	options = extend(presettings, options);
+
+	//init extended options
+	for (var optName in options){
+		var option = options[optName];
+
+		//add extra listener
+		if (isFn(option)){
+			on(target, optName, option.bind(target));
+			delete options[optName]
+		}
+		//take over extra-property
+		else if (!has(mod, optName)) {
+			target[optName] = option
+		}
+	}
+
+	//init event
+	fire(target, 'init');
+
+	//track instances
+	if (mod.instances) {
+		mod.instances[targetId] = target;
+	}
+
+	//add class
+	if (mod.displayName && isElement(target)) target.classList.add(mod.displayName);
+
+	//mark as DOM-inclusion observable
+	//TODO: move isAttached to scope
+	if (target.isAttached === undefined && isElement(target)){
+		target.isAttached = false;
+	}
+
+	var scope = target._;
+	//FIXME: create mod propeties iterator
+
+	//create toJSON for target
+	if (!target.toJSON){
+		target.toJSON = modInstanceToJSON;
+	}
+
+	//create properties controllers
+	//NOTE: `get`s have to be defined before values being inited
+	//TODO: flag this code in order to avoid double define
+	mod.eachProp(function(propName, prop){
+		if (lifecycleNames[propName] || registerNames[propName]) return;
+
+		//transfuse private properties to target
+		if (isPrivateName(propName)) defineProperty(target, propName, {
+			value: clone(prop),
+			writable: true,
+			enumerable: false,
+			configurable: false
+		});
+
+		//property descriptor
+		else {
+			//FIXME: get rid of this condition
+			if (options) {
+				prop = new Prop(target, propName, mod, options[propName]);
+			} else {
+				prop = new Prop(target, propName, mod);
+			}
+		}
+	}, true)
+
+
+	//go to initial mod
+	applyMod(target, mod);
+
+	//created callback (can’t be called on nested mods)
+	mod.created && mod.created.call(target);
+	fire(target, 'created');
+
+	//fire attached
+	// console.log(target, mod.displayName, root.contains(target))
+	if (root.contains(target)){
+		fireAttached(target);
+	}
+
+	// console.groupEnd()
+
+	return target;
+}
+
+
+/**
+* Set new (inner) mod on target
+*/
+function applyMod(target, mod){
+	if (!mod) return;
+
+	// console.group('applyMod', mod.displayName)
+
+	mod.eachProp(function(propName){
+		target._[propName].setMod(mod);
+	})
+
+	// console.groupEnd()
+}
+
+
+/**
+* Reset active mod
+*/
+function unapplyMod(target, mod){
+	if (!mod) return;
+
+	// console.group('unapply Mod', mod.groupName, mod.propName)
+
+	mod.eachProp(function(propName){
+		target._[propName].setMod(target._[propName].initialMod);
+	})
+
+	// console.groupEnd();
+}
 
 /**
 *	Parses presetted mod props
 */
 function parsePresettings(target, mod){
-	var props = mod.properties;
 	var preset = {};
-	// console.group("parsePresettings", props)
+	// console.group('parsePresettings', props)
 
 	var testElement = has(target, 'cloneNode') ? target.cloneNode() : target;
-	for (var propName in props){
+
+	mod.eachProp(function(propName, prop){
 		var dashedPropName = toDashedCase(propName);
 		if (has(target, propName)) {
-			// console.log("ontarget")
+			// console.log('ontarget')
 			if (!(/^on/.test(propName)) &&
 				(propName in testElement)) {
 					//NOTE: interfering properties:
@@ -2130,8 +2066,8 @@ function parsePresettings(target, mod){
 					//value in input
 					//min, max in input
 				//TODO: workaround this
-				// console.log("native presetting", propName)
-				// throw Error("Interfering property `" + propName + '`')
+				// console.log('native presetting', propName)
+				// throw Error('Interfering property `' + propName + '`')
 			} else {
 				//save predefined element value
 				preset[propName] = target[propName];
@@ -2139,16 +2075,16 @@ function parsePresettings(target, mod){
 		}
 
 		else {
-			var propType = isObject(mod[propName]) ? (!isFn(mod[propName].init) ? mod[propName].init : '' )  : mod[propName];
+			var propType = isObject(prop) ? (!isFn(prop.init) ? prop.init : '' )  : prop;
 			if (has(target, 'attributes')) {
-				var attr = target.attributes[propName] || target.attributes["data-" + propName] || target.attributes[dashedPropName] || target.attributes["data-" + dashedPropName];
+				var attr = target.attributes[propName] || target.attributes['data-' + propName] || target.attributes[dashedPropName] || target.attributes['data-' + dashedPropName];
 				if (attr) {
 					if (/^on/.test(propName)) preset[propName] = new Function(attr.value);
 					else preset[propName] = parseTypedAttr(attr.value, propType);
 				}
 			}
 		}
-	}
+	})
 	// console.log(preset)
 	// console.groupEnd()
 
@@ -2165,13 +2101,13 @@ if (MO) {
 		mutations.forEach(function(mutation){
 			// console.log(mutation, mutation.type)
 			//TODO: Update list of data-listeners
-			if (mutation.type === "attributes"){
-				//console.log("doc", mutation)
+			if (mutation.type === 'attributes'){
+				//console.log('doc', mutation)
 				//TODO: check whether classes were added to the elements
 			}
 
 			//check whether appended elements are Mods
-			else if (mutation.type === "childList"){
+			else if (mutation.type === 'childList'){
 				var l = mutation.addedNodes.length;
 
 				for (var i = 0; i < l; i++){
@@ -2181,34 +2117,28 @@ if (MO) {
 
 					//check whether element added is mod
 					// console.log(el, isModInstance(el))
-					if (isModInstance(el) && !el.isAttached) {
-						el.isAttached = true;
-						fire(el, "attached");
+					if (isModInstance(el)) {
+						fireAttached(el);
 					}
 
 					for (var modName in Mod.registry){
 						var mod = Mod.registry[modName];
 
+						//FIXME: match selector
 						//autoinit top-level registered mods
-						if (matchSelector.call(el, mod.settings.selector)){
-							// console.log("autoinit parent", modName, el.isAttached);
-
-							new mod(el);
+						if (matchSelector.call(el, mod.selector)){
+							// console.log('autoinit parent', modName, el.isAttached);
+							mod(el);
 						}
 
-						//autoinit low-level registered mods
-						var targets = el.querySelectorAll(mod.settings.selector);
+						//FIXME: autoinit low-level registered mods
+						var targets = el.querySelectorAll(mod.selector);
 
 						for (var j = 0; j < targets.length; j++){
 							var innerEl = targets[j];
-							// console.log("autoinit child", modName, el.isAttached)
+							// console.log('autoinit child', modName, el.isAttached)
 
-							new mod(innerEl);
-
-							if (!innerEl.isAttached) {
-								innerEl.isAttached = true;
-								fire(innerEl, "attached");
-							}
+							fireAttached(mod(innerEl));
 						}
 					}
 					//NOTE: noname mods within elements wont fire `attached`
@@ -2245,9 +2175,16 @@ function flattenKeys(set){
 		}
 	}
 
-	// console.log("after", set);
+	// console.log('after', set);
 
 	return set;
+}
+
+/**
+* Tests whether name is private
+*/
+function isPrivateName(n){
+	return n[0] === '_' && n.length > 1
 }
 
 /**
@@ -2262,7 +2199,7 @@ function isModInstance(target){
 * Checks whether the constructor passed is mod
 */
 function isMod(mod){
-	return isFn(mod) && !!mod.propNames;
+	return isFn(mod) && !!mod.eachProp
 }
 
 /**
@@ -2274,14 +2211,59 @@ function isPossiblyFnRef(str){
 
 
 /**
+* Mod properties getter
+*/
+function modToJSON(){
+	var resultProps = {}, resultProp;
+	var mod = this;
+
+	// for (var propName in mod){
+	// 	if (reservedNames[propName] || registerNames[propName]) continue;
+	// 	var prop = mod[propName];
+	mod.eachProp(function(propName, prop){
+		// console.log(propName)
+		if (isObject(prop)){
+			resultProp = {};
+			for (var name in prop){
+				// console.log(name, prop[name])
+				if (isMod(prop[name])) {
+					resultProp[name] = prop[name].toJSON();
+				} else {
+					resultProp[name] = prop[name];
+				}
+			}
+			resultProps[propName] = resultProp;
+		} else {
+			resultProps[propName] = prop;
+		}
+
+	// }
+	}, true)
+
+	// console.log(resultProps)
+	return resultProps;
+}
+
+
+/**
 * transforms any mod instance passed to JSON
 */
 function modInstanceToJSON(){
 	var scope = this._, result = {};
 	for (var propName in scope){
 		var prop = scope[propName];
-		if (!isFn(prop.value)) result[propName] = prop.valueOf();
+		if (!isFn(prop.value)) result[propName] = prop.value;
 	}
 
 	return result;
+}
+
+/**
+* Check whether target is attached, invoke callback
+*/
+function fireAttached(target){
+	if (!target.isAttached){
+		target.isAttached = true;
+		fire(target, 'attached');
+	}
 }

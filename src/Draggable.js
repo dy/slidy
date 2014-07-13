@@ -1,5 +1,7 @@
 ﻿//TODO: make ghost insteadof moving self
 var Draggable = Mod({
+	name: 'draggable',
+
 	init: function(opts){
 		// console.group("init", opts)
 	},
@@ -498,7 +500,7 @@ var Draggable = Mod({
 	'window resize': function(){
 		this._updateLimits();
 	}
-}).register("draggable");
+})
 
 
 
