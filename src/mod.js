@@ -1109,15 +1109,10 @@ Prop.prototype = {
 			// console.log('unbind inner ref fn', self.refProp, '`' + self.refEvt + '`')
 			off(target[self.refProp], self.refEvt, self.value);
 		}
-		//unbind fnref
-		else if (isString(self.value) && isPossiblyFnRef(self.value)) {
+		//unbind fn/fnref
+		else if (isString(self.value) && isPossiblyFnRef(self.value) || isFn(self.value)) {
 			//TODO: there cb reference is of the new state one
 			// console.log('unbind', self.displayName, self.value, scope[self.value].value)
-			off(target, self.displayName, self.callValueReference);
-		}
-		//unbind fn
-		else if (isFn(self.value)) {
-			// console.log('off fn', self.callValueReference)
 			off(target, self.displayName, self.callValueReference);
 		}
 	},
@@ -1135,13 +1130,9 @@ Prop.prototype = {
 			// console.log('bind refPointer',target[self.refProp], self.refEvt, self.value)
 			on(target[self.refProp], self.refEvt, self.value);
 		}
-		//bind fnref
-		else if (isString(self.value) && has(scope, self.value) && isPossiblyFnRef(self.value)){
+		//bind fn/fnref
+		else if (isString(self.value) && has(scope, self.value) && isPossiblyFnRef(self.value) || isFn(self.value)){
 			// console.log('bind fnref')
-			on(target, self.displayName, self.callValueReference);
-		}
-		//bind fn
-		else if (isFn(self.value)) {
 			on(target, self.displayName, self.callValueReference);
 		}
 	},
@@ -1257,11 +1248,12 @@ Prop.prototype = {
 				if (!self[isAfterLock]) {
 					self[isAfterLock] = true;
 
-					//TODO: catch non-fn
-					if (isFn(oldState)) {
-						var afterResult = self.callHook(oldState, 'after', value, oldValue);
+					var afterResult;
+
+					if (isFn(oldState.after)) {
+						afterResult = oldState.after.call(target, value, oldValue);
 					} else {
-						var afterResult = oldState;
+						afterResult = oldState.after;
 					}
 
 					//ignore leaving state
@@ -1331,9 +1323,13 @@ Prop.prototype = {
 				}
 				//real mod
 				else {
-					beforeResult = self.callHook(state, 'before', value, oldValue);
+					// beforeResult = self.callHook(state, 'before', value, oldValue);
+					if (isFn(state.before)) {
+						beforeResult = state.before.call(target, value, oldValue);
+					} else {
+						beforeResult = state.before;
+					}
 				}
-
 
 				//ignore leaving mod
 				if (beforeResult === false) {
@@ -1362,49 +1358,18 @@ Prop.prototype = {
 		//changed callback
 		//TODO: refuse changed callback to change self value by returning anything
 		var isChangedLock = 'isChangedTo' + value;
-		if (!self[isChangedLock] && value !== oldValue) {
+		if (self.changed && !self[isChangedLock] && value !== oldValue) {
 			self[isChangedLock] = true;
 
-			var changedResult = self.callHook(self, 'changed', value, oldValue);
+			self.changed.call(target, value, oldValue)
 
 			//TODO: there have to be a covering test, because kudago.slideshow failed
 			self[isChangedLock] = null;
-
-			//redirect state, if returned any
-			// if (changedResult !== undefined) {
-			// 	// self.value = changedResult;
-			// 	self.setValue(changedResult);
-			// 	// console.groupEnd()
-			// 	return;
-			// }
-
-			// //catch redirect
-			// if (self.value !== value) {
-			// 	// console.groupEnd();
-			// 	return;
-			// }
 		}
 
 		//update attribute
 		self.setAttribute();
 		// console.groupEnd()
-	},
-
-	//short hook caller
-	callHook: function(holder, name, a, b){
-		var self = this, target = self.target, hookResult
-		if (!holder) return;
-
-		//fn hook
-		if (isFn(holder[name])) {
-			hookResult = holder[name].call(target, a, b)
-		}
-		//value hook
-		else if (isObject(holder)) {
-			hookResult = holder[name]
-		}
-
-		return hookResult;
 	},
 
 	//reflects self value on attribute
@@ -1603,7 +1568,6 @@ Mod.create = function(target, props, parentMod){
 
 		//transfuse property
 		mod[propName] = prop;
-		// mod[propName] = new ModProp(prop);
 	}
 
 
@@ -1619,9 +1583,6 @@ Mod.create = function(target, props, parentMod){
 			fireAttached(mod(targets[i]));
 		}
 	}
-
-	//FIXME: do not allow configuring mod anymore
-	// Object.seal(mod);
 
 	// console.groupEnd();
 	return mod
@@ -1711,146 +1672,6 @@ function mergeProperty(newProp, oldProp){
 		}
 	}
 }
-
-
-//-----------iterator
-/**
-* Mod property descriptor controller
-* Doesn’t replaces real passed mod descriptor, but takes control over it & provides methods
-*//*
-function PropDescriptor(propName, prop, mod){
-	var self = this;
-
-	//ignore double init
-	if (prop instanceof PropDescriptor) return prop;
-
-	//save name & initial prop
-	self.propName = propName;
-	self.prop = prop;
-	self.mod = mod;
-
-	//clean reserved names
-	if (reservedNames[propName]) self.isReserved = true;
-
-	//ignore private properties
-	else if (propName[0] !== '_') self.isPrivate = true;
-
-	//handle prop descriptors
-	else if (isObject(prop)) {
-		self.isDescriptor = true;
-
-		//flatten listed states
-		flattenKeys(prop);
-
-		//handle states & descriptor
-		for (var stateName in prop){
-			if (reservedNames[stateName] || techNames[stateName]) continue;
-
-			//make sure mutual fn properties are stubbed as noop fns
-			var innerProps = prop[stateName];
-
-			//create mod based on state props, in case if it’s not mod already
-			if (!isMod(innerProps) && isObject(innerProps)) {
-				innerProps.name = propName + stateName;
-				prop[stateName] = Mod(innerProps, mod);
-			}
-		}
-	} else {
-		self.isPlain = true;
-	}
-}
-
-PropDescriptor.prototype = {
-	//return new prop (not PropDescriptor instance)
-	getExtendedProp: function(newProp){
-		var self = this;
-
-		if (self.prop === undefined) return newProp;
-		if (newProp === undefined) return self;
-
-		//supposation that natural behaviour is extension of all oldProps
-		// console.log(oldProp, newProp, isObject(oldProp), isObject(newProp))
-		if (isObject(newProp)){
-			if (self.isDescriptor){
-				return deepExtend(clone(self.prop), newProp.prop);
-			} else {
-				return extend({init: self.prop}, newProp.prop);
-			}
-			return self;
-		} else {
-			if (self.isDescriptor){
-				//TODO: are you sure don’t want to extend old property’s `init` value?
-				return newProp
-			} else {
-				return newProp
-			}
-		}
-	},
-	toJSON: function(){return this.prop},
-
-	//iterate over each inner state declared
-	eachState: function(fn){
-		var self = this, result;
-		if (self.isDescriptor){
-			for (var stateName in self.prop) {
-				if (reservedNames[stateName] || techNames[stateName]) continue;
-				result = fn(stateName, self.prop[stateName]);
-				if (result === false) return;
-			}
-		}
-	},
-
-	//spawns `Prop` instance on target
-	spawn: function(target, options){
-		var self = this;
-
-		//transfuse private properties to target
-		if (self.isPrivate) defineProperty(target, self.propName, {
-			value: clone(self.prop),
-			writable: true,
-			enumerable: false,
-			configurable: false
-		});
-
-		//property descriptor
-		else {
-			//FIXME: get rid of this condition
-			if (options) {
-				prop = new Prop(target, self.propName, self.mod, options[self.propName]);
-			} else {
-				prop = new Prop(target, self.propName, self.mod);
-			}
-		}
-	}
-}*/
-
-
-/**
-* Mod extender - creates clone of a mod extended with props passed
-*/
-// function extendMod(props){
-// 	var oldMod = this;
-
-// 	props = props || {};
-
-// 	//transfer old properties
-// 	oldMod.eachProp(function(name, oldProp){
-// 		props[name] = oldProp.getExtendedProp(props[name]);
-// 	})
-
-// 	var newMod = Mod(props);
-
-// 	// console.groupEnd();
-// 	return newMod
-// }
-
-
-
-
-
-
-
-
 
 /**
 * Custom mod instance constructor

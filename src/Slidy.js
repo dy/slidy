@@ -83,8 +83,7 @@ var Slidy = Mod({
 	//set of values for each picker
 	values: {
 		init: function(opt){
-			// console.log("init values")
-			return [];
+			return opt || [];
 		}
 	},
 
