@@ -7,7 +7,6 @@ describe("Draggable", function(){
 	canvas.height = 10000;
 
 
-
 	it("plain", function(){
 		var a = createDraggable("plain")
 	})
@@ -33,8 +32,22 @@ describe("Draggable", function(){
 		})
 	})
 
-	it("repeat", function(){
-		//TODO: think of excluding repeat from draggable and placing it to slidy
+	it("restrict x", function(){
+		createDraggable("restrict x", {
+			axis: 'x'
+		})
+	})
+
+	it("y", function(){
+		// createDraggable("y")
+	})
+
+	it("circular", function(){
+		// createDraggable("circular")
+	})
+
+	it("threshold", function(){
+		// createDraggable("circular")
 	})
 
 	it("handle", function(){
@@ -66,7 +79,7 @@ describe("Draggable", function(){
 
 		var el = document.createElement("div");
 		el.title = name;
-		el.className = name + " draggable-container";
+		el.className = "draggable-container";
 		document.body.appendChild(el);
 
 		//create mover
@@ -80,7 +93,7 @@ describe("Draggable", function(){
 		on(drEl, 'dragstart', renderHelpers);
 		on(drEl, 'drag', renderHelpers);
 		on(drEl, 'dragend', clear);
-		on(drEl, 'dragstateIdle', clear);
+		on(drEl, 'idle', clear);
 
 		return drEl;
 	}

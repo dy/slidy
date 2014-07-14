@@ -125,19 +125,13 @@ describe("Slidy", function(){
 			el.appendChild(pointer);
 		})
 
-		it("sector", function(){
-			xxx
-		})
+		// it("sector", function(){
+		// 	xxx
+		// })
 
-		it("svg shape", function(){
-			xxx
-			// var el = createSlider("rectangular", {
-			// 	min:[0,0],
-			// 	max:[100,100],
-			// 	value: [40,70],
-			// 	type: 'svg'
-			// })
-		})
+		// it("svg shape", function(){
+		// 	xxx
+		// })
 	})
 
 
@@ -148,7 +142,6 @@ describe("Slidy", function(){
 				type: "horizontal",
 				min: 100,
 				max: 0,
-				value: 50,
 				values: [10, 50, 80]
 			})
 		})
@@ -158,13 +151,27 @@ describe("Slidy", function(){
 				type: "rectangular",
 				min: [100, -100],
 				max: [-100, 100],
-				value: 50,
+				value: 50, //bad value
 				values: [[-10, 50], [80, -10], [10,20], [-100,-100]]
 			})
 		})
 
 		it("repeat x", function(){
-			xxx
+			document.body.appendChild(
+				new Slidy({
+					title: "repeat x",
+					className: "horizontal",
+					change: function(){this.activePicker.innerHTML = this.value},
+
+					type: "horizontal",
+					min: -10,
+					max: 10,
+					value: 1,
+					step: 2,
+					snap: true,
+					repeat: true
+				})
+			);
 		})
 
 		it("repeat y", function(){
@@ -174,17 +181,26 @@ describe("Slidy", function(){
 		it("repeat rect", function(){
 			xxx
 		})
-		it("expose data", function(){
-			xxx
-		})
 
-		it("snapping", function(){
-			xxx
-		})
+		// it("expose data", function(){
+		// 	xxx
+		// })
 
-		it("loose limits", function(){
-			xxx
-		})
+		// it("steps (small number of them)", function(){
+		// 	xxx
+		// })
+
+		// it("snapping (random grid)", function(){
+		// 	xxx
+		// })
+
+		// it("loose boundaries", function(){
+		// 	xxx
+		// })
+
+		// it("image slider example", function(){
+		// 	xxx
+		// })
 	})
 
 
@@ -201,14 +217,26 @@ describe("Slidy", function(){
 			xxx
 		})
 
-		it("scroll", function(){
+		it("scroll x", function(){
+			xxx
+		})
+
+		it("scroll y", function(){
+			xxx
+		})
+
+		it("scroll xy", function(){
 			xxx
 		})
 	})
 
 
 	describe("corner cases", function(){
-		it("out of bounds values", function(){
+		it("out of bounds initial values", function(){
+			xxx
+		})
+
+		it("wrong initial values", function(){
 			xxx
 		})
 	})

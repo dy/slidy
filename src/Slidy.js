@@ -9,11 +9,6 @@ var Slidy = Mod({
 		// console.log("slidy init")
 	},
 
-	//list of pickers
-	pickers: {
-		init: function(){return []}
-	},
-
 	created: function(){
 		var self = this, picker;
 
@@ -90,7 +85,6 @@ var Slidy = Mod({
 	//placing type
 	type:{
 		init: "horizontal",
-
 		"horizontal": {
 			before: function(){
 				// console.log("before horiz", this.activePicker)
@@ -105,7 +99,7 @@ var Slidy = Mod({
 				var hRange = this.max - this.min,
 					ratioX = (this.value - this.min) / hRange;
 					ratioY = .5;
-				// console.log("upd pos", hScope, vScope)
+				this.activePicker.freeze = false;
 				this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
 				this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
 			},
@@ -123,6 +117,9 @@ var Slidy = Mod({
 					self = this;
 
 				var normalValue = (thumb.x - lim.left) / hScope;
+
+				if (self.snap) self.activePicker.freeze = true;
+
 				self.value = normalValue * (self.max - self.min) + self.min;
 
 				//trigger onchange
@@ -335,7 +332,6 @@ var Slidy = Mod({
 			}
 		}
 	},
-
 	updatePosition: noop,
 
 	//value limits
@@ -354,11 +350,14 @@ var Slidy = Mod({
 			if (typeof value === 'string' && /,/.test(value)) return parseArray(value);
 		}
 	},
+
+	//minimal step to bind final value
 	step: {
-		//detect step automatically based on min/max range (1/100 by default)
 		init: function(value){
-			//initial call
 			var range;
+			if (value !== undefined) return value;
+
+			//detect undefined step automatically based on min/max range (1/100 by default)
 			if (this.max) {
 				if (this.max.length == 2) {
 					range = Math.abs(this.max[0] - this.min[0]);
@@ -395,6 +394,10 @@ var Slidy = Mod({
 		}
 	},
 
+	//list of pickers
+	pickers: {
+		init: function(){return []}
+	},
 
 	//set option for all pickers instances
 	setPickersOption: function(name, value){

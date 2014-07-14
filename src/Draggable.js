@@ -24,7 +24,34 @@ var Draggable = Mod({
 	//how many pixels to omit before switching to drag state
 	threshold: {
 		//Number/Array[w,h]/Array[x,y,x,y]/function (custom shape)
-		init: 12
+		init: 12,
+
+		//return array[x,y,x,y]
+		get: function(val){
+			if (isFn(val)){
+				return val();
+			} else {
+				// console.log("get ts", val)
+				return val;
+			}
+		},
+
+		set: function(val){
+			if (typeof val === "number"){
+				//ts
+				// console.log("set ts", val, [-val*.5, -val*.5, val*.5, val*.5])
+				return [-val*.5, -val*.5, val*.5, val*.5];
+			} else if (val.length === 2){
+				//Array(w,h)
+				return [-val[0]*.5, -val[1]*.5, val[0]*.5, val[1]*.5]
+			} else if(val.length === 4){
+				//Array(x1,y1,x2,y2)
+				return val
+			} else if (isFn(val)){
+				//custom val funciton
+				return val
+			}
+		}
 	},
 
 	//whether to autoscroll on reaching the border of the screen
@@ -35,7 +62,6 @@ var Draggable = Mod({
 		init: root,
 		set: function(within){
 			// console.log("within change", within )
-			// console.log(within, this.within, this.parentNode)
 			if (isElement(within)){
 				return within
 			} else if (typeof within === "string"){
@@ -43,7 +69,7 @@ var Draggable = Mod({
 			} else {
 				return root
 			}
-		},
+		}
 	},
 
 	//which area of draggable should not be outside the restriction area
@@ -64,9 +90,6 @@ var Draggable = Mod({
 			}
 
 			return value;
-		},
-		changed: function(){
-			this.updateLimits();
 		}
 	},
 
@@ -90,15 +113,35 @@ var Draggable = Mod({
 	//how much slower sniper drag is
 	sniperSpeed: .15,
 
-	//false, 'x', 'y'
+	//'x', 'y', 'both'
 	axis: {
-		init: null,
+		x: {
+			before: function(){
+				console.log("before x")
+			},
+			threshold: {
+				get: function(val){
+					console.log("get")
+					val = Draggable.threshold.get(val);
+					val[1] = -9999;
+					val[3] = 9999;
+					return val;
+				}
+			}
+		},
+		y: {
+			threshold: {
+				get: function(){
+					val = Draggable.threshold.get(val);
+					val[0] = -9999;
+					val[2] = 9999;
+					return val;
+				}
+			}
+		},
+		_: {
 
-		x: {},
-		y: {},
-		null: {},
-		_: null
-
+		}
 	},
 
 	//repeat position by one of axis
@@ -132,6 +175,27 @@ var Draggable = Mod({
 
 	},
 
+	//use native drag
+	native: {
+		//is native drag supported
+		init: (function(){
+			var div = document.createElement("div")
+			var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
+			return isNativeSupported
+		})() && false,
+
+		changed: function(value, oldValue){
+			// console.log("set native to", value, oldValue)
+			if (value === false && this.dragstate === "native"){
+				this.dragstate = "idle";
+			} else if (value === true && this.dragstate !== "init") {
+				this.dragstate = "native";
+			}
+		},
+
+	},
+
+
 	//position
 	x: {
 		init: 0,
@@ -157,7 +221,7 @@ var Draggable = Mod({
 		},
 
 		changed: function(){
-			if (!this.mute) updatePosition(this)
+			if (!this.freeze) updatePosition(this)
 		}
 	},
 	y: {
@@ -186,32 +250,12 @@ var Draggable = Mod({
 		},
 
 		changed: function(){
-			if (!this.mute) updatePosition(this);
+			if (!this.freeze) updatePosition(this);
 		}
 	},
+
 	//whether to ignore position changing
-	mute: false,
-
-	//use native drag
-	native: {
-		//is native drag supported
-		init: (function(){
-			var div = document.createElement("div")
-			var isNativeSupported = ('draggable' in div) || ('ondragstart' in div && 'ondrop' in div);
-			return isNativeSupported
-		})() && false,
-
-		changed: function(value, oldValue){
-			// console.log("set native to", value, oldValue)
-			if (value === false && this.dragstate === "native"){
-				this.dragstate = "idle";
-			} else if (value === true && this.dragstate !== "init") {
-				this.dragstate = "native";
-			}
-		},
-
-	},
-
+	freeze: false,
 
 	//main draggable state reflector
 	dragstate: {
@@ -223,10 +267,10 @@ var Draggable = Mod({
 				//go native
 				// console.log("idle before")
 				if (this.native) this.dragstate = "native";
+				fire(this, "idle");
 			},
 
 			mousedown: function(e){
-				this.updateLimits();
 				initDragparams(this, e);
 				this.dragstate = "threshold";
 			}
@@ -247,7 +291,7 @@ var Draggable = Mod({
 				var difY = (e.clientY - this._dragparams.initY);
 
 				//if threshold passed - go drag
-				if (thresholdPassed(difX, difY, this.threshold)) {
+				if (this.thresholdPassed(difX, difY, this.threshold)) {
 					fire(this, 'dragstart', null, true)
 					this.startDrag(e);
 				}
@@ -340,7 +384,6 @@ var Draggable = Mod({
 			},
 			dragover: setDropEffect
 		}
-
 	},
 
 	//starts drag from event passed
@@ -461,7 +504,7 @@ var Draggable = Mod({
 
 		//it is here because not always element is in DOM when constructor inits
 		var limOffsets = offsets(this.within);
-		// console.log("upd limits", limOffsets)
+		// console.log("upd limits", this.within, limOffsets)
 
 		this._offsets = offsets(this);
 
@@ -482,6 +525,11 @@ var Draggable = Mod({
 		this._limits.right = limOffsets.right - this.oX - this._offsets.width - selfPads.right + (this._offsets.width - pin[2]);
 	},
 
+	thresholdPassed: function(difX, difY){
+		var ts = this.threshold;
+		return !isBetween(difX, ts[0], ts[2]) || !isBetween(difY, ts[1], ts[3])
+	},
+
 	//movement restrictions
 	_limits: {
 		top: 0,
@@ -490,6 +538,7 @@ var Draggable = Mod({
 		right: 0
 	},
 
+	//self offsets cache
 	_offsets: {
 		top: 0,
 		left: 0,
@@ -520,29 +569,9 @@ function setDropEffect(e){
 	return false;
 }
 
-//threshold passing checker
-function thresholdPassed(difX, difY, threshold){
-	if (typeof threshold === "number"){
-		//straight number
-		if (Math.abs(difX) > threshold *.5 || Math.abs(difY) > threshold*.5){
-			return true
-		}
-	} else if (threshold.length === 2){
-		//Array(w,h)
-		if (Math.abs(difX) > threshold[0]*.5 || Math.abs(difY) > threshold[1]*.5) return true;
-	} else if(threshold.length === 4){
-		//Array(x1,y1,x2,y2)
-		if (!isBetween(difX, threshold[0], threshold[2]) || !isBetween(difX, threshold[1], threshold[3]))
-			return true;
-	} else if (typeof threshold === "function"){
-		//custom threshold funciton
-		return threshold(difX, difY);
-	}
-	return false;
-}
-
 //dragstate init
 function initDragparams($el, e){
+	$el.updateLimits();
 	if (!$el._dragparams) $el._dragparams = {};
 	$el._dragparams.initX = e.clientX
 	$el._dragparams.initY = e.clientY

@@ -141,13 +141,13 @@ function deepExtend(a){
 }
 
 //sinple clone of any value passed (mod instance init)
-function clone(a){
+function clone(a, fully){
 	if (a instanceof Array) {
 		return a.slice();
 	}
-	// if (isElement(a)){
-	// 	return a.cloneNode(true);
-	// }
+	if (fully && isElement(a)){
+		return a.cloneNode(true);
+	}
 	if (isObject(a)){
 		return deepExtend({}, a);
 	}
