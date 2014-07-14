@@ -1184,7 +1184,6 @@ Prop.prototype = {
 					return;
 				}
 
-
 				//redirect state, if returned any
 				if (setResult !== undefined) {
 					value = setResult;
@@ -1363,7 +1362,7 @@ Prop.prototype = {
 		//changed callback
 		//TODO: refuse changed callback to change self value by returning anything
 		var isChangedLock = 'isChangedTo' + value;
-		if (!self[isChangedLock]) {
+		if (!self[isChangedLock] && value !== oldValue) {
 			self[isChangedLock] = true;
 
 			var changedResult = self.callHook(self, 'changed', value, oldValue);
@@ -1372,19 +1371,18 @@ Prop.prototype = {
 			self[isChangedLock] = null;
 
 			//redirect state, if returned any
-			if (changedResult !== undefined) {
-				// self.value = changedResult;
-				self.setValue(changedResult);
-				// console.groupEnd()
-				return;
-			}
+			// if (changedResult !== undefined) {
+			// 	// self.value = changedResult;
+			// 	self.setValue(changedResult);
+			// 	// console.groupEnd()
+			// 	return;
+			// }
 
-			//catch redirect
-			if (self.value !== value) {
-				// console.groupEnd();
-				return;
-			}
-
+			// //catch redirect
+			// if (self.value !== value) {
+			// 	// console.groupEnd();
+			// 	return;
+			// }
 		}
 
 		//update attribute
@@ -1605,6 +1603,7 @@ Mod.create = function(target, props, parentMod){
 
 		//transfuse property
 		mod[propName] = prop;
+		// mod[propName] = new ModProp(prop);
 	}
 
 

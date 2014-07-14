@@ -66,7 +66,7 @@ var Draggable = Mod({
 			return value;
 		},
 		changed: function(){
-			this._updateLimits();
+			this.updateLimits();
 		}
 	},
 
@@ -157,8 +157,7 @@ var Draggable = Mod({
 		},
 
 		changed: function(){
-			updatePosition(this)
-
+			if (!this.mute) updatePosition(this)
 		}
 	},
 	y: {
@@ -184,13 +183,14 @@ var Draggable = Mod({
 			}
 
 			return round(value, this.precision)
-
 		},
 
 		changed: function(){
-			updatePosition(this);
+			if (!this.mute) updatePosition(this);
 		}
 	},
+	//whether to ignore position changing
+	mute: false,
 
 	//use native drag
 	native: {
@@ -226,7 +226,7 @@ var Draggable = Mod({
 			},
 
 			mousedown: function(e){
-				this._updateLimits();
+				this.updateLimits();
 				initDragparams(this, e);
 				this.dragstate = "threshold";
 			}
@@ -249,7 +249,7 @@ var Draggable = Mod({
 				//if threshold passed - go drag
 				if (thresholdPassed(difX, difY, this.threshold)) {
 					fire(this, 'dragstart', null, true)
-					this._startDrag(e);
+					this.startDrag(e);
 				}
 			},
 			'document mouseup, document mouseleave': function(e){
@@ -270,11 +270,11 @@ var Draggable = Mod({
 			},
 			'document selectstart': preventDefault,
 			'document mousemove': function(e){
-				this._doDrag(e)
+				this.doDrag(e)
 				fire(this, 'drag', null, true)
 			},
 			'document mouseup, document mouseleave': function(e){
-				this._stopDrag(e);
+				this.stopDrag(e);
 				fire(this, 'dragend', null, true);
 				this.dragstate = "idle"
 			}
@@ -313,7 +313,7 @@ var Draggable = Mod({
 
 			dragstart:  function(e){
 				//console.log("native dragstart")
-				this._startDrag(e);
+				this.startDrag(e);
 				e.dataTransfer.effectAllowed = 'all';
 
 				//hook drag image stub (native image is invisible)
@@ -322,7 +322,7 @@ var Draggable = Mod({
 				e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
 			},
 			dragend:  function(e){
-				this._stopDrag(e);
+				this.stopDrag(e);
 
 				//remove drag image stub
 				this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
@@ -335,7 +335,7 @@ var Draggable = Mod({
 				//ignore zero-movement
 				if (this._dragparams.clientX === e.clientX && this._dragparams.clientY === e.clientY) return e.stopImmediatePropagation();
 
-				this._doDrag(e);
+				this.doDrag(e);
 				//this.ondrag && this.ondrag.call(this);
 			},
 			dragover: setDropEffect
@@ -344,9 +344,9 @@ var Draggable = Mod({
 	},
 
 	//starts drag from event passed
-	_startDrag: function(e){
+	startDrag: function(e){
 		//define limits
-		this._updateLimits();
+		this.updateLimits();
 
 		var d = this._dragparams;
 
@@ -418,7 +418,7 @@ var Draggable = Mod({
 		}
 	},
 
-	_doDrag: function(e) {
+	doDrag: function(e) {
 		//console.log("drag", e)
 		var d = this._dragparams;
 
@@ -449,14 +449,14 @@ var Draggable = Mod({
 		// this.y += difY;
 	},
 
-	_stopDrag: function(e){
-		// console.log("_stopDrag")
+	stopDrag: function(e){
+		// console.log("stopDrag")
 		delete this._dragparams;
 	},
 
 
 	//updates movement restrictions
-	_updateLimits: function(){
+	updateLimits: function(){
 		if (!this.isAttached) return;
 
 		//it is here because not always element is in DOM when constructor inits
@@ -498,7 +498,7 @@ var Draggable = Mod({
 	},
 
 	'window resize': function(){
-		this._updateLimits();
+		this.updateLimits();
 	}
 })
 

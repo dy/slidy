@@ -14,12 +14,12 @@ describe("Slidy", function(){
 
 		//update value
 		on(el, "change", function(){
-			// console.log("value changed", this.value)
+			// console.log("redraw label", this.value, this.activePicker)
 			if (this.activePicker) this.activePicker.innerHTML = this.value;
 		})
 
 		//create slidy
-		new Slidy(el, opts);
+		Slidy(el, opts);
 
 		//show min/max
 		el.children[0].innerHTML = el.min.length && el.min || round(el.min, .01);
@@ -28,6 +28,8 @@ describe("Slidy", function(){
 
 		return el;
 	}
+
+
 
 	describe("shapes", function(){
 		it("horizonal", function(){
