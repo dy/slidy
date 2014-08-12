@@ -12,6 +12,8 @@ describe("Slidy", function(){
 		].join("");
 		document.body.appendChild(el);
 
+		extend(el, opts);
+
 		//update value
 		on(el, "change", function(){
 			// console.log("redraw label", this.value, this.activePicker)
@@ -19,7 +21,7 @@ describe("Slidy", function(){
 		})
 
 		//create slidy
-		Slidy(el, opts);
+		Slidy(el);
 
 		//show min/max
 		el.children[0].innerHTML = el.min.length && el.min || round(el.min, .01);

@@ -1,7 +1,11 @@
 ﻿//TODO: make ghost insteadof moving self
 var Draggable = Mod({
+	extends: 'div',
 	name: 'draggable',
 
+	/**
+	* Lifecycle
+	*/
 	init: function(opts){
 		// console.group("init", opts)
 	},
@@ -21,6 +25,9 @@ var Draggable = Mod({
 		}
 	},
 
+	/**
+	* Options
+	*/
 	//how many pixels to omit before switching to drag state
 	threshold: {
 		//Number/Array[w,h]/Array[x,y,x,y]/function (custom shape)
@@ -31,13 +38,13 @@ var Draggable = Mod({
 			if (isFn(val)){
 				return val();
 			} else {
-				// console.log("get ts", val)
+				// console.log("get ts", this.threshold)
 				return val;
 			}
 		},
 
 		set: function(val){
-			if (typeof val === "number"){
+			if (isNumber(val)){
 				//ts
 				// console.log("set ts", val, [-val*.5, -val*.5, val*.5, val*.5])
 				return [-val*.5, -val*.5, val*.5, val*.5];
@@ -50,11 +57,13 @@ var Draggable = Mod({
 			} else if (isFn(val)){
 				//custom val funciton
 				return val
+			} else {
+				return [0,0,0,0]
 			}
 		}
 	},
 
-	//whether to autoscroll on reaching the border of the screen
+	//autoscroll on reaching the border of the screen
 	autoscroll: false,
 
 	//null is no restrictions
@@ -117,12 +126,10 @@ var Draggable = Mod({
 	axis: {
 		x: {
 			before: function(){
-				console.log("before x")
 			},
 			threshold: {
 				get: function(val){
-					console.log("get")
-					val = Draggable.threshold.get(val);
+					val = Draggable.fn.threshold.get(val);
 					val[1] = -9999;
 					val[3] = 9999;
 					return val;
@@ -131,8 +138,8 @@ var Draggable = Mod({
 		},
 		y: {
 			threshold: {
-				get: function(){
-					val = Draggable.threshold.get(val);
+				get: function(val){
+					val = Draggable.fn.threshold.get(val);
 					val[0] = -9999;
 					val[2] = 9999;
 					return val;
@@ -314,13 +321,12 @@ var Draggable = Mod({
 			},
 			'document selectstart': preventDefault,
 			'document mousemove': function(e){
-				this.doDrag(e)
+				this.doDrag(e);
 				fire(this, 'drag', null, true)
 			},
 			'document mouseup, document mouseleave': function(e){
 				this.stopDrag(e);
 				fire(this, 'dragend', null, true);
-				this.dragstate = "idle"
 			}
 		},
 
@@ -334,55 +340,6 @@ var Draggable = Mod({
 		},
 		out: {
 
-		},
-
-		//native drag
-		native: {
-			before: function(){
-				// console.log("draggable before native")
-				//hang proper styles
-				css(this, {
-					"user-drag": "element",
-					"cursor": "pointer!important"
-				})
-
-				//make restricting area allowable to drop
-				on(this.within, 'dragover', setDropEffect)
-			},
-			after: function(){
-				//console.log("after native")
-				css(this, "user-drag", "none");
-				off(this.within, 'dragover', setDropEffect)
-			},
-
-			dragstart:  function(e){
-				//console.log("native dragstart")
-				this.startDrag(e);
-				e.dataTransfer.effectAllowed = 'all';
-
-				//hook drag image stub (native image is invisible)
-				this.$dragImageStub = document.createElement('div');
-				this.parentNode.insertBefore(this.$dragImageStub, this);
-				e.dataTransfer.setDragImage(this.$dragImageStub, 0, 0);
-			},
-			dragend:  function(e){
-				this.stopDrag(e);
-
-				//remove drag image stub
-				this.$dragImageStub.parentNode.removeChild(this.$dragImageStub);
-				delete this.$dragImageStub;
-			},
-			drag:  function(e){
-				//ignore final native drag event
-				if (e.x === 0 && e.y === 0) return;
-
-				//ignore zero-movement
-				if (this._dragparams.clientX === e.clientX && this._dragparams.clientY === e.clientY) return e.stopImmediatePropagation();
-
-				this.doDrag(e);
-				//this.ondrag && this.ondrag.call(this);
-			},
-			dragover: setDropEffect
 		}
 	},
 
@@ -456,13 +413,11 @@ var Draggable = Mod({
 		d.sniperRunX = 0;
 		d.sniperRunY = 0;
 
-		if (this.dragstate !== "native") {
-			this.dragstate = "drag";
-		}
+		this.dragstate = "drag";
 	},
 
 	doDrag: function(e) {
-		//console.log("drag", e)
+		console.log("drag")
 		var d = this._dragparams;
 
 		var difX = e.clientX - d.clientX;
@@ -493,8 +448,9 @@ var Draggable = Mod({
 	},
 
 	stopDrag: function(e){
-		// console.log("stopDrag")
+		console.log("stopDrag")
 		delete this._dragparams;
+		this.dragstate = "idle"
 	},
 
 
@@ -532,18 +488,26 @@ var Draggable = Mod({
 
 	//movement restrictions
 	_limits: {
-		top: 0,
-		left: 0,
-		bottom: 0,
-		right: 0
+		init: function(){
+			return {
+				top: 0,
+				left: 0,
+				bottom: 0,
+				right: 0
+			}
+		}
 	},
 
 	//self offsets cache
 	_offsets: {
-		top: 0,
-		left: 0,
-		bottom: 0,
-		right: 0
+		init: function(){
+			return {
+				top: 0,
+				left: 0,
+				bottom: 0,
+				right: 0
+			}
+		}
 	},
 
 	'window resize': function(){

@@ -410,7 +410,8 @@ var Slidy = Mod({
 	createPicker: function(){
 		var self = this, picker;
 
-		picker = Draggable({
+		var picker = document.createElement('div');
+		extend(picker, {
 			within: this,
 
 			created: function(){
@@ -442,6 +443,8 @@ var Slidy = Mod({
 
 			native: false
 		});
+
+		Draggable(picker)
 
 		picker.number = this.pickers.length;
 

@@ -32,14 +32,16 @@ describe("Draggable", function(){
 		})
 	})
 
-	it("restrict x", function(){
-		createDraggable("restrict x", {
+	it("x", function(){
+		createDraggable("x", {
 			axis: 'x'
 		})
 	})
 
 	it("y", function(){
-		// createDraggable("y")
+		createDraggable("y", {
+			axis: 'y'
+		})
 	})
 
 	it("circular", function(){
@@ -87,7 +89,11 @@ describe("Draggable", function(){
 		drEl.innerHTML = name;
 		el.appendChild(drEl);
 
-		new Draggable(drEl, opts);
+		for( var name in opts){
+			drEl[name] = opts[name];
+		}
+
+		new Draggable(drEl);
 
 		on(drEl, 'threshold', paintThreshold);
 		on(drEl, 'dragstart', renderHelpers);
