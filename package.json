@@ -12,7 +12,9 @@
     "draggy": "*"
   },
   "devDependencies": {
-    "mocha": "*"
+    "mocha": "*",
+    "mocha-phantomjs": "*",
+    "require-stub": "*"
   },
   "scripts": {
     "test": "mocha"

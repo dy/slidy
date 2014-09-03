@@ -1,4 +1,7 @@
-﻿/**
+﻿var Draggy = require('draggy');
+
+
+/**
 * Range input mod
 * @module  slidy
 */
@@ -404,6 +407,7 @@ var Slidy = module.exorts = Mod({
 	 */
 
 	value: {
+		//TODO: fix case where native picker is a target (polyfill or extend).
 		init: function(v){
 			// console.log("init value", v, this.values)
 			//predefine single value
@@ -457,7 +461,9 @@ var Slidy = module.exorts = Mod({
 
 
 	/**
-	 * Set of values for each picker
+	 * Set of values for each picker.
+	 * You can’t store it another way: pickers itself has no values.
+	 *
 	 * @type {Array}
 	 */
 
