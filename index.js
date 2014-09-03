@@ -1,88 +1,40 @@
 ﻿/**
 * Range input mod
+* @module  slidy
 */
-var Slidy = Mod({
-	name: 'slidy',
+
+var Slidy = module.exorts = Mod({
+
+
+
+	/*                       I N I T                           */
+
 
 	init: function(){
 		var self = this;
-		// console.log("slidy init")
+		console.log("slidy init")
 	},
 
 	created: function(){
 		var self = this, picker;
 
-		// console.log("slidy created");
+		console.log("slidy created");
 
 		//fire initial set
 		// fire(this, "change");
 	},
 
-	attached: function(e){
-		// console.log("slidy attached")
-		//set proper positioning for all pickers
-	},
 
-	//active picker value
-	value: {
-		init: function(v){
-			// console.log("init value", v, this.values)
-			//predefine single value
-			if (!this.values.length) this.values.push(v);
 
-			//create pickers according to list of values
-			for (var i = 0; i < this.values.length; i++){
-				// console.log("add picker", i)
-				this.createPicker();
-			}
-		},
-		set: function(value, old){
-			var result;
+	/*                       O P T I O N S                     */
 
-			// if (!this.activePicker) return;
-			// console.log("set value", value, old)
 
-			if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
+	/**
+	 * Placing type
+	 * @enum {string}
+	 * @default 'horizontal'
+	 */
 
-			if (value && value.length === 2) {
-				result = [];
-				result[0] = round(between(value[0], this.min[0], this.max[0]), this.step)
-				result[1] = round(between(value[1], this.min[1], this.max[1]), this.step)
-				if (!result[0] && result[0] !== 0) result[0] = old[0];
-				if (!result[1] && result[1] !== 0) result[1] = old[1];
-				value = result;
-			}
-			//one-dim value
-			else {
-				value = parseFloat(value);
-				if (isNaN(value)) return old;
-
-				result = round(between(value, this.min, this.max), this.step);
-			}
-
-			return result;
-		},
-
-		changed: function(val, old){
-			// console.log("changed value", val, old)
-
-			if (this.activePicker) this.values[this.activePicker.number] = val;
-			else this.values[0] = val;
-
-			this.updatePosition();
-
-			fire(this, "change")
-		}
-	},
-
-	//set of values for each picker
-	values: {
-		init: function(opt){
-			return opt || [];
-		}
-	},
-
-	//placing type
 	type:{
 		init: "horizontal",
 		"horizontal": {
@@ -332,9 +284,13 @@ var Slidy = Mod({
 			}
 		}
 	},
-	updatePosition: noop,
 
-	//value limits
+
+	/**
+	 * Value limits
+	 * @type {number}
+	 */
+
 	min: {
 		//predefined value type obliges parsing recognition as a value
 		init: 0,
@@ -351,7 +307,11 @@ var Slidy = Mod({
 		}
 	},
 
-	//minimal step to bind final value
+
+	/**
+	 * Minimal step to bind final value
+	 */
+
 	step: {
 		init: function(value){
 			var range;
@@ -371,22 +331,50 @@ var Slidy = Mod({
 		}
 	},
 
-	//TODO Range
-	//jquery-way
+
+	/**
+	 * Range mode
+	 * @todo
+	 */
+
 	range: true, //min, max
 
-	//TODO snapping function: rigid/loose
-	snap: false,
-	//?or precision?
 
-	//TODO: focusable, controllable
+	/**
+	 * Snapping function
+	 * @todo
+	 * @note or precision?
+	 */
+
+	snap: false,
+
+
+	/**
+	 * Focusable, controllable
+	 *
+	 * @todo
+	 */
+
 	keyboard: true,
 
-	//TODO
+
+	/**
+	 * Ignore sets
+	 *
+	 * @todo
+	 */
+
 	readonly: false,
 
-	//TODO whether to repeat either by one axis if one dimension or by both axis or one pointed if two dimensions
-	//false, true, [bool, bool]
+
+	/**
+	 * Repeat either by one axis if one dimension
+	 * or by both axis or one pointed if two dimensions
+	 *
+	 * @enum {bool}
+	 * @default true
+	 */
+
 	repeat: {
 		init: false,
 		changed: function(repeat){
@@ -394,23 +382,117 @@ var Slidy = Mod({
 		}
 	},
 
-	//list of pickers
+
+
+	/*                            A P I                          */
+
+
+	/**
+	 * List of pickers
+	 *
+	 * @type {Array}
+	 */
+
 	pickers: {
 		init: function(){return []}
 	},
 
-	//set option for all pickers instances
+
+	/**
+	 * Current picker value
+	 * @enum {(Array|number)}
+	 */
+
+	value: {
+		init: function(v){
+			// console.log("init value", v, this.values)
+			//predefine single value
+			if (!this.values.length) this.values.push(v);
+
+			//create pickers according to list of values
+			for (var i = 0; i < this.values.length; i++){
+				// console.log("add picker", i)
+				this.createPicker();
+			}
+		},
+
+		set: function(value, old){
+			var result;
+
+			// if (!this.activePicker) return;
+			// console.log("set value", value, old)
+
+			if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
+
+			if (value && value.length === 2) {
+				result = [];
+				result[0] = round(between(value[0], this.min[0], this.max[0]), this.step)
+				result[1] = round(between(value[1], this.min[1], this.max[1]), this.step)
+				if (!result[0] && result[0] !== 0) result[0] = old[0];
+				if (!result[1] && result[1] !== 0) result[1] = old[1];
+				value = result;
+			}
+			//one-dim value
+			else {
+				value = parseFloat(value);
+				if (isNaN(value)) return old;
+
+				result = round(between(value, this.min, this.max), this.step);
+			}
+
+			return result;
+		},
+
+		changed: function(val, old){
+			// console.log("changed value", val, old)
+
+			if (this.activePicker) this.values[this.activePicker.number] = val;
+			else this.values[0] = val;
+
+			this.updatePosition();
+
+			fire(this, "change")
+		}
+	},
+
+
+	/**
+	 * Set of values for each picker
+	 * @type {Array}
+	 */
+
+	values: {
+		init: function(opt){
+			return opt || [];
+		}
+	},
+
+
+	/**
+	 * Set option for all pickers instances
+	 *
+	 * @param {string} name Option name
+	 * @param {*} value Option value
+	 */
+
 	setPickersOption: function(name, value){
 		for (var i = 0; i < this.pickers.length; i++){
 			this.pickers[i][name] = value
 		}
 	},
 
-	//create new picker
+
+	/**
+	 * Create new picker
+	 *
+	 * @return {Draggy} New picker created
+	 */
+
 	createPicker: function(){
-		var self = this, picker;
+		var self = this;
 
 		var picker = document.createElement('div');
+
 		extend(picker, {
 			within: this,
 
@@ -453,7 +535,16 @@ var Slidy = Mod({
 		this.appendChild(picker);
 	},
 
-	//get closest picker to the place of event
+
+	/**
+	 * Get closest picker to the place of event
+	 *
+	 * @param {[type]} x [description]
+	 * @param {[type]} y [description]
+	 *
+	 * @return {[type]} [description]
+	 */
+
 	getClosestPickerNumber: function(x,y){
 		//between all pickers choose the one with closest x,y
 		var minX, minY, minR = 9999, picker, minPicker;
@@ -469,6 +560,13 @@ var Slidy = Mod({
 
 		return minPicker;
 	},
+
+
+	/**
+	 * Current picker dragging
+	 *
+	 * @type {Draggy}
+	 */
 
 	activePicker: {
 		set: function(number){
@@ -491,7 +589,17 @@ var Slidy = Mod({
 	},
 
 
-	//-------Interactions
+
+	/*                     E V E N T S                    */
+
+
+	/**
+	 * Always move closest picker to the place of click
+	 *
+	 * @param {Event} e
+	 * @event
+	 */
+
 	mousedown: function(e){
 		//make closest picker active
 		var offsets = this.getBoundingClientRect();
@@ -504,15 +612,20 @@ var Slidy = Mod({
 		for (var i = 0; i < this.pickers.length; i++){
 			picker = this.pickers[i];
 			if (picker === this.activePicker) continue;
-			picker.dragstate = "idle"
+			picker.dragstate = "idle";
 		}
 
 		//make new picker drag
 		this.activePicker.startDrag(e);
 	},
 
+
+	/**
+	 * Update pickers position on resize
+	 */
+
 	'window resize': function(){
 		this.activePicker.updateLimits();
-		this.updatePosition()
+		this.updatePosition();
 	}
-})
+});
