@@ -137,24 +137,25 @@
 
 <div id="mocha"></div>
 
-<!--<script src="../node_modules/jquery/dist/jquery.min.js"></script>-->
-
 <script src="../node_modules/mocha/mocha.js"></script>
 <script src="../node_modules/chai/chai.js"></script>
-
-
-<script src="../src/polyfill.js"></script>
-
-<script src="../node_modules/mod-constructor/dist/mod.js"></script>
-<script src="../index.js"></script>
 
 <script>
 	mocha.setup('bdd');
 	assert = chai.assert;
 </script>
 
+
+<!-- dev -->
+<script src="../node_modules/mod-constructor/dist/mod.js"></script>
+<script src="../src/polyfill.js"></script>
+<script src="../node_modules/require-stub/index.js"></script>
+<script src="../index.js"></script>
+
+
 <script src="testHelpers.js"></script>
 <script src="index.js"></script>
+
 
 <script>
 	mocha.checkLeaks();
