@@ -444,7 +444,7 @@ var Slidy = Mod({
 			native: false
 		});
 
-		Draggable(picker)
+		Draggable(picker);
 
 		picker.number = this.pickers.length;
 

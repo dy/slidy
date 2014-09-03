@@ -1,34 +1,53 @@
 {
   "name": "slidy",
-  "version": "0.1.1",
+  "version": "0.0.0",
+  "description": "Any kind of slider",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "grunt-closure-compiler": "~0.0.21",
+    "chai": "~1.9.1",
+    "grunt-contrib-concat": "~0.5.0",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-uglify": "~0.5.1",
+    "grunt-homemade": "~0.2.3",
+    "grunt-contrib-watch": "~0.6.1",
+    "gulp-autoprefixer": "~0.0.8",
+    "gulp": "~3.8.7",
+    "gulp-clean": "~0.3.1",
+    "gulp-closure-compiler": "~0.2.2",
+    "gulp-livereload": "~2.1.0",
+    "gulp-concat": "~2.3.4",
+    "gulp-exec": "~2.1.0",
+    "gulp-es6-transpiler": "~0.2.0",
+    "gulp-traceur": "~0.12.0",
+    "mod-js": "~0.2.8",
+    "gulp-typescript": "~0.3.1",
+    "mod-constructor": "~0.2.9"
+  },
   "devDependencies": {
-    "gulp": "latest",
-    "grunt-contrib-jshint": "latest",
-    "grunt-contrib-qunit": "latest",
-    "grunt-contrib-concat": "latest",
-    "grunt-contrib-watch": "latest",
-    "grunt-contrib-uglify": "latest",
-    "grunt-traceur-build": "latest",
-    "gulp-traceur": "latest",
-    "grunt-homemade": "latest",
-    "grunt-closure-compiler": "latest",
-    "gulp-livereload": "latest",
-    "gulp-concat": "latest",
-    "gulp-autoprefixer": "latest",
-    "gulp-jshint": "latest",
-    "gulp-watch": "latest",
-    "gulp-uglify": "latest",
-    "gulp-rename": "latest",
-    "gulp-clean": "latest",
-    "gulp-notify": "latest",
-    "gulp-cache": "latest",
-    "gulp-exec": "latest",
-    "gulp-util": "latest",
-    "gulp-es6-transpiler": "latest",
-    "gulp-closure-compiler": "latest",
-    "gulp-typescript": "latest",
-    "gulp-ts": "latest",
-    "gulp-tsc": "latest",
-    "mod-js": "~0.2.5"
-  }
+    "mocha": "~1.18.2"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfcreative/slidy"
+  },
+  "keywords": [
+    "slider",
+    "scrollbar",
+    "range",
+    "picker",
+    "input"
+  ],
+  "author": "dfcreative",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dfcreative/slidy/issues"
+  },
+  "homepage": "https://github.com/dfcreative/slidy"
 }
