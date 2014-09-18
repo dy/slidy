@@ -5,36 +5,13 @@
 
 <style>
 	/* Interactions painter layer*/
-	canvas{
+	.painter{
 		position: absolute;
 		top: 0;
 		left: 0;
 		z-index: 999;
 		pointer-events: none;
 	}
-
-	/*------------- Draggable stuff ----------*/
-	.draggable-container{
-		/*position: relative;*/
-		padding:2vh 2vw;
-		background: #f3f3f3;
-		/*min-height: 300px;*/
-		margin: 2vh 0;
-		position: relative;
-	}
-
-	.draggable-container > .draggable{
-		background: rgba(120,130,140,1);
-		width: 10vh;
-		height: 10vh;
-		color: white;
-		font-size: 13px;
-		padding: 1vh 1vw;
-		text-align: center;
-		position: relative;
-		cursor: move;
-	}
-
 
 
 	/*------------- Slidy stuff -------------*/
@@ -89,7 +66,7 @@
 		box-shadow: inset 0 0 0 2px black;
 	}
 
-	.slidy > .draggable{
+	.slidy > .draggy{
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -137,6 +114,10 @@
 
 <div id="mocha"></div>
 
+
+<canvas class="painter"></canvas>
+
+
 <script src="../node_modules/mocha/mocha.js"></script>
 <script src="../node_modules/chai/chai.js"></script>
 
@@ -149,6 +130,20 @@
 <!-- dev -->
 <script src="../node_modules/mod-constructor/dist/mod.js"></script>
 <script src="../node_modules/require-stub/index.js"></script>
+<script src="../node_modules/extend/index.js"></script>
+<script src="../node_modules/mucss/index.js"></script>
+<script src="../node_modules/mutation-observer/index.js"></script>
+<script src="../node_modules/matches-selector/index.js"></script>
+<script src="../node_modules/mutypes/index.js"></script>
+<script src="../node_modules/each-csv/index.js"></script>
+<script src="../node_modules/mustring/index.js"></script>
+<script src="../node_modules/muparse/index.js"></script>
+<script src="../node_modules/muevents/index.js"></script>
+<script src="../node_modules/tiny-element/index.js"></script>
+<script src="../node_modules/intersects/index.js"></script>
+<script src="../node_modules/mumath/index.js"></script>
+<script src="../node_modules/lifecycle-events/index.js"></script>
+<script src="../node_modules/draggy/index.js"></script>
 <script src="../index.js"></script>
 
 

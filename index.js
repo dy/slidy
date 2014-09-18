@@ -1,43 +1,49 @@
 ﻿var Draggy = require('draggy');
+var extend = require('extend');
+var m = require('mumath');
+var parse = require('muparse');
+var lifecycle = require('lifecycle-events');
 
 
 /**
-* Range input mod
+* Range input component
 * @module  slidy
 */
-
 var Slidy = module.exorts = Mod({
 
 
 
-	/*                       I N I T                           */
+/* ---------------------------------  i  N  I  t  ------------------------------------ */
 
 
 	init: function(){
 		var self = this;
-		console.log("slidy init")
 	},
 
 	created: function(){
 		var self = this, picker;
-
-		console.log("slidy created");
+		// console.log("slidy created");
 
 		//fire initial set
 		// fire(this, "change");
+
+		//enable lifecycle events
+		lifecycle.enableMutations(this);
+	},
+
+	attached: function(){
+		//update pickers position to the self container
 	},
 
 
 
-	/*                       O P T I O N S                     */
+/* -------------------------------  O  p  t  i  o  n  S  ----------------------------- */
 
 
-	/**
-	 * Placing type
+	/** Placing type
 	 * @enum {string}
 	 * @default 'horizontal'
 	 */
-
 	type:{
 		init: "horizontal",
 		"horizontal": {
@@ -289,44 +295,28 @@ var Slidy = module.exorts = Mod({
 	},
 
 
-	/**
-	 * Value limits
+	/** Value limits
 	 * @type {number}
 	 */
-
 	min: {
 		//predefined value type obliges parsing recognition as a value
-		init: 0,
-		set: function(value){
-			// console.log("set min", value, /,/.test(value))
-			if (typeof value === 'string' && /,/.test(value)) return parseArray(value);
-		}
+		init: 0
 	},
 	max: {
-		init: 100,
-		set: function(value){
-			// console.log("set max", value)
-			if (typeof value === 'string' && /,/.test(value)) return parseArray(value);
-		}
+		init: 100
 	},
 
 
-	/**
-	 * Minimal step to bind final value
+	/** Minimal step to bind final value
 	 */
-
 	step: {
 		init: function(value){
 			var range;
 			if (value !== undefined) return value;
 
-			//detect undefined step automatically based on min/max range (1/100 by default)
+			//detect step automatically based on min/max range (1/100 by default)
 			if (this.max) {
-				if (this.max.length == 2) {
-					range = Math.abs(this.max[0] - this.min[0]);
-				} else {
-					range = Math.abs(this.max - this.min);
-				}
+				range = Math.abs(this.max - this.min);
 				return range <= 100 ? .01 : 1;
 			} else {
 				return 1;
@@ -335,114 +325,107 @@ var Slidy = module.exorts = Mod({
 	},
 
 
-	/**
-	 * Range mode
+	/** Range mode
 	 * @todo
 	 */
-
 	range: true, //min, max
 
 
-	/**
-	 * Snapping function
+	/** Snapping function
 	 * @todo
 	 * @note or precision?
 	 */
-
 	snap: false,
 
 
-	/**
-	 * Focusable, controllable
+	/** Focusable, controllable
 	 *
 	 * @todo
 	 */
-
 	keyboard: true,
 
 
-	/**
-	 * Ignore sets
+	/** Ignore sets
 	 *
 	 * @todo
 	 */
-
 	readonly: false,
 
 
-	/**
-	 * Repeat either by one axis if one dimension
+	/** Repeat either by one axis if one dimension
 	 * or by both axis or one pointed if two dimensions
 	 *
 	 * @enum {bool}
 	 * @default true
 	 */
-
 	repeat: {
 		init: false,
 		changed: function(repeat){
-			if (this.activePicker) this.activePicker.repeat = repeat;
 		}
 	},
 
 
 
-	/*                            A P I                          */
+/* ------------------------------  W  o  r  K  --------------------------------------- */
 
 
-	/**
-	 * List of pickers
+	/** List of pickers
 	 *
 	 * @type {Array}
 	 */
-
 	pickers: {
-		init: function(){return []}
+		init: function(v){
+			var pickers = [];
+
+			//create number of pickers according to the value dimension
+			if (type.isArray(this.value)) {
+				for (var i = 0, l = this.value.length; i < l; i++){
+					pickers.push(this.createPicker());
+				}
+			} else {
+				pickers.push(this.createPicker());
+			}
+
+			return pickers;
+		}
 	},
 
 
 	/**
-	 * Current picker value
+	 * Slidy value
+	 * keeps list of values in case of multiple pickers
+	 *
+	 * @example
+	 * [[0,0], [1,2], [3,4]] - for the case of three 2-dim pickers
+	 * [1,2,3] - for the case of three 1-dim pickers
+	 * [1,2] - for the case of one 2-dim picker or 2 1-dim pickers (range)
 	 * @enum {(Array|number)}
 	 */
-
 	value: {
 		//TODO: fix case where native picker is a target (polyfill or extend).
+		//detect number of pickers based on initial value
 		init: function(v){
+			var value;
 			// console.log("init value", v, this.values)
-			//predefine single value
-			if (!this.values.length) this.values.push(v);
 
-			//create pickers according to list of values
-			for (var i = 0; i < this.values.length; i++){
-				// console.log("add picker", i)
-				this.createPicker();
+			//if value is array-like - create n-dim array (suppose that multipickers are passed in another way)
+			if (type.isString(v) && /,/.test(v)) {
+				value = parse.array(v);
 			}
+
+			//else suppose single value
+			else {
+				value = parseFloat(v) || 0;
+			}
+
+			return value;
 		},
 
 		set: function(value, old){
 			var result;
 
-			// if (!this.activePicker) return;
-			// console.log("set value", value, old)
-
-			if (typeof value === "string" && /,/.test(value)) value = parseArray(value);
-
-			if (value && value.length === 2) {
-				result = [];
-				result[0] = round(between(value[0], this.min[0], this.max[0]), this.step)
-				result[1] = round(between(value[1], this.min[1], this.max[1]), this.step)
-				if (!result[0] && result[0] !== 0) result[0] = old[0];
-				if (!result[1] && result[1] !== 0) result[1] = old[1];
-				value = result;
-			}
-			//one-dim value
-			else {
-				value = parseFloat(value);
-				if (isNaN(value)) return old;
-
-				result = round(between(value, this.min, this.max), this.step);
-			}
+			result = m.between(value, this.min, this.max);
+			result = m.toPrecision(result, this.step);
 
 			return result;
 		},
@@ -450,95 +433,45 @@ var Slidy = module.exorts = Mod({
 		changed: function(val, old){
 			// console.log("changed value", val, old)
 
-			if (this.activePicker) this.values[this.activePicker.number] = val;
-			else this.values[0] = val;
+			// if (this.activePicker) this.values[this.activePicker.number] = val;
+			// else this.values[0] = val;
 
-			this.updatePosition();
+			// this.updatePosition();
 
-			fire(this, "change")
+			// fire(this, "change");
 		}
 	},
 
 
 	/**
-	 * Set of values for each picker.
-	 * You can’t store it another way: pickers itself has no values.
-	 *
-	 * @type {Array}
-	 */
-
-	values: {
-		init: function(opt){
-			return opt || [];
-		}
-	},
-
-
-	/**
-	 * Set option for all pickers instances
+	 * Set option for all picker instances
 	 *
 	 * @param {string} name Option name
 	 * @param {*} value Option value
 	 */
-
 	setPickersOption: function(name, value){
-		for (var i = 0; i < this.pickers.length; i++){
-			this.pickers[i][name] = value
+		for (var i = this.pickers.length; i--;){
+			this.pickers[i][name] = value;
 		}
 	},
 
 
 	/**
-	 * Create new picker
+	 * Create a new picker
 	 *
 	 * @return {Draggy} New picker created
 	 */
-
 	createPicker: function(){
 		var self = this;
 
-		var picker = document.createElement('div');
-
-		extend(picker, {
+		var picker = Draggy({
 			within: this,
-
-			created: function(){
-				// console.log("picker created", this.threshold)
-			},
-
-			attached: function(e){
-				// console.log("picker attached", this.number)
-				//correct pin (centrize based on width of picker)
-				this.pin = [this.offsetWidth / 2, this.offsetHeight / 2];
-				//set initial position
-				self.activePicker = this.number;
-				self.updatePosition();
-				// console.groupEnd()
-			},
-
-			dragstart: function(e){
-				// console.log("dstart")
-				disableSelection(document.documentElement);
-				css(document.documentElement, {"cursor": "none"});
-			},
-			dragend: function(e){
-				// console.log("dend")
-				enableSelection(document.documentElement);
-				css(document.documentElement, {"cursor": null});
-			},
-
-			threshold: 0,
-
-			native: false
+			pin: false
 		});
 
-		Draggable(picker);
-
-		picker.number = this.pickers.length;
-
-		this.pickers.push(picker);
-
 		this.appendChild(picker);
+
+		return picker;
 	},
 
 
@@ -550,8 +483,7 @@ var Slidy = module.exorts = Mod({
 	 *
 	 * @return {[type]} [description]
 	 */
-
-	getClosestPickerNumber: function(x,y){
+	getClosestPicker: function(x,y){
 		//between all pickers choose the one with closest x,y
 		var minX, minY, minR = 9999, picker, minPicker;
 
@@ -574,29 +506,29 @@ var Slidy = module.exorts = Mod({
 	 * @type {Draggy}
 	 */
 
-	activePicker: {
-		set: function(number){
-			// console.log("set active picker", number)
-			if (typeof number === "number"){
-				//set value to the active picker’s value
-				// console.log(this.values, this.value)
+	// activePicker: {
+	// 	set: function(number){
+	// 		// console.log("set active picker", number)
+	// 		if (typeof number === "number"){
+	// 			//set value to the active picker’s value
+	// 			// console.log(this.values, this.value)
 
-				return this.pickers[number];
-			} else {
-				return number
-			}
-		},
+	// 			return this.pickers[number];
+	// 		} else {
+	// 			return number;
+	// 		}
+	// 	},
 
-		changed: function(picker){
-			// console.log("ap changed", picker)
-			//set value to active picker’s one
-			this.value = this.values[picker.number];
-		}
-	},
+	// 	changed: function(picker){
+	// 		// console.log("ap changed", picker)
+	// 		//set value to active picker’s one
+	// 		this.value = this.values[picker.number];
+	// 	}
+	// },
 
 
 
-	/*                     E V E N T S                    */
+/* ------------------------------  E  V  E  N  T  ------------------------------------ */
 
 
 	/**
@@ -608,21 +540,21 @@ var Slidy = module.exorts = Mod({
 
 	mousedown: function(e){
 		//make closest picker active
-		var offsets = this.getBoundingClientRect();
-		// console.log("mousedown", e.clientX - offsets.left, e.clientY - offsets.top)
-		var number = this.getClosestPickerNumber(e.clientX - offsets.left, e.clientY - offsets.top);
-		this.activePicker = number;
+		// var offsets = this.getBoundingClientRect();
+		// // console.log("mousedown", e.clientX - offsets.left, e.clientY - offsets.top)
+		// var number = this.getClosestPickerNumber(e.clientX - offsets.left, e.clientY - offsets.top);
+		// this.activePicker = number;
 
-		//disable every picker but active
-		var picker;
-		for (var i = 0; i < this.pickers.length; i++){
-			picker = this.pickers[i];
-			if (picker === this.activePicker) continue;
-			picker.dragstate = "idle";
-		}
+		// //disable every picker but active
+		// var picker;
+		// for (var i = 0; i < this.pickers.length; i++){
+		// 	picker = this.pickers[i];
+		// 	if (picker === this.activePicker) continue;
+		// 	picker.dragstate = "idle";
+		// }
 
-		//make new picker drag
-		this.activePicker.startDrag(e);
+		// //make new picker drag
+		// this.activePicker.startDrag(e);
 	},
 
 
@@ -631,7 +563,7 @@ var Slidy = module.exorts = Mod({
 	 */
 
 	'window resize': function(){
-		this.activePicker.updateLimits();
-		this.updatePosition();
+		// this.activePicker.updateLimits();
+		// this.updatePosition();
 	}
 });

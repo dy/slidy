@@ -5,7 +5,7 @@ describe("Slidy", function(){
 	function createSlider(name, opts){
 		var el = document.createElement("div");
 		el.title = name;
-		el.className = name;
+		el.className = name + ' slidy';
 		el.innerHTML = [
 			'<span class="min">-</span>',
 			'<span class="max">+</span>',
@@ -15,10 +15,10 @@ describe("Slidy", function(){
 		extend(el, opts);
 
 		//update value
-		on(el, "change", function(){
+		el.addEventListener("change", function(){
 			// console.log("redraw label", this.value, this.activePicker)
 			if (this.activePicker) this.activePicker.innerHTML = this.value;
-		})
+		});
 
 		//create slidy
 		Slidy(el);
@@ -34,7 +34,7 @@ describe("Slidy", function(){
 
 
 	describe("shapes", function(){
-		it("horizonal", function(){
+		it.only("horizonal", function(){
 			//TODO: why not centered by y?
 
 			var el = createSlider("horizontal", {

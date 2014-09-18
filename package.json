@@ -9,7 +9,11 @@
   "dependencies": {
     "mod-constructor": "*",
     "mucss": "*",
-    "draggy": "*"
+    "draggy": "*",
+    "mumath": "*",
+    "muparse": "*",
+    "lifecycle-events": "*",
+    "tiny-element": "*"
   },
   "devDependencies": {
     "mocha": "*",
