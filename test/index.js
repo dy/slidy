@@ -24,8 +24,8 @@ describe("Slidy", function(){
 		Slidy(el);
 
 		//show min/max
-		el.children[0].innerHTML = el.min.length && el.min || round(el.min, .01);
-		el.children[1].innerHTML = el.max.length && el.max || round(el.max, .01);
+		el.children[0].innerHTML = el.min.length && el.min || el.min.toPrecision(2);
+		el.children[1].innerHTML = el.max.length && el.max || el.max.toPrecision(2);
 
 
 		return el;

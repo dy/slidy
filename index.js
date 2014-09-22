@@ -1,4 +1,4 @@
-﻿var Draggy = require('draggy');
+var Draggy = require('draggy');
 var extend = require('extend');
 var m = require('mumath');
 var parse = require('muparse');
@@ -22,17 +22,62 @@ var Slidy = module.exorts = Mod({
 
 	created: function(){
 		var self = this, picker;
-		// console.log("slidy created");
+		// console.log('slidy created');
 
 		//fire initial set
-		// fire(this, "change");
+		// fire(this, 'change');
 
 		//enable lifecycle events
 		lifecycle.enableMutations(this);
 	},
 
+
+	/**
+	 * Update pickers position on the first load and resize.
+	 * Note that it is concern of slidy
+	 * to update picker position to correspond to the value, rather than draggy.
+	 */
+	'window resize:throttle(20)': 'update',
 	attached: function(){
-		//update pickers position to the self container
+		//update picker pin & limits to update value properly
+		//draggy updates self limits & pins only on the first drag, so need to do it before
+		this.setPickersOption('pin', false);
+		this.setPickersOption('limits', this);
+
+		//update thumb position according to the value
+		this.update();
+
+	},
+
+
+	/**
+	 * Always move closest picker to the place of click
+	 *
+	 * @param {Event} e
+	 * @event
+	 */
+	mousedown: function(e){
+		var offsets = this.getBoundingClientRect();
+
+		//get coords relative to the container (this)
+		var x = e.clientX - offsets.left;
+		var y = e.clientY - offsets.top;
+
+		//make closest picker active
+		var picker = this.getClosestPicker(x, y);
+
+		//move picker to the point of click with the centered drag point
+		picker.x = x - picker.pin[0];
+		picker.y = y - picker.pin[1];
+
+		//disable every picker except for the active one
+		for (var i = this.pickers.length; i--;){
+			if (this.pickers[i] === this.activePicker) continue;
+			this.pickers[i].dragstate = 'idle';
+		}
+
+		//make new picker drag
+		picker.mousedown(e);
 	},
 
 
@@ -45,28 +90,28 @@ var Slidy = module.exorts = Mod({
 	 * @default 'horizontal'
 	 */
 	type:{
-		init: "horizontal",
-		"horizontal": {
+		init: 'horizontal',
+		horizontal: {
 			before: function(){
-				// console.log("before horiz", this.activePicker)
-				this.setPickersOption("axis", "x");
+				// console.log('before horiz', this.activePicker)
+				this.setPickersOption('axis', 'x');
 			},
 
-			updatePosition: function(){
-				var	lim = this.activePicker._limits,
-					hScope = (lim.right - lim.left),
-					vScope = (lim.bottom - lim.top)
+			//place pickers according to the values
+			updatePicker: function(picker){
+				var	lims = picker.limits,
+					hScope = (lims.right - lims.left),
+					vScope = (lims.bottom - lims.top);
 
 				var hRange = this.max - this.min,
-					ratioX = (this.value - this.min) / hRange;
+					ratioX = (this.value - this.min) / hRange,
 					ratioY = .5;
-				this.activePicker.freeze = false;
-				this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
-				this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
+				picker.x = ratioX * hScope - picker.pin[0];
+				picker.y = ratioY * vScope - picker.pin[1];
 			},
 
 			drag: function(e){
-				// console.log("drag observed", e.target.dragstate);
+				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					d = thumb.dragstate,
 					lim = thumb._limits,
@@ -84,16 +129,16 @@ var Slidy = module.exorts = Mod({
 				self.value = normalValue * (self.max - self.min) + self.min;
 
 				//trigger onchange
-				fire(self,"change")
+				fire(self,'change');
 			}
 		},
-		"vertical": {
+		'vertical': {
 			before: function(){
-				this.setPickersOption("axis", "y");
+				this.setPickersOption('axis', 'y');
 			},
 
 			updatePosition: function(){
-				// console.log("upd position")
+				// console.log('upd position')
 				var	lim = this.activePicker._limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top)
@@ -107,7 +152,7 @@ var Slidy = module.exorts = Mod({
 			},
 
 			drag: function(e){
-				// console.log("drag observed", e.target.dragstate);
+				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					d = thumb.dragstate,
 					lim = thumb._limits,
@@ -122,17 +167,17 @@ var Slidy = module.exorts = Mod({
 				self.value = normalValue * (self.max - self.min) + self.min;
 
 				//trigger onchange
-				fire(self,"change")
+				fire(self,'change')
 			}
 		},
-		"rectangular": {
+		'rectangular': {
 			before: function(){
-				this.setPickersOption("axis", null);
-				// console.log("before rectangular", this.activePicker)
+				this.setPickersOption('axis', null);
+				// console.log('before rectangular', this.activePicker)
 			},
 
 			updatePosition: function(){
-				// console.log("updatePosition", this.activePicker)
+				// console.log('updatePosition', this.activePicker)
 				var	lim = this.activePicker._limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top)
@@ -147,7 +192,7 @@ var Slidy = module.exorts = Mod({
 			},
 
 			drag: function(e){
-				// console.log("drag observed", e.target.dragstate);
+				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					d = thumb.dragstate,
 					lim = thumb._limits,
@@ -166,12 +211,12 @@ var Slidy = module.exorts = Mod({
 				];
 
 				//trigger onchange
-				fire(self,"change")
+				fire(self,'change')
 			}
 		},
-		"circular": {
+		'circular': {
 			before: function(){
-				this.setPickersOption("axis", null);
+				this.setPickersOption('axis', null);
 			},
 
 			updatePosition: function(){
@@ -186,7 +231,7 @@ var Slidy = module.exorts = Mod({
 				var angle = (normalValue - .5) * 2 * Math.PI;
 
 				//TODO: set coords from value
-				// console.log("update position")
+				// console.log('update position')
 
 				this.activePicker.mute = false;
 
@@ -195,7 +240,7 @@ var Slidy = module.exorts = Mod({
 			},
 
 			drag: function(e){
-				// console.log("drag observed");
+				// console.log('drag observed');
 				var thumb = e.target,
 					d = thumb.dragstate,
 					lim = thumb._limits,
@@ -219,16 +264,16 @@ var Slidy = module.exorts = Mod({
 				//get value from coords
 				self.value = normalValue * (self.max - self.min) + self.min
 
-				// console.log("value changed", normalValue)
+				// console.log('value changed', normalValue)
 				self.activePicker.mute = true;
 
 				//trigger onchange
-				fire(self,"change", angle * 180 / Math.PI)
+				fire(self,'change', angle * 180 / Math.PI)
 			}
 		},
-		"round": {
+		'round': {
 			before: function(){
-				this.setPickersOption("axis", null);
+				this.setPickersOption('axis', null);
 			},
 
 			updatePosition: function(){
@@ -251,14 +296,14 @@ var Slidy = module.exorts = Mod({
 				var yRadius = vScope * normalRadiusValue / 2
 
 				//TODO: set coords from value
-				// console.log("update position", xRadius)
+				// console.log('update position', xRadius)
 
 				this.activePicker.x = Math.cos(angle) * xRadius + hScope * .5 - this.activePicker.pin[0];
 				this.activePicker.y = Math.sin(angle) * yRadius + vScope * .5 - this.activePicker.pin[1];
 			},
 
 			drag: function(e){
-				// console.log("drag observed", e.target.dragstate);
+				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					d = thumb.dragstate,
 					lim = thumb._limits,
@@ -286,10 +331,10 @@ var Slidy = module.exorts = Mod({
 					normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1]
 				]
 
-				// console.log("value changed", self.value)
+				// console.log('value changed', self.value)
 
 				//trigger onchange
-				fire(self,"change")
+				fire(self,'change')
 			}
 		}
 	},
@@ -366,7 +411,7 @@ var Slidy = module.exorts = Mod({
 
 
 
-/* ------------------------------  W  o  r  K  --------------------------------------- */
+/* ------------------------------  A  P  I  ------------------------------------------ */
 
 
 	/** List of pickers
@@ -406,7 +451,7 @@ var Slidy = module.exorts = Mod({
 		//detect number of pickers based on initial value
 		init: function(v){
 			var value;
-			// console.log("init value", v, this.values)
+			// console.log('init value', v, this.values)
 
 			//if value is array-like - create n-dim array (suppose that multipickers are passed in another way)
 			if (type.isString(v) && /,/.test(v)) {
@@ -431,14 +476,14 @@ var Slidy = module.exorts = Mod({
 		},
 
 		changed: function(val, old){
-			// console.log("changed value", val, old)
+			// console.log('changed value', val, old)
 
 			// if (this.activePicker) this.values[this.activePicker.number] = val;
 			// else this.values[0] = val;
 
 			// this.updatePosition();
 
-			// fire(this, "change");
+			// fire(this, 'change');
 		}
 	},
 
@@ -492,7 +537,7 @@ var Slidy = module.exorts = Mod({
 			r = Math.sqrt( (x-picker.x-picker.pin[0])*(x-picker.x-picker.pin[0]) + (y-picker.y-picker.pin[1])*(y-picker.y-picker.pin[1]) );
 			if (r < minR) {
 				minR = r;
-				minPicker = i;
+				minPicker = picker;
 			}
 		}
 
@@ -500,70 +545,14 @@ var Slidy = module.exorts = Mod({
 	},
 
 
-	/**
-	 * Current picker dragging
-	 *
-	 * @type {Draggy}
-	 */
-
-	// activePicker: {
-	// 	set: function(number){
-	// 		// console.log("set active picker", number)
-	// 		if (typeof number === "number"){
-	// 			//set value to the active picker’s value
-	// 			// console.log(this.values, this.value)
-
-	// 			return this.pickers[number];
-	// 		} else {
-	// 			return number;
-	// 		}
-	// 	},
-
-	// 	changed: function(picker){
-	// 		// console.log("ap changed", picker)
-	// 		//set value to active picker’s one
-	// 		this.value = this.values[picker.number];
-	// 	}
-	// },
-
-
-
-/* ------------------------------  E  V  E  N  T  ------------------------------------ */
-
 
 	/**
-	 * Always move closest picker to the place of click
-	 *
-	 * @param {Event} e
-	 * @event
+	 * Go by all pickers, update their’s limits & position
 	 */
-
-	mousedown: function(e){
-		//make closest picker active
-		// var offsets = this.getBoundingClientRect();
-		// // console.log("mousedown", e.clientX - offsets.left, e.clientY - offsets.top)
-		// var number = this.getClosestPickerNumber(e.clientX - offsets.left, e.clientY - offsets.top);
-		// this.activePicker = number;
-
-		// //disable every picker but active
-		// var picker;
-		// for (var i = 0; i < this.pickers.length; i++){
-		// 	picker = this.pickers[i];
-		// 	if (picker === this.activePicker) continue;
-		// 	picker.dragstate = "idle";
-		// }
-
-		// //make new picker drag
-		// this.activePicker.startDrag(e);
-	},
-
-
-	/**
-	 * Update pickers position on resize
-	 */
-
-	'window resize': function(){
-		// this.activePicker.updateLimits();
-		// this.updatePosition();
+	update: function(){
+		var pickers = this.pickers;
+		for (var i = 0, l = pickers.length; i<l; i++){
+			this.updatePicker(pickers[i]);
+		}
 	}
 });
