@@ -15,10 +15,14 @@ describe("Slidy", function(){
 		extend(el, opts);
 
 		//update value
-		el.addEventListener("change", function(){
-			// console.log("redraw label", this.value, this.activePicker)
-			if (this.activePicker) this.activePicker.innerHTML = this.value;
-		});
+		el.addEventListener("change", updateValue);
+		el.addEventListener("created", updateValue);
+
+		function updateValue(){
+			for (var i = 0, l = this.pickers.length; i < l; i++){
+				this.pickers[i].innerHTML = this.value.length ? this.value[i] : this.value.toFixed(2);
+			}
+		}
 
 		//create slidy
 		Slidy(el);

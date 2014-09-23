@@ -46,7 +46,6 @@ var Slidy = module.exorts = Mod({
 
 		//update thumb position according to the value
 		this.update();
-
 	},
 
 
@@ -110,29 +109,26 @@ var Slidy = module.exorts = Mod({
 				picker.y = ratioY * vScope - picker.pin[1];
 			},
 
+			//round value on each drag
 			drag: function(e){
 				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
-					d = thumb.dragstate,
-					lim = thumb._limits,
-					thumbW = thumb._offsets.width,
-					thumbH = thumb._offsets.height,
+					lim = thumb.limits,
+					thumbW = thumb.offsetWidth,
+					thumbH = thumb.offsetHeight,
 					//scope sizes
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					self = this;
 
 				var normalValue = (thumb.x - lim.left) / hScope;
-
 				if (self.snap) self.activePicker.freeze = true;
 
 				self.value = normalValue * (self.max - self.min) + self.min;
-
-				//trigger onchange
-				fire(self,'change');
 			}
 		},
 		'vertical': {
+			//TODO
 			before: function(){
 				this.setPickersOption('axis', 'y');
 			},
@@ -419,8 +415,11 @@ var Slidy = module.exorts = Mod({
 	 * @type {Array}
 	 */
 	pickers: {
+		//create initial number of pickers
+		//NOTE: don’t place it into value: it will cause extra recalcs
 		init: function(v){
-			var pickers = [];
+			//create initial pickers
+			var pickers = this.pickers = [];
 
 			//create number of pickers according to the value dimension
 			if (type.isArray(this.value)) {
@@ -469,6 +468,7 @@ var Slidy = module.exorts = Mod({
 		set: function(value, old){
 			var result;
 
+			//clamp values
 			result = m.between(value, this.min, this.max);
 			result = m.toPrecision(result, this.step);
 
@@ -478,12 +478,11 @@ var Slidy = module.exorts = Mod({
 		changed: function(val, old){
 			// console.log('changed value', val, old)
 
-			// if (this.activePicker) this.values[this.activePicker.number] = val;
-			// else this.values[0] = val;
+			//update pickers position to the new value
+			//this.update();
 
-			// this.updatePosition();
-
-			// fire(this, 'change');
+			//trigger change every time value changes
+			this.emit('change');
 		}
 	},
 
