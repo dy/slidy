@@ -3,42 +3,71 @@ var extend = require('extend');
 var m = require('mumath');
 var parse = require('muparse');
 var lifecycle = require('lifecycle-events');
+var state = require('st8');
+var Enot = require('enot');
+
+
+module.exports = Slidy;
+
+
+
+/* ---------------------------------  I  N  I  T  ------------------------------------ */
 
 
 /**
 * Range input component
-* @module  slidy
 */
-var Slidy = module.exorts = Mod({
+function Slidy(target, options){
+	this.element = target;
+
+	//save self refrence
+	//TODO: hope this doesn’t cause leaks, test it
+	this.element.slidy = this;
+
+	options = options || {};
+
+	//parse attributes of targret
+	var prop, parseResult;
+	for (var propName in Slidy.options){
+		//parse attribute, if no option passed
+		if (options[propName] === undefined){
+			prop = Slidy.options[propName];
+			options[propName] = parse.attribute(target, propName, prop.init !== undefined ? prop.init : prop);
+		}
+
+		//declare initial value
+		if (options[propName] !== undefined) {
+			this[propName] = options[propName];
+		}
+	}
+
+	//define properties
+	state(this, Slidy.options);
+
+	//enable default events
+	enot.on(this, Slidy.events);
+
+	//enable lifecycle events
+	lifecycle.enableMutations(this.element);
+
+
+	//emit callback
+	this.emit('created');
+}
 
 
 
-/* ---------------------------------  i  N  I  t  ------------------------------------ */
+/* ---------------------------------  E  V  E  N  T  S  ------------------------------ */
 
 
-	init: function(){
-		var self = this;
-	},
-
-	created: function(){
-		var self = this, picker;
-		// console.log('slidy created');
-
-		//fire initial set
-		// fire(this, 'change');
-
-		//enable lifecycle events
-		lifecycle.enableMutations(this);
-	},
-
-
+Slidy.events = {
 	/**
 	 * Update pickers position on the first load and resize.
 	 * Note that it is concern of slidy
 	 * to update picker position to correspond to the value, rather than draggy.
 	 */
 	'window resize:throttle(20)': 'update',
-	attached: function(){
+	'@element attached': function(){
 		//update picker pin & limits to update value properly
 		//draggy updates self limits & pins only on the first drag, so need to do it before
 		this.setPickersOption('pin', false);
@@ -55,7 +84,7 @@ var Slidy = module.exorts = Mod({
 	 * @param {Event} e
 	 * @event
 	 */
-	mousedown: function(e){
+	'@element mousedown': function(e){
 		var offsets = this.getBoundingClientRect();
 
 		//get coords relative to the container (this)
@@ -77,12 +106,20 @@ var Slidy = module.exorts = Mod({
 
 		//make new picker drag
 		picker.mousedown(e);
-	},
+	}
+};
 
 
 
-/* -------------------------------  O  p  t  i  o  n  S  ----------------------------- */
+/* -------------------------------  O  P  T  I  O  N  S  ----------------------------- */
 
+
+Slidy.options = {
+	/** Value limits
+	 * @type {number}
+	 */
+	min: 0,
+	max: 100,
 
 	/** Placing type
 	 * @enum {string}
@@ -90,7 +127,7 @@ var Slidy = module.exorts = Mod({
 	 */
 	type:{
 		init: 'horizontal',
-		horizontal: {
+		'horizontal': {
 			before: function(){
 				// console.log('before horiz', this.activePicker)
 				this.setPickersOption('axis', 'x');
@@ -110,7 +147,7 @@ var Slidy = module.exorts = Mod({
 			},
 
 			//round value on each drag
-			drag: function(e){
+			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					lim = thumb.limits,
@@ -147,7 +184,7 @@ var Slidy = module.exorts = Mod({
 				this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
 			},
 
-			drag: function(e){
+			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					d = thumb.dragstate,
@@ -187,7 +224,7 @@ var Slidy = module.exorts = Mod({
 				this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
 			},
 
-			drag: function(e){
+			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					d = thumb.dragstate,
@@ -235,7 +272,7 @@ var Slidy = module.exorts = Mod({
 				this.activePicker.y = Math.sin(angle) * vScope/2 + vScope/2 - this.activePicker.pin[1];
 			},
 
-			drag: function(e){
+			updateValue: function(e){
 				// console.log('drag observed');
 				var thumb = e.target,
 					d = thumb.dragstate,
@@ -298,7 +335,7 @@ var Slidy = module.exorts = Mod({
 				this.activePicker.y = Math.sin(angle) * yRadius + vScope * .5 - this.activePicker.pin[1];
 			},
 
-			drag: function(e){
+			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
 				var thumb = e.target,
 					d = thumb.dragstate,
@@ -333,18 +370,6 @@ var Slidy = module.exorts = Mod({
 				fire(self,'change')
 			}
 		}
-	},
-
-
-	/** Value limits
-	 * @type {number}
-	 */
-	min: {
-		//predefined value type obliges parsing recognition as a value
-		init: 0
-	},
-	max: {
-		init: 100
 	},
 
 
@@ -404,10 +429,6 @@ var Slidy = module.exorts = Mod({
 		changed: function(repeat){
 		}
 	},
-
-
-
-/* ------------------------------  A  P  I  ------------------------------------------ */
 
 
 	/** List of pickers
@@ -482,76 +503,87 @@ var Slidy = module.exorts = Mod({
 			//this.update();
 
 			//trigger change every time value changes
-			this.emit('change');
-		}
-	},
-
-
-	/**
-	 * Set option for all picker instances
-	 *
-	 * @param {string} name Option name
-	 * @param {*} value Option value
-	 */
-	setPickersOption: function(name, value){
-		for (var i = this.pickers.length; i--;){
-			this.pickers[i][name] = value;
-		}
-	},
-
-
-	/**
-	 * Create a new picker
-	 *
-	 * @return {Draggy} New picker created
-	 */
-	createPicker: function(){
-		var self = this;
-
-		var picker = Draggy({
-			within: this,
-			pin: false
-		});
-
-		this.appendChild(picker);
-
-		return picker;
-	},
-
-
-	/**
-	 * Get closest picker to the place of event
-	 *
-	 * @param {[type]} x [description]
-	 * @param {[type]} y [description]
-	 *
-	 * @return {[type]} [description]
-	 */
-	getClosestPicker: function(x,y){
-		//between all pickers choose the one with closest x,y
-		var minX, minY, minR = 9999, picker, minPicker;
-
-		for (var i = 0; i < this.pickers.length; i++){
-			picker = this.pickers[i];
-			r = Math.sqrt( (x-picker.x-picker.pin[0])*(x-picker.x-picker.pin[0]) + (y-picker.y-picker.pin[1])*(y-picker.y-picker.pin[1]) );
-			if (r < minR) {
-				minR = r;
-				minPicker = picker;
-			}
-		}
-
-		return minPicker;
-	},
-
-
-
-	/**
-	 * Go by all pickers, update their’s limits & position
-	 */
-	update: function(){
-		var pickers = this.pickers;
-		for (var i = 0, l = pickers.length; i<l; i++){
-			this.updatePicker(pickers[i]);
+			Enot.emit(this.element, 'change', null, true);
 		}
 	}
-});
+};
+
+
+
+/* ------------------------------  A  P  I  ------------------------------------------ */
+
+
+var SlidyProto = Slidy.prototype = Object.create(Enot.prototype);
+
+
+/**
+ * Set option for all picker instances
+ *
+ * @param {string} name Option name
+ * @param {*} value Option value
+ */
+SlidyProto.setPickersOption = function(name, value){
+	for (var i = this.pickers.length; i--;){
+		this.pickers[i][name] = value;
+	}
+};
+
+
+/**
+ * Create a new picker
+ *
+ * @return {Draggy} New picker created
+ */
+SlidyProto.createPicker = function(){
+	var self = this;
+
+	var $picker = document.createElement('div');
+	var picker = new Draggy($picker, {
+		within: this,
+		pin: false
+	});
+
+	//save slidy reference
+	//TODO: test that it doesn’t cause leaks
+	// $picker.slidy = this;
+
+	this.element.appendChild($picker);
+
+	return picker;
+};
+
+
+/**
+ * Get closest picker to the place of event
+ *
+ * @param {[type]} x [description]
+ * @param {[type]} y [description]
+ *
+ * @return {[type]} [description]
+ */
+SlidyProto.getClosestPicker = function(x,y){
+	//between all pickers choose the one with closest x,y
+	var minX, minY, minR = 9999, picker, minPicker;
+
+	for (var i = 0; i < this.pickers.length; i++){
+		picker = this.pickers[i];
+		r = Math.sqrt( (x-picker.x-picker.pin[0])*(x-picker.x-picker.pin[0]) + (y-picker.y-picker.pin[1])*(y-picker.y-picker.pin[1]) );
+		if (r < minR) {
+			minR = r;
+			minPicker = picker;
+		}
+	}
+
+	return minPicker;
+};
+
+
+/**
+ * Go by all pickers, update their’s limits & position
+ */
+SlidyProto.update = function(){
+	var pickers = this.pickers;
+	for (var i = 0, l = pickers.length; i<l; i++){
+		this.updatePicker(pickers[i]);
+	}
+};

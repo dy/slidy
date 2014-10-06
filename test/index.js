@@ -1,6 +1,7 @@
 describe("Slidy", function(){
 
 	//TODO: handle same-value case for 2&more pickers
+	//TODO: centrize position
 
 	function createSlider(name, opts){
 		var el = document.createElement("div");
@@ -12,24 +13,22 @@ describe("Slidy", function(){
 		].join("");
 		document.body.appendChild(el);
 
-		extend(el, opts);
 
 		//update value
 		el.addEventListener("change", updateValue);
-		el.addEventListener("created", updateValue);
 
 		function updateValue(){
-			for (var i = 0, l = this.pickers.length; i < l; i++){
-				this.pickers[i].innerHTML = this.value.length ? this.value[i] : this.value.toFixed(2);
+			for (var i = 0, l = this.slidy.pickers.length; i < l; i++){
+				this.slidy.pickers[i].innerHTML = this.value.length ? this.value[i] : this.value.toFixed(2);
 			}
 		}
 
 		//create slidy
-		Slidy(el);
+		var slidy = new Slidy(el, opts);
 
 		//show min/max
-		el.children[0].innerHTML = el.min.length && el.min || el.min.toPrecision(2);
-		el.children[1].innerHTML = el.max.length && el.max || el.max.toPrecision(2);
+		el.children[0].innerHTML = slidy.min.length && el.min || slidy.min.toPrecision(2);
+		el.children[1].innerHTML = slidy.max.length && el.max || slidy.max.toPrecision(2);
 
 
 		return el;

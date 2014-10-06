@@ -53,3 +53,12 @@
 
 * Implement all jquery-UI’s
 * All dragdealer’s stuff
+
+
+
+
+* Use-cases:
+	* Equalizer
+	* Mixer
+	* Bank split input
+	*
