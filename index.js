@@ -45,7 +45,7 @@ function Slidy(target, options){
 	state(this, Slidy.options);
 
 	//enable default events
-	enot.on(this, Slidy.events);
+	Enot.on(this, Slidy.events);
 
 	//enable lifecycle events
 	lifecycle.enableMutations(this.element);
@@ -70,8 +70,9 @@ Slidy.events = {
 	'@element attached': function(){
 		//update picker pin & limits to update value properly
 		//draggy updates self limits & pins only on the first drag, so need to do it before
+
 		this.setPickersOption('pin', false);
-		this.setPickersOption('limits', this);
+		this.setPickersOption('limits', this.element);
 
 		//update thumb position according to the value
 		this.update();
@@ -85,12 +86,11 @@ Slidy.events = {
 	 * @event
 	 */
 	'@element mousedown': function(e){
-		var offsets = this.getBoundingClientRect();
+		var offsets = this.element.getBoundingClientRect();
 
 		//get coords relative to the container (this)
 		var x = e.clientX - offsets.left;
 		var y = e.clientY - offsets.top;
-
 		//make closest picker active
 		var picker = this.getClosestPicker(x, y);
 
@@ -105,7 +105,12 @@ Slidy.events = {
 		}
 
 		//make new picker drag
-		picker.mousedown(e);
+		picker.startDrag(e);
+	},
+
+	/** Keep value updated */
+	'@element drag': function(e){
+		this.updateValue(e);
 	}
 };
 
@@ -142,6 +147,7 @@ Slidy.options = {
 				var hRange = this.max - this.min,
 					ratioX = (this.value - this.min) / hRange,
 					ratioY = .5;
+
 				picker.x = ratioX * hScope - picker.pin[0];
 				picker.y = ratioY * vScope - picker.pin[1];
 			},
@@ -149,16 +155,16 @@ Slidy.options = {
 			//round value on each drag
 			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
-				var thumb = e.target,
-					lim = thumb.limits,
-					thumbW = thumb.offsetWidth,
-					thumbH = thumb.offsetHeight,
+				var draggy = e.target.draggy,
+					lim = draggy.limits,
+					draggyW = draggy.offsetWidth,
+					draggyH = draggy.offsetHeight,
 					//scope sizes
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					self = this;
 
-				var normalValue = (thumb.x - lim.left) / hScope;
+				var normalValue = (draggy.x - lim.left) / hScope;
 				if (self.snap) self.activePicker.freeze = true;
 
 				self.value = normalValue * (self.max - self.min) + self.min;
@@ -437,18 +443,19 @@ Slidy.options = {
 	 */
 	pickers: {
 		//create initial number of pickers
-		//NOTE: don’t place it into value: it will cause extra recalcs
+		//NOTE: don’t place it into value:
+		// value changes very often so it will cause very heavy recalc
 		init: function(v){
 			//create initial pickers
-			var pickers = this.pickers = [];
+			//NOTE: ensure at least on picker exists
+			var pickers = this.pickers = [this.createPicker()];
 
 			//create number of pickers according to the value dimension
+			//FIXME: take into account dims/values
 			if (type.isArray(this.value)) {
-				for (var i = 0, l = this.value.length; i < l; i++){
+				for (var i = 1, l = this.value.length; i < l; i++){
 					pickers.push(this.createPicker());
 				}
-			} else {
-				pickers.push(this.createPicker());
 			}
 
 			return pickers;
@@ -497,11 +504,8 @@ Slidy.options = {
 		},
 
 		changed: function(val, old){
-			// console.log('changed value', val, old)
-
 			//update pickers position to the new value
 			//this.update();
-
 			//trigger change every time value changes
 			Enot.emit(this.element, 'change', null, true);
 		}
@@ -539,7 +543,7 @@ SlidyProto.createPicker = function(){
 
 	var $picker = document.createElement('div');
 	var picker = new Draggy($picker, {
-		within: this,
+		within: this.element,
 		pin: false
 	});
 
@@ -565,7 +569,7 @@ SlidyProto.getClosestPicker = function(x,y){
 	//between all pickers choose the one with closest x,y
 	var minX, minY, minR = 9999, picker, minPicker;
 
-	for (var i = 0; i < this.pickers.length; i++){
+	for (var i = 0, r; i < this.pickers.length; i++){
 		picker = this.pickers[i];
 		r = Math.sqrt( (x-picker.x-picker.pin[0])*(x-picker.x-picker.pin[0]) + (y-picker.y-picker.pin[1])*(y-picker.y-picker.pin[1]) );
 		if (r < minR) {
@@ -578,8 +582,7 @@ SlidyProto.getClosestPicker = function(x,y){
 };
 
 
-/**
- * Go by all pickers, update their’s limits & position
+/** Go by all pickers, update their’s limits & position
  */
 SlidyProto.update = function(){
 	var pickers = this.pickers;

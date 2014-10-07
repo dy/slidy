@@ -7,7 +7,7 @@
     "test": "test"
   },
   "dependencies": {
-    "mod-constructor": "*",
+    "enot": "*",
     "mucss": "*",
     "draggy": "*",
     "mumath": "*",

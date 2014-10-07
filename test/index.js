@@ -18,8 +18,9 @@ describe("Slidy", function(){
 		el.addEventListener("change", updateValue);
 
 		function updateValue(){
-			for (var i = 0, l = this.slidy.pickers.length; i < l; i++){
-				this.slidy.pickers[i].innerHTML = this.value.length ? this.value[i] : this.value.toFixed(2);
+			var slidy = this.slidy;
+			for (var i = 0, l = slidy.pickers.length; i < l; i++){
+				slidy.pickers[i].element.innerHTML = slidy.value.length ? this.value[i] : slidy.value.toFixed(2);
 			}
 		}
 
