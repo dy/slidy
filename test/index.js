@@ -22,7 +22,7 @@ describe("Slidy", function(){
 		function updateValue(){
 			var slidy = this.slidy;
 			for (var i = 0, l = slidy.pickers.length; i < l; i++){
-				slidy.pickers[i].element.innerHTML = slidy.value.length ? this.value[i] : slidy.value.toFixed(2);
+				slidy.pickers[i].element.innerHTML = slidy.value.length ? slidy.value : slidy.value.toFixed(2);
 			}
 		}
 
@@ -30,8 +30,8 @@ describe("Slidy", function(){
 		var slidy = new Slidy(el, opts);
 
 		//show min/max
-		el.children[0].innerHTML = slidy.min.length && el.min || slidy.min.toPrecision(2);
-		el.children[1].innerHTML = slidy.max.length && el.max || slidy.max.toPrecision(2);
+		el.children[0].innerHTML = slidy.min.length ? slidy.min : slidy.min.toPrecision(2);
+		el.children[1].innerHTML = slidy.max.length ? slidy.max : slidy.max.toPrecision(2);
 
 
 		return el;

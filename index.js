@@ -50,7 +50,6 @@ function Slidy(target, options){
 	//enable lifecycle events
 	lifecycle.enableMutations(this.element);
 
-
 	//emit callback
 	this.emit('created');
 }
@@ -128,6 +127,9 @@ Slidy.options = {
 	min: 0,
 	max: 100,
 
+	/** Pointer for number of dimensions */
+	dim: 0,
+
 	/** Placing type
 	 * @enum {string}
 	 * @default 'horizontal'
@@ -139,6 +141,8 @@ Slidy.options = {
 				// console.log('before horiz', this.activePicker)
 				this.setPickersOption('axis', 'x');
 			},
+
+			dim: 1,
 
 			//place pickers according to the values
 			updatePicker: function(picker){
@@ -177,6 +181,8 @@ Slidy.options = {
 				this.setPickersOption('axis', 'y');
 			},
 
+			dim: 1,
+
 			updatePicker: function(picker){
 				var	lims = picker.limits,
 					hScope = (lims.right - lims.left),
@@ -209,51 +215,51 @@ Slidy.options = {
 		rectangular: {
 			before: function(){
 				this.setPickersOption('axis', null);
-				// console.log('before rectangular', this.activePicker)
 			},
+
+			dim: 2,
 
 			updatePicker: function(picker){
 				// console.log('updatePosition', this.activePicker)
-				var	lim = this.activePicker._limits,
+				var	lim = picker.limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top)
 
 				var hRange = this.max[0] - this.min[0],
 					vRange = this.max[1] - this.min[1],
 					ratioX = (this.value[0] - this.min[0]) / hRange,
-					ratioY = (- this.value[1] + this.max[1]) / vRange
+					ratioY = (- this.value[1] + this.max[1]) / vRange;
 
-				this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
-				this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
+				picker.x = ratioX * hScope - picker.pin[0];
+				picker.y = ratioY * vScope - picker.pin[1];
 			},
 
 			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
-				var thumb = e.target,
-					d = thumb.dragstate,
-					lim = thumb._limits,
-					thumbW = thumb._offsets.width,
-					thumbH = thumb._offsets.height,
+				var draggy = e.target.draggy,
+					d = draggy.dragstate,
+					lim = draggy.limits,
+					draggyW = draggy.offsetWidth,
+					draggyH = draggy.offsetHeight,
 					//scope sizes
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					self = this;
 
-				var normalValue = [(thumb.x - lim.left) / hScope, ( - thumb.y + lim.bottom) / vScope];
+				var normalValue = [(draggy.x - lim.left) / hScope, ( - draggy.y + lim.bottom) / vScope];
 
 				self.value = [
 					normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
 					normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
 				];
-
-				//trigger onchange
-				fire(self,'change')
 			}
 		},
 		circular: {
 			before: function(){
 				this.setPickersOption('axis', null);
 			},
+
+			dim: 1,
 
 			updatePicker: function(picker){
 				var	lim = this.activePicker._limits,
@@ -311,6 +317,8 @@ Slidy.options = {
 			before: function(){
 				this.setPickersOption('axis', null);
 			},
+
+			dim: 2,
 
 			updatePicker: function(picker){
 				var	lim = this.activePicker._limits,
@@ -440,8 +448,7 @@ Slidy.options = {
 	 */
 	pickers: {
 		//create initial number of pickers
-		//NOTE: don’t place it into value:
-		// value changes very often so it will cause very heavy recalc
+		//NOTE: don’t place it into value: it changes very often so causes heavy recalc
 		init: function(v){
 			//create initial pickers
 			//NOTE: ensure at least on picker exists
@@ -449,7 +456,7 @@ Slidy.options = {
 
 			//create number of pickers according to the value dimension
 			//FIXME: take into account dims/values
-			if (type.isArray(this.value)) {
+			if (type.isArray(this.value) && this.dim === 1) {
 				for (var i = 1, l = this.value.length; i < l; i++){
 					pickers.push(this.createPicker());
 				}
@@ -471,24 +478,7 @@ Slidy.options = {
 	 * @enum {(Array|number)}
 	 */
 	value: {
-		//TODO: fix case where native picker is a target (polyfill or extend).
-		//detect number of pickers based on initial value
-		init: function(v){
-			var value;
-			// console.log('init value', v, this.values)
-
-			//if value is array-like - create n-dim array (suppose that multipickers are passed in another way)
-			if (type.isString(v) && /,/.test(v)) {
-				value = parse.array(v);
-			}
-
-			//else suppose single value
-			else {
-				value = parseFloat(v) || 0;
-			}
-
-			return value;
-		},
+		//TODO: fix case where native picker is a target (polyfill or extend)
 
 		set: function(value, old){
 			var result;
