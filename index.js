@@ -67,6 +67,8 @@ Slidy.events = {
 	 * to update picker position to correspond to the value, rather than draggy.
 	 */
 	'window resize:throttle(20)': 'update',
+
+	//FIXME: this binding isn’t applicable for advanced compilation
 	'@element attached': function(){
 		//update picker pin & limits to update value properly
 		//draggy updates self limits & pins only on the first drag, so need to do it before
@@ -132,7 +134,7 @@ Slidy.options = {
 	 */
 	type:{
 		init: 'horizontal',
-		'horizontal': {
+		horizontal: {
 			before: function(){
 				// console.log('before horiz', this.activePicker)
 				this.setPickersOption('axis', 'x');
@@ -165,57 +167,52 @@ Slidy.options = {
 					self = this;
 
 				var normalValue = (draggy.x - lim.left) / hScope;
-				if (self.snap) self.activePicker.freeze = true;
 
 				self.value = normalValue * (self.max - self.min) + self.min;
 			}
 		},
-		'vertical': {
+		vertical: {
 			//TODO
 			before: function(){
 				this.setPickersOption('axis', 'y');
 			},
 
-			updatePosition: function(){
-				// console.log('upd position')
-				var	lim = this.activePicker._limits,
-					hScope = (lim.right - lim.left),
-					vScope = (lim.bottom - lim.top)
+			updatePicker: function(picker){
+				var	lims = picker.limits,
+					hScope = (lims.right - lims.left),
+					vScope = (lims.bottom - lims.top);
 
 				var vRange = this.max - this.min,
 					ratioX = .5,
 					ratioY = (- this.value + this.max) / vRange
 
-				this.activePicker.x = ratioX * hScope - this.activePicker.pin[0];
-				this.activePicker.y = ratioY * vScope - this.activePicker.pin[1];
+				picker.x = ratioX * hScope - picker.pin[0];
+				picker.y = ratioY * vScope - picker.pin[1];
 			},
 
 			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
-				var thumb = e.target,
-					d = thumb.dragstate,
-					lim = thumb._limits,
-					thumbW = thumb._offsets.width,
-					thumbH = thumb._offsets.height,
+				var draggy = e.target.draggy,
+					d = draggy.dragstate,
+					lim = draggy.limits,
+					draggyW = draggy.offsetWidth,
+					draggyH = draggy.offsetHeight,
 					//scope sizes
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					self = this;
 
-				var normalValue = (- thumb.y + lim.bottom) / vScope;
+				var normalValue = (- draggy.y + lim.bottom) / vScope;
 				self.value = normalValue * (self.max - self.min) + self.min;
-
-				//trigger onchange
-				fire(self,'change')
 			}
 		},
-		'rectangular': {
+		rectangular: {
 			before: function(){
 				this.setPickersOption('axis', null);
 				// console.log('before rectangular', this.activePicker)
 			},
 
-			updatePosition: function(){
+			updatePicker: function(picker){
 				// console.log('updatePosition', this.activePicker)
 				var	lim = this.activePicker._limits,
 					hScope = (lim.right - lim.left),
@@ -253,12 +250,12 @@ Slidy.options = {
 				fire(self,'change')
 			}
 		},
-		'circular': {
+		circular: {
 			before: function(){
 				this.setPickersOption('axis', null);
 			},
 
-			updatePosition: function(){
+			updatePicker: function(picker){
 				var	lim = this.activePicker._limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
@@ -310,12 +307,12 @@ Slidy.options = {
 				fire(self,'change', angle * 180 / Math.PI)
 			}
 		},
-		'round': {
+		round: {
 			before: function(){
 				this.setPickersOption('axis', null);
 			},
 
-			updatePosition: function(){
+			updatePicker: function(picker){
 				var	lim = this.activePicker._limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),

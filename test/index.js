@@ -2,6 +2,7 @@ describe("Slidy", function(){
 
 	//TODO: handle same-value case for 2&more pickers
 	//TODO: centrize position
+	var uid = 0;
 
 	function createSlider(name, opts){
 		var el = document.createElement("div");
@@ -11,6 +12,7 @@ describe("Slidy", function(){
 			'<span class="min">-</span>',
 			'<span class="max">+</span>',
 		].join("");
+		el.id = 'slidy-' + uid++;
 		document.body.appendChild(el);
 
 
@@ -39,8 +41,6 @@ describe("Slidy", function(){
 
 	describe("shapes", function(){
 		it.only("horizonal", function(){
-			//TODO: why not centered by y?
-
 			var el = createSlider("horizontal", {
 				min: -1,
 				max: 1,
@@ -67,7 +67,7 @@ describe("Slidy", function(){
 			var el = createSlider("vertical", {
 				min:-1,
 				max: 1,
-				value: 0,
+				value: -0.2,
 				type: 'vertical'
 			})
 		})
