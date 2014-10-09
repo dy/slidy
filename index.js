@@ -32,7 +32,7 @@ function Slidy(target, options){
 		//parse attribute, if no option passed
 		if (options[propName] === undefined){
 			prop = Slidy.options[propName];
-			options[propName] = parse.attribute(target, propName, prop.init !== undefined ? prop.init : prop);
+			options[propName] = parse.attribute(target, propName, prop && prop.init !== undefined ? prop.init : prop);
 		}
 
 		//declare initial value
@@ -101,7 +101,7 @@ Slidy.events = {
 
 		//disable every picker except for the active one
 		for (var i = this.pickers.length; i--;){
-			if (this.pickers[i] === this.activePicker) continue;
+			if (this.pickers[i] === picker) continue;
 			this.pickers[i].dragstate = 'idle';
 		}
 
@@ -138,14 +138,13 @@ Slidy.options = {
 		init: 'horizontal',
 		horizontal: {
 			before: function(){
-				// console.log('before horiz', this.activePicker)
 				this.setPickersOption('axis', 'x');
 			},
 
 			dim: 1,
 
 			//place pickers according to the values
-			updatePicker: function(picker){
+			updatePickerPosition: function(picker){
 				var	lims = picker.limits,
 					hScope = (lims.right - lims.left),
 					vScope = (lims.bottom - lims.top);
@@ -183,7 +182,7 @@ Slidy.options = {
 
 			dim: 1,
 
-			updatePicker: function(picker){
+			updatePickerPosition: function(picker){
 				var	lims = picker.limits,
 					hScope = (lims.right - lims.left),
 					vScope = (lims.bottom - lims.top);
@@ -219,8 +218,8 @@ Slidy.options = {
 
 			dim: 2,
 
-			updatePicker: function(picker){
-				// console.log('updatePosition', this.activePicker)
+			updatePickerPosition: function(picker){
+				// console.log('updatePosition', picker)
 				var	lim = picker.limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top)
@@ -261,8 +260,9 @@ Slidy.options = {
 
 			dim: 1,
 
-			updatePicker: function(picker){
-				var	lim = this.activePicker._limits,
+			updatePickerPosition: function(picker){
+				// console.log('upd position')
+				var	lim = picker.limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					centerX = hScope / 2,
@@ -272,45 +272,35 @@ Slidy.options = {
 				var	normalValue = (this.value - this.min) / range;
 				var angle = (normalValue - .5) * 2 * Math.PI;
 
-				//TODO: set coords from value
-				// console.log('update position')
+				picker.freeze = false;
 
-				this.activePicker.mute = false;
-
-				this.activePicker.x = Math.cos(angle) * hScope/2 + hScope/2 - this.activePicker.pin[0];
-				this.activePicker.y = Math.sin(angle) * vScope/2 + vScope/2 - this.activePicker.pin[1];
+				picker.x = Math.cos(angle) * hScope/2 + hScope/2 - picker.pin[0];
+				picker.y = Math.sin(angle) * vScope/2 + vScope/2 - picker.pin[1];
+				// console.log(picker.x, picker.element.style.transform)
+				picker.freeze = true;
 			},
 
 			updateValue: function(e){
 				// console.log('drag observed');
-				var thumb = e.target,
-					d = thumb.dragstate,
-					lim = thumb._limits,
-					thumbW = thumb._offsets.width,
-					thumbH = thumb._offsets.height,
+				var draggy = e.target.draggy,
+					d = draggy.dragstate,
+					lim = draggy.limits,
 					//scope sizes
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					self = this;
 
-				var x = thumb.x - hScope / 2;
-				var y = thumb.y - vScope / 2;
+				var x = draggy.x - hScope / 2 + draggy.pin[0];
+				var y = draggy.y - vScope / 2 + draggy.pin[1];
 
 				//get angle
-				var angle = Math.atan2( y, x )
+				var angle = Math.atan2( y, x );
 
 				//get normal value
-				var normalValue = (angle / 2 / Math.PI + .5);
-				// console.log(normalValue)
+				var normalValue = angle / 2 / Math.PI + .5;
 
 				//get value from coords
-				self.value = normalValue * (self.max - self.min) + self.min
-
-				// console.log('value changed', normalValue)
-				self.activePicker.mute = true;
-
-				//trigger onchange
-				fire(self,'change', angle * 180 / Math.PI)
+				self.value = normalValue * (self.max - self.min) + self.min;
 			}
 		},
 		round: {
@@ -320,8 +310,8 @@ Slidy.options = {
 
 			dim: 2,
 
-			updatePicker: function(picker){
-				var	lim = this.activePicker._limits,
+			updatePickerPosition: function(picker){
+				var	lim = picker._limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					centerX = hScope / 2,
@@ -336,33 +326,31 @@ Slidy.options = {
 				var rRange = this.max[1] - this.min[1];
 				var normalRadiusValue = (this.value[1] - this.min[1]) / rRange;
 				// console.log(this.value[1])
-				var xRadius = hScope * normalRadiusValue / 2
-				var yRadius = vScope * normalRadiusValue / 2
+				var xRadius = hScope * normalRadiusValue / 2;
+				var yRadius = vScope * normalRadiusValue / 2;
 
 				//TODO: set coords from value
 				// console.log('update position', xRadius)
 
-				this.activePicker.x = Math.cos(angle) * xRadius + hScope * .5 - this.activePicker.pin[0];
-				this.activePicker.y = Math.sin(angle) * yRadius + vScope * .5 - this.activePicker.pin[1];
+				picker.x = Math.cos(angle) * xRadius + hScope * .5 - picker.pin[0];
+				picker.y = Math.sin(angle) * yRadius + vScope * .5 - picker.pin[1];
 			},
 
 			updateValue: function(e){
 				// console.log('drag observed', e.target.dragstate);
-				var thumb = e.target,
-					d = thumb.dragstate,
-					lim = thumb._limits,
-					thumbW = thumb._offsets.width,
-					thumbH = thumb._offsets.height,
+				var draggy = e.target.draggy,
+					d = draggy.dragstate,
+					lim = draggy.limits,
 					//scope sizes
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					self = this;
 
-				var x = thumb.x + thumb.pin[0] - hScope / 2;
-				var y = thumb.y + thumb.pin[1] - vScope / 2;
+				var x = draggy.x + draggy.pin[0] - hScope / 2;
+				var y = draggy.y + draggy.pin[1] - vScope / 2;
 
 				//get angle
-				var angle = Math.atan2( y, x )
+				var angle = Math.atan2( y, x );
 
 				//get normal value
 				var normalAngleValue = (angle / 2 / Math.PI + .5);
@@ -373,12 +361,7 @@ Slidy.options = {
 				self.value = [
 					normalAngleValue * (self.max[0] - self.min[0]) + self.min[0],
 					normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1]
-				]
-
-				// console.log('value changed', self.value)
-
-				//trigger onchange
-				fire(self,'change')
+				];
 			}
 		}
 	},
@@ -492,11 +475,16 @@ Slidy.options = {
 
 		changed: function(val, old){
 			//update pickers position to the new value
-			//this.update();
+			this.update();
 			//trigger change every time value changes
+			this.emit('change');
 			Enot.emit(this.element, 'change', null, true);
 		}
-	}
+	},
+
+
+	/** Callbacks */
+	change: undefined
 };
 
 
@@ -574,6 +562,6 @@ SlidyProto.getClosestPicker = function(x,y){
 SlidyProto.update = function(){
 	var pickers = this.pickers;
 	for (var i = 0, l = pickers.length; i<l; i++){
-		this.updatePicker(pickers[i]);
+		this.updatePickerPosition(pickers[i]);
 	}
 };

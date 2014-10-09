@@ -40,7 +40,7 @@ describe("Slidy", function(){
 
 
 	describe("shapes", function(){
-		it.only("horizonal", function(){
+		it("horizonal", function(){
 			var el = createSlider("horizontal", {
 				min: -1,
 				max: 1,
@@ -100,9 +100,9 @@ describe("Slidy", function(){
 				value: 0,
 				type: 'circular',
 				change: function(e){
-					// console.log(e.detail);
+					// console.log(123, this.value);
 					css(pointer, {
-						"-webkit-transform": "rotate(" + e.detail + "deg)"
+						"-webkit-transform": "rotate(" + (-this.value * 180 / 3.14) + "deg)"
 					})
 				}
 			})
