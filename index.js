@@ -521,7 +521,8 @@ SlidyProto.createPicker = function(){
 	var $picker = document.createElement('div');
 	var picker = new Draggy($picker, {
 		within: this.element,
-		pin: false
+		pin: false,
+		hideCursor: true
 	});
 
 	//save slidy reference
