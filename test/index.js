@@ -1,6 +1,6 @@
 describe("Slidy", function(){
 
-	//TODO: handle same-value case for 2&more pickers
+	//TODO: handle same-value case for 2 & more pickers
 	//TODO: centrize position
 	var uid = 0;
 

@@ -70,10 +70,10 @@ Slidy.events = {
 	//FIXME: this binding isn’t applicable for advanced compilation
 	'@element attached': function(){
 		//update picker pin & limits to update value properly
-		//draggy updates self limits & pins only on the first drag, so need to do it before
-
-		this.setPickersOption('pin', false);
-		this.setPickersOption('limits', this.element);
+		this.pickers.forEach(function(picker){
+			picker.pin = [picker.element.offsetWidth * .5, picker.element.offsetHeight * .5];
+			picker.update();
+		});
 
 		//update thumb position according to the value
 		this.update();
@@ -95,6 +95,9 @@ Slidy.events = {
 		//make closest picker active
 		var picker = this.getClosestPicker(x, y);
 
+		//make new picker drag
+		picker.startDrag(e);
+
 		//move picker to the point of click with the centered drag point
 		picker.x = x - picker.pin[0];
 		picker.y = y - picker.pin[1];
@@ -105,8 +108,6 @@ Slidy.events = {
 			this.pickers[i].dragstate = 'idle';
 		}
 
-		//make new picker drag
-		picker.startDrag(e);
 	},
 
 	/** Keep value updated */
@@ -152,7 +153,6 @@ Slidy.options = {
 				var hRange = this.max - this.min,
 					ratioX = (this.value - this.min) / hRange,
 					ratioY = .5;
-
 				picker.x = ratioX * hScope - picker.pin[0];
 				picker.y = ratioY * vScope - picker.pin[1];
 			},
@@ -466,6 +466,8 @@ Slidy.options = {
 		set: function(value, old){
 			var result;
 
+			value = value || this.min;
+
 			//clamp values
 			result = m.between(value, this.min, this.max);
 			result = m.toPrecision(result, this.step);
@@ -496,7 +498,7 @@ var SlidyProto = Slidy.prototype = Object.create(Enot.prototype);
 
 
 /**
- * Set option for all picker instances
+ * Set option for all picker instances or call method
  *
  * @param {string} name Option name
  * @param {*} value Option value
