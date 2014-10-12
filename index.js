@@ -95,12 +95,12 @@ Slidy.events = {
 		//make closest picker active
 		var picker = this.getClosestPicker(x, y);
 
-		//make new picker drag
-		picker.startDrag(e);
-
 		//move picker to the point of click with the centered drag point
 		picker.x = x - picker.pin[0];
 		picker.y = y - picker.pin[1];
+
+		//make new picker drag
+		picker.startDrag(e);
 
 		//disable every picker except for the active one
 		for (var i = this.pickers.length; i--;){
