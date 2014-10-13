@@ -42,6 +42,9 @@ function Slidy(target, options){
 		}
 	}
 
+	//set up muting events flag
+	this.mute = false;
+
 	//define properties
 	state(this, Slidy.options);
 
@@ -495,9 +498,11 @@ Slidy.options = {
 		},
 
 		changed: function(val, old){
-			//trigger change every time value changes
-			this.emit('change');
-			Emitter.emit(this.element, 'change', null, true);
+			if (!this.mute) {
+				//trigger change every time value changes
+				this.emit('change');
+				Emitter.emit(this.element, 'change', null, true);
+			}
 
 			// console.log('val changed', val, old)
 
