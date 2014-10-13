@@ -502,8 +502,8 @@ Slidy.options = {
 			// console.log('val changed', val, old)
 
 			//update pickers position to the new value
-			//NOTE: this is moved to dragend in performance reasons
-			// this.update();
+			//NOTE: this may be moved to dragend in performance reasons
+			this.updatePickersPosition();
 		}
 	},
 
