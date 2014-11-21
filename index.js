@@ -49,7 +49,7 @@ function Slidy(target, options){
 	state(this, Slidy.options);
 
 	//enable default events
-	Enot.on(this, Slidy.events);
+	Enot.on(this.element, Slidy.events);
 
 	//enable lifecycle events
 	lifecycle.enableMutations(this.element);
@@ -72,15 +72,17 @@ Slidy.events = {
 	'window resize:throttle(20)': 'update',
 
 	//FIXME: this binding isn’t applicable for advanced compilation
-	'@element attached': function(){
+	'attached': function(){
+		// console.log('attached')
+
 		//update picker pin & limits to update value properly
-		this.pickers.forEach(function(picker){
+		this.slidy.pickers.forEach(function(picker){
 			picker.pin = [picker.element.offsetWidth * .5, picker.element.offsetHeight * .5];
-			picker.update();
+			picker.updateLimits();
 		});
 
 		//update thumb position according to the value
-		this.updatePickersPosition();
+		this.slidy.updatePickersPosition();
 	},
 
 
@@ -90,21 +92,27 @@ Slidy.events = {
 	 * @param {Event} e
 	 * @event
 	 */
-	'@element mousedown': function(e){
+	'mousedown': function(e){
+		var slidy = this.slidy;
+
 		// console.log('mdown')
-		var offsets = this.element.getBoundingClientRect();
+		var offsets = this.getBoundingClientRect();
 
 		//get coords relative to the container (this)
 		var x = e.clientX - offsets.left;
 		var y = e.clientY - offsets.top;
 		//make closest picker active
-		var picker = this.getClosestPicker(x, y);
+		var picker = slidy.getClosestPicker(x, y);
 
 		//make new picker drag
-		if (e.target === this.element) picker.startDrag(e);
+		if (e.target === this) {
+			picker.initDragparams(e);
+			picker.dragstate = 'threshold';
+			picker.doDrag(e);
+		}
 
 		//move picker to the point of click with the centered drag point
-		if (this.instant) {
+		if (slidy.instant) {
 			picker.x = x - picker.pin[0];
 			picker.y = y - picker.pin[1];
 			picker.dragparams.innerOffsetX = picker.pin[0];
@@ -113,22 +121,22 @@ Slidy.events = {
 		}
 
 		//disable every picker except for the active one
-		for (var i = this.pickers.length; i--;){
-			if (this.pickers[i] === picker) continue;
-			this.pickers[i].dragstate = 'idle';
+		for (var i = slidy.pickers.length; i--;){
+			if (slidy.pickers[i] === picker) continue;
+			slidy.pickers[i].dragstate = 'idle';
 		}
 	},
 
 	/** Keep value updated */
-	'@element drag': function(e){
+	'drag': function(e){
 		// console.group('drag')
-		this.updateValue(e);
+		this.slidy.updateValue(e);
 		// console.groupEnd();
 	},
 
 	/** Update pickers position on end*/
-	'@element dragend': function(e){
-		this.updatePickersPosition();
+	'dragend': function(e){
+		this.slidy.updatePickersPosition();
 	}
 };
 
@@ -330,7 +338,8 @@ Slidy.options = {
 			dim: 2,
 
 			updatePickerPosition: function(picker){
-				var	lim = picker._limits,
+				// console.log('upd position')
+				var	lim = picker.limits,
 					hScope = (lim.right - lim.left),
 					vScope = (lim.bottom - lim.top),
 					centerX = hScope / 2,
@@ -486,7 +495,8 @@ Slidy.options = {
 			var result;
 			// console.group('setval', value)
 
-			value = value || this.min;
+			//FIXME: what is this for?
+			value = value !== undefined ? value : this.min;
 
 			//clamp values
 			result = m.between(value, this.min, this.max);
@@ -508,13 +518,14 @@ Slidy.options = {
 
 			//update pickers position to the new value
 			//NOTE: this may be moved to dragend in performance reasons
+			//FIXME: this causes limitless initial setx
 			this.updatePickersPosition();
 		}
 	},
 
 
 	/** Callbacks */
-	change: undefined
+	change: null
 };
 
 
@@ -547,6 +558,7 @@ SlidyProto.createPicker = function(){
 	var self = this;
 
 	var $picker = document.createElement('div');
+	$picker.className = 'slidy-picker';
 	var picker = new Draggy($picker, {
 		within: this.element,
 		pin: false,
@@ -559,6 +571,7 @@ SlidyProto.createPicker = function(){
 	// $picker.slidy = this;
 
 	this.element.appendChild($picker);
+	picker.updateLimits();
 
 	return picker;
 };
