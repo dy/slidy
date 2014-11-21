@@ -12,9 +12,6 @@ module.exports = Slidy;
 
 
 
-/* ---------------------------------  I  N  I  T  ------------------------------------ */
-
-
 /**
 * Range input component
 */
@@ -59,10 +56,9 @@ function Slidy(target, options){
 }
 
 
-
-/* ---------------------------------  E  V  E  N  T  S  ------------------------------ */
-
-
+/**
+ * Events - bound via enot to element
+ */
 Slidy.events = {
 	/**
 	 * Update pickers position on the first load and resize.
@@ -141,10 +137,9 @@ Slidy.events = {
 };
 
 
-
-/* -------------------------------  O  P  T  I  O  N  S  ----------------------------- */
-
-
+/**
+ * Redefinable options
+ */
 Slidy.options = {
 	/** Move to the point of click always, centered by pin */
 	instant: false,
@@ -180,6 +175,7 @@ Slidy.options = {
 				var hRange = this.max - this.min,
 					ratioX = (this.value - this.min) / hRange,
 					ratioY = .5;
+
 				picker.x = ratioX * hScope - picker.pin[0];
 				picker.y = ratioY * vScope - picker.pin[1];
 			},
@@ -479,6 +475,12 @@ Slidy.options = {
 
 
 	/**
+	 * Add this class to each picker
+	 */
+	pickerClass: 'slidy-picker',
+
+
+	/**
 	 * Slidy value
 	 * keeps list of values in case of multiple pickers
 	 *
@@ -493,7 +495,7 @@ Slidy.options = {
 
 		set: function(value, old){
 			var result;
-			// console.group('setval', value)
+			// console.log('setval', value)
 
 			//FIXME: what is this for?
 			value = value !== undefined ? value : this.min;
@@ -558,17 +560,15 @@ SlidyProto.createPicker = function(){
 	var self = this;
 
 	var $picker = document.createElement('div');
-	$picker.className = 'slidy-picker';
+	$picker.className = this.pickerClass;
+
+	//create picker
 	var picker = new Draggy($picker, {
 		within: this.element,
 		pin: false,
 		hideCursor: true,
 		threshold: 0
 	});
-
-	//save slidy reference
-	//TODO: test that it doesn’t cause leaks
-	// $picker.slidy = this;
 
 	this.element.appendChild($picker);
 	picker.updateLimits();

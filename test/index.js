@@ -148,7 +148,7 @@ describe("Slidy", function(){
 				type: "horizontal",
 				min: 100,
 				max: 0,
-				values: [10, 50, 80]
+				value: [10, 50, 80]
 			});
 		});
 
@@ -237,13 +237,17 @@ describe("Slidy", function(){
 
 
 	describe("corner cases", function(){
-		it("out of bounds initial values", function(){
-			xxx
+		it.skip("out of bounds initial values", function(){
+
 		});
 
-		it("wrong initial values", function(){
-			xxx
+		it.skip("wrong initial values", function(){
+
 		});
+
+		it.skip("empty initial values array", function(){
+
+		})
 	});
 
 })
