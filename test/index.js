@@ -1,3 +1,6 @@
+var Slidy = require('../');
+var css = require('mucss');
+
 describe("Slidy", function(){
 
 	//TODO: handle same-value case for 2 & more pickers

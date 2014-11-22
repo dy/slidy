@@ -6,7 +6,7 @@ var lifecycle = require('lifecycle-events');
 var state = require('st8');
 var Enot = require('enot');
 var Emitter = require('emmy');
-
+var type = require('mutype');
 
 module.exports = Slidy;
 

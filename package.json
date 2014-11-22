@@ -13,12 +13,14 @@
     "mumath": "*",
     "muparse": "*",
     "lifecycle-events": "*",
-    "tiny-element": "*"
+    "tiny-element": "*",
+    "mutype": "~0.3.0"
   },
   "devDependencies": {
     "mocha": "*",
     "mocha-phantomjs": "*",
-    "require-stub": "*"
+    "require-stub": "*",
+    "mucss": "~0.5.4"
   },
   "scripts": {
     "test": "mocha"
