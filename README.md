@@ -1,22 +1,17 @@
 # slidy
 
-A plugin which makes any element draggable within any other element.
-Built on ES6.
+Range slider component.
 
-[WIP]
+[Tests](TODO).
 
-Use as plain HTMLElement.
+## Usage
 
-### Why is it better than ______?
+`$ npm install slidy`
 
-In short, it is faster and smaller.
-In details:
+```js
+var Slidy = require('slidy');
 
-* Any number of pickers
-* It makes cycle picking
-* It allows custom snapping
-* It makes any path possible
-* It has sniper mode
-* It animates through requestAnimFrame
-* Accessibility
-* No memory-leaks not in native nor default mode (proof)
+var slidy = new Slidy;
+
+document.body.appendChild(slidy.element);
+```

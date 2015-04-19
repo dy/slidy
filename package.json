@@ -1,28 +1,27 @@
 {
   "name": "slidy",
   "version": "0.1.5",
-  "description": "Any kind of slider",
+  "description": "Slider component",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
-    "enot": "*",
-    "mucss": "*",
-    "draggy": "*",
-    "mumath": "*",
-    "muparse": "*",
+    "draggy": "^1.0.0",
+    "emmy": "^5.2.0",
+    "is-array": "^1.0.1",
     "lifecycle-events": "*",
-    "tiny-element": "*",
-    "mutype": "~0.3.0"
+    "mucss": "^0.6.0",
+    "mumath": "^0.4.3",
+    "st8": "^0.1.24",
+    "xtend": "^4.0.0"
   },
   "devDependencies": {
-    "mocha": "*",
-    "mocha-phantomjs": "*",
-    "require-stub": "*",
-    "mucss": "~0.5.4"
+    "mocha": "*"
   },
   "scripts": {
+    "watch": "watchify -r ./index.js:slidy -r mucss -d -o test/bundle.js",
+    "build": "browserify -r ./index:slidy -r mucss -o test/bundle.js",
     "test": "mocha"
   },
   "repository": {

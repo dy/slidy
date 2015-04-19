@@ -1,5 +1,6 @@
-var Slidy = require('../');
+var Slidy = require('slidy');
 var css = require('mucss');
+
 
 describe("Slidy", function(){
 
@@ -24,8 +25,13 @@ describe("Slidy", function(){
 
 		function updateValue(){
 			var slidy = this.slidy;
-			for (var i = 0, l = slidy.pickers.length; i < l; i++){
-				slidy.pickers[i].element.innerHTML = slidy.value.length ? slidy.value : slidy.value.toFixed(2);
+
+			if (slidy.pickers.length === 1){
+				slidy.pickers[0].element.innerHTML = slidy.value;
+			} else {
+				for (var i = 0, l = slidy.pickers.length; i < l; i++){
+					slidy.pickers[i].element.innerHTML = slidy.value[i];
+				}
 			}
 		}
 
@@ -33,8 +39,8 @@ describe("Slidy", function(){
 		var slidy = new Slidy(el, opts);
 
 		//show min/max
-		el.children[0].innerHTML = slidy.min.length ? slidy.min : slidy.min.toPrecision(2);
-		el.children[1].innerHTML = slidy.max.length ? slidy.max : slidy.max.toPrecision(2);
+		el.children[0].innerHTML = slidy.min.length ? slidy.min : slidy.min.toFixed(2);
+		el.children[1].innerHTML = slidy.max.length ? slidy.max : slidy.max.toFixed(2);
 
 
 		return el;
@@ -144,7 +150,6 @@ describe("Slidy", function(){
 	});
 
 
-
 	describe("features", function(){
 		it("multiple thumbs", function(){
 			var el = createSlider("multi horizontal", {
@@ -160,7 +165,15 @@ describe("Slidy", function(){
 				type: "rectangular",
 				min: [100, -100],
 				max: [-100, 100],
-				value: 50, //bad value
+				value: [[-10, 50], [80, -10], [10,20], [-100,-100]]
+			});
+		});
+
+		it("circular multiple thumbs", function(){
+			var el = createSlider("multi circular", {
+				type: "circular",
+				min: [100, -100],
+				max: [-100, 100],
 				values: [[-10, 50], [80, -10], [10,20], [-100,-100]]
 			});
 		});
