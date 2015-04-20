@@ -9,8 +9,9 @@
   "dependencies": {
     "draggy": "^1.0.0",
     "emmy": "^5.2.0",
+    "get-client-xy": "^1.0.1",
     "is-array": "^1.0.1",
-    "lifecycle-events": "*",
+    "lifecycle-events": "^1.0.0",
     "mucss": "^0.6.0",
     "mumath": "^0.4.3",
     "st8": "^0.1.24",

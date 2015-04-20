@@ -19,6 +19,8 @@ var on = require('emmy/on');
 var off = require('emmy/off');
 var emit = require('emmy/emit');
 var throttle = require('emmy/throttle');
+var getClientX = require('get-client-xy').x;
+var getClientY = require('get-client-xy').y;
 
 
 var win = window, doc = document;
@@ -84,10 +86,11 @@ function Slidy(target, options) {
 		var offsets = self.element.getBoundingClientRect();
 
 		//get coords relative to the container (this)
-		var x = e.clientX - offsets.left;
-		var y = e.clientY - offsets.top;
+		var x = getClientX(e) - offsets.left;
+		var y = getClientY(e) - offsets.top;
+
 		//make closest picker active
-		var picker = slidy.getClosestPicker(x, y);
+		var picker = self.getClosestPicker(x, y);
 
 		//make new picker drag
 		if (e.target === self.element) {
@@ -97,7 +100,7 @@ function Slidy(target, options) {
 		}
 
 		//move picker to the point of click with the centered drag point
-		if (slidy.instant) {
+		if (self.instant) {
 			picker.x = x - picker.pin[0];
 			picker.y = y - picker.pin[1];
 			picker.dragparams.innerOffsetX = picker.pin[0];
@@ -106,13 +109,14 @@ function Slidy(target, options) {
 		}
 
 		//disable every picker except for the active one
-		for (var i = slidy.pickers.length; i--;) {
-			if (slidy.pickers[i] !== picker) {
-				slidy.pickers[i].dragstate = 'idle';
+		for (var i = self.pickers.length; i--;) {
+			if (self.pickers[i] !== picker) {
+				self.pickers[i].dragstate = 'idle';
 			}
 		}
 	});
 
+	/*
 	//keep value updated on drag
 	on(self.element, 'drag', function (e) {
 		//get current picker’s value
@@ -135,6 +139,7 @@ function Slidy(target, options) {
 	on(self.element, 'dragend', function (e) {
 		self.updatePickersPosition();
 	});
+	*/
 
 	//emit callback
 	self.emit('created');

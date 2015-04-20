@@ -15,3 +15,6 @@ var slidy = new Slidy;
 
 document.body.appendChild(slidy.element);
 ```
+
+
+[![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)
