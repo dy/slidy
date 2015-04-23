@@ -5,6 +5,10 @@
  */
 
 
+//TODO: pre-created pickers
+//TODO: fix case where target is native slider (polyfill or extend)
+
+
 var Draggable = require('draggy');
 
 var extend = require('xtend/mutable');
@@ -12,6 +16,7 @@ var round = require('mumath/round');
 var between = require('mumath/between');
 var state = require('st8');
 var isArray = require('is-array');
+var defineState = require('define-state');
 
 var lifecycle = require('lifecycle-events');
 var Emitter = require('events');
@@ -28,8 +33,6 @@ var win = window, doc = document;
 
 module.exports = Slidy;
 
-
-//TODO: fix case where native picker is a target (polyfill or extend)
 
 /** Cache of instances. Just as it is safer than keeping them on targets. */
 var instancesCache = Slidy.cache = new WeakMap;
@@ -53,11 +56,18 @@ function Slidy(target, options) {
 
 	//init instance
 	target.classList.add('slidy');
+
+	//define type
+	defineState(this, 'type', this.type);
+
+	//adopt passed options
 	extend(this, options);
 
 	//create initial number of pickers (at least one picker exists)
 	this.pickers = [this.createPicker()];
 
+	//define initial type
+	this.type = 'horizontal';
 
 	///Events
 	// Update pickers position on the first load and resize.
@@ -68,17 +78,16 @@ function Slidy(target, options) {
 	});
 
 	//observe when slider is inserted
-	lifecycle.enable(self.element);
 	on(self.element, 'attached', function (e) {
 		//update picker pin & limits to update value properly
 		self.pickers.forEach(function (picker) {
 			picker.pin = [picker.element.offsetWidth * .5, picker.element.offsetHeight * .5];
-			picker.updateLimits();
 		});
 
 		//update thumb position according to the value
-		self.updatePickersPosition();
+		// self.updatePickersPosition();
 	});
+	lifecycle.enable(self.element);
 
 	// Always move closest picker to the place of click
 	on(self.element, 'mousedown', function (e) {
@@ -92,7 +101,7 @@ function Slidy(target, options) {
 		//make closest picker active
 		var picker = self.getClosestPicker(x, y);
 
-		//make new picker drag
+		//if clicked on self - drag picker
 		if (e.target === self.element) {
 			picker.initDragparams(e);
 			picker.dragstate = 'threshold';
@@ -157,7 +166,7 @@ proto.min = 0;
 proto.max = 100;
 
 /** Pointer for number of dimensions */
-proto.dim = 0;
+proto.dimensions = 1;
 
 /**
  * Placing type
@@ -165,39 +174,38 @@ proto.dim = 0;
  * @default 'horizontal'
  */
 proto.type = {
-	init: 'horizontal',
-	horizontal: {
-		axis: 'x',
-		dim: 1,
+	horizontal: function () {
+		this.setPickersOption('axis', 'x');
+		this.dimensions = 1;
 
 		//place pickers according to the value passed
-		updatePickerPosition: function (picker, value) {
-			var	lims = picker.limits,
-				hScope = (lims.right - lims.left),
-				vScope = (lims.bottom - lims.top);
+		// updatePickerPosition: function (picker, value) {
+		// 	var	lims = picker.limits,
+		// 		hScope = (lims.right - lims.left),
+		// 		vScope = (lims.bottom - lims.top);
 
-			var hRange = this.max - this.min,
-				ratioX = (value - this.min) / hRange,
-				ratioY = .5;
+		// 	var hRange = this.max - this.min,
+		// 		ratioX = (value - this.min) / hRange,
+		// 		ratioY = .5;
 
-			picker.x = ratioX * hScope - picker.pin[0];
-			picker.y = ratioY * vScope - picker.pin[1];
-		},
+		// 	picker.x = ratioX * hScope - picker.pin[0];
+		// 	picker.y = ratioY * vScope - picker.pin[1];
+		// };
 
 		//round value on each drag
-		getValue: function (e) {
-			var draggy = e.target.draggy,
-				lim = draggy.limits,
-				draggyW = draggy.offsetWidth,
-				draggyH = draggy.offsetHeight,
-				//scope sizes
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top),
-				self = this;
+		// getValue: function (e) {
+		// 	var draggy = e.target.draggy,
+		// 		lim = draggy.limits,
+		// 		draggyW = draggy.offsetWidth,
+		// 		draggyH = draggy.offsetHeight,
+		// 		//scope sizes
+		// 		hScope = (lim.right - lim.left),
+		// 		vScope = (lim.bottom - lim.top),
+		// 		self = this;
 
-			var normalValue = (draggy.x - lim.left) / hScope;
-			return normalValue * (self.max - self.min) + self.min;
-		}
+		// 	var normalValue = (draggy.x - lim.left) / hScope;
+		// 	return normalValue * (self.max - self.min) + self.min;
+		// }
 	},
 	vertical: {
 		axis: 'y',
@@ -387,7 +395,7 @@ proto.type = {
 
 /** Minimal step to bind final value
  */
-proto.type = {
+proto.step = {
 	init: function (value) {
 		var range;
 		if (value !== undefined) return value;
@@ -406,7 +414,7 @@ proto.type = {
 /** Range mode
  * @todo
  */
-proto.type =  true; //min, max
+proto.mode =  true; //min, max
 
 
 /** Snapping function

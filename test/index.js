@@ -266,4 +266,4 @@ describe("Slidy", function(){
 		})
 	});
 
-})
+});
