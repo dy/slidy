@@ -58,16 +58,16 @@ function Slidy(target, options) {
 	target.classList.add('slidy');
 
 	//define type
-	defineState(this, 'type', this.type);
+	defineState(self, 'type', self.type);
 
 	//adopt passed options
-	extend(this, options);
+	extend(self, options);
 
 	//create initial number of pickers (at least one picker exists)
-	this.pickers = [this.createPicker()];
+	self.pickers = [self.createPicker()];
 
 	//define initial type
-	this.type = 'horizontal';
+	self.type = 'horizontal';
 
 	///Events
 	// Update pickers position on the first load and resize.
@@ -81,48 +81,45 @@ function Slidy(target, options) {
 	on(self.element, 'attached', function (e) {
 		//update picker pin & limits to update value properly
 		self.pickers.forEach(function (picker) {
-			picker.pin = [picker.element.offsetWidth * .5, picker.element.offsetHeight * .5];
-		});
+			picker.pin = [
+				picker.element.offsetWidth * .5,
+				picker.element.offsetHeight * .5
+			];
 
-		//update thumb position according to the value
-		// self.updatePickersPosition();
+			picker.update();
+		});
 	});
 	lifecycle.enable(self.element);
 
-	// Always move closest picker to the place of click
+	//move closest picker to the place of click
 	on(self.element, 'mousedown', function (e) {
-		// console.log('mdown')
-		var offsets = self.element.getBoundingClientRect();
+		var clickCoords = self.element.getBoundingClientRect();
 
 		//get coords relative to the container (this)
-		var x = getClientX(e) - offsets.left;
-		var y = getClientY(e) - offsets.top;
+		var x = getClientX(e) - clickCoords.left;
+		var y = getClientY(e) - clickCoords.top;
 
 		//make closest picker active
 		var picker = self.getClosestPicker(x, y);
 
-		//if clicked on self - drag picker
-		if (e.target === self.element) {
-			picker.initDragparams(e);
-			picker.dragstate = 'threshold';
-			picker.doDrag(e);
-		}
-
 		//move picker to the point of click with the centered drag point
-		if (self.instant) {
-			picker.x = x - picker.pin[0];
-			picker.y = y - picker.pin[1];
-			picker.dragparams.innerOffsetX = picker.pin[0];
-			picker.dragparams.innerOffsetY = picker.pin[1];
-			picker.doDrag(e);
-		}
+		// if (self.instant) {
+		picker.move(x - picker.pin[0], y - picker.pin[1]);
+
+		//init drag, if clicked not on the picker
+		if (e.target === self.element) picker.startDrag(e);
+
+		//centrize picker
+		picker.innerOffsetX = picker.pin[0];
+		picker.innerOffsetY = picker.pin[1];
 
 		//disable every picker except for the active one
-		for (var i = self.pickers.length; i--;) {
-			if (self.pickers[i] !== picker) {
-				self.pickers[i].dragstate = 'idle';
+		// - some other pickers might be clicked occasionally
+		self.pickers.forEach(function (ipicker) {
+			if (ipicker !== picker) {
+				ipicker.state = 'idle';
 			}
-		}
+		});
 	});
 
 	/*
@@ -165,8 +162,10 @@ var proto = Slidy.prototype = Object.create(Emitter.prototype);
 proto.min = 0;
 proto.max = 100;
 
+
 /** Pointer for number of dimensions */
 proto.dimensions = 1;
+
 
 /**
  * Placing type
@@ -175,11 +174,11 @@ proto.dimensions = 1;
  */
 proto.type = {
 	horizontal: function () {
-		this.setPickersOption('axis', 'x');
+		this.pickers.forEach(function (picker) { picker.axis = 'x';});
 		this.dimensions = 1;
 
 		//place pickers according to the value passed
-		// updatePickerPosition: function (picker, value) {
+		// this.update = function (value) {
 		// 	var	lims = picker.limits,
 		// 		hScope = (lims.right - lims.left),
 		// 		vScope = (lims.bottom - lims.top);
@@ -207,38 +206,38 @@ proto.type = {
 		// 	return normalValue * (self.max - self.min) + self.min;
 		// }
 	},
-	vertical: {
-		axis: 'y',
-		dim: 1,
+	vertical: function () {
+		this.pickers.forEach(function (picker) { picker.axis = 'y';});
+		this.dimensions = 1;
 
-		updatePickerPosition: function (picker, value) {
-			var	lims = picker.limits,
-				hScope = (lims.right - lims.left),
-				vScope = (lims.bottom - lims.top);
+		// updatePickerPosition: function (picker, value) {
+		// 	var	lims = picker.limits,
+		// 		hScope = (lims.right - lims.left),
+		// 		vScope = (lims.bottom - lims.top);
 
-			var vRange = this.max - this.min,
-				ratioX = .5,
-				ratioY = (-value + this.max) / vRange
+		// 	var vRange = this.max - this.min,
+		// 		ratioX = .5,
+		// 		ratioY = (-value + this.max) / vRange
 
-			picker.x = ratioX * hScope - picker.pin[0];
-			picker.y = ratioY * vScope - picker.pin[1];
-		},
+		// 	picker.x = ratioX * hScope - picker.pin[0];
+		// 	picker.y = ratioY * vScope - picker.pin[1];
+		// },
 
-		getValue: function (e) {
-			// console.log('drag observed', e.target.dragstate);
-			var draggy = e.target.draggy,
-				d = draggy.dragstate,
-				lim = draggy.limits,
-				draggyW = draggy.offsetWidth,
-				draggyH = draggy.offsetHeight,
-				//scope sizes
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top),
-				self = this;
+		// getValue: function (e) {
+		// 	// console.log('drag observed', e.target.dragstate);
+		// 	var draggy = e.target.draggy,
+		// 		d = draggy.dragstate,
+		// 		lim = draggy.limits,
+		// 		draggyW = draggy.offsetWidth,
+		// 		draggyH = draggy.offsetHeight,
+		// 		//scope sizes
+		// 		hScope = (lim.right - lim.left),
+		// 		vScope = (lim.bottom - lim.top),
+		// 		self = this;
 
-			var normalValue = (- draggy.y + lim.bottom) / vScope;
-			return normalValue * (self.max - self.min) + self.min;
-		}
+		// 	var normalValue = (- draggy.y + lim.bottom) / vScope;
+		// 	return normalValue * (self.max - self.min) + self.min;
+		// }
 	},
 	rectangular: {
 		axis: null,
@@ -385,10 +384,6 @@ proto.type = {
 				normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1]
 			];
 		}
-	},
-
-	changed: function () {
-		this.setPickersOption ('axis', this.axis);
 	}
 };
 
@@ -534,20 +529,6 @@ proto.value = {
 
 
 
-
-/**
- * Set option for all picker instances or call method
- *
- * @param {string} name Option name
- * @param {*} value Option value
- */
-proto.setPickersOption = function (name, value) {
-	for (var i = this.pickers.length; i--;) {
-		this.pickers[i][name] = value;
-	}
-};
-
-
 /**
  * Create a new picker
  *
@@ -577,23 +558,27 @@ proto.createPicker = function () {
 /**
  * Get closest picker to the place of event
  *
- * @param {[type]} x [description]
- * @param {[type]} y [description]
+ * @param {number} x offsetLeft, relative to slidy
+ * @param {number} y offsetTop, relative to slidy
  *
- * @return {[type]} [description]
+ * @return {Draggy} A picker instance
  */
 proto.getClosestPicker = function (x,y) {
 	//between all pickers choose the one with closest x,y
-	var minX, minY, minR = 9999, picker, minPicker;
+	var minR = 9999, picker, minPicker;
 
-	for (var i = 0, r; i < this.pickers.length; i++) {
-		picker = this.pickers[i];
-		r = Math.sqrt( (x-picker.x-picker.pin[0])*(x-picker.x-picker.pin[0]) + (y-picker.y-picker.pin[1])*(y-picker.y-picker.pin[1]) );
-		if (r < minR) {
+	this.pickers.forEach(function (picker) {
+		var xy = picker.getCoords();
+		var dx = (x - xy[0] - picker.pin[0]);
+		var dy = (y - xy[1] - picker.pin[1]);
+
+		var r = Math.sqrt( dx*dx + dy*dy );
+
+		if ( r < minR ) {
 			minR = r;
 			minPicker = picker;
 		}
-	}
+	});
 
 	return minPicker;
 };
