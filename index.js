@@ -8,8 +8,7 @@
 //TODO: pre-created pickers
 //TODO: fix case where target is native slider (polyfill or extend)
 
-
-var Draggable = require('draggy');
+var Picker = require('./lib/picker');
 
 var extend = require('xtend/mutable');
 var round = require('mumath/round');
@@ -64,7 +63,7 @@ function Slidy(target, options) {
 	extend(self, options);
 
 	//create initial number of pickers (at least one picker exists)
-	self.pickers = [self.createPicker()];
+	self.pickers = [this.createPicker()];
 
 	//define initial type
 	self.type = 'horizontal';
@@ -79,15 +78,7 @@ function Slidy(target, options) {
 
 	//observe when slider is inserted
 	on(self.element, 'attached', function (e) {
-		//update picker pin & limits to update value properly
-		self.pickers.forEach(function (picker) {
-			picker.pin = [
-				picker.element.offsetWidth * .5,
-				picker.element.offsetHeight * .5
-			];
-
-			picker.update();
-		});
+		self.update();
 	});
 	lifecycle.enable(self.element);
 
@@ -100,24 +91,17 @@ function Slidy(target, options) {
 		var y = getClientY(e) - clickCoords.top;
 
 		//make closest picker active
-		var picker = self.getClosestPicker(x, y);
+		self.picker = self.getClosestPicker(x, y);
 
-		//move picker to the point of click with the centered drag point
-		// if (self.instant) {
-		picker.move(x - picker.pin[0], y - picker.pin[1]);
-
-		//init drag, if clicked not on the picker
-		if (e.target === self.element) picker.startDrag(e);
-
-		//centrize picker
-		picker.innerOffsetX = picker.pin[0];
-		picker.innerOffsetY = picker.pin[1];
+		//move picker to the point of click
+		self.picker.move(x,y).startDrag();
 
 		//disable every picker except for the active one
 		// - some other pickers might be clicked occasionally
+		//FIXME: the case of multitouch
 		self.pickers.forEach(function (ipicker) {
-			if (ipicker !== picker) {
-				ipicker.state = 'idle';
+			if (ipicker !== self.picker) {
+				ipicker.draggable.state = 'idle';
 			}
 		});
 	});
@@ -177,8 +161,8 @@ proto.type = {
 		this.pickers.forEach(function (picker) { picker.axis = 'x';});
 		this.dimensions = 1;
 
-		//place pickers according to the value passed
-		// this.update = function (value) {
+		//place pickers according to the value
+		// this.update = function () {
 		// 	var	lims = picker.limits,
 		// 		hScope = (lims.right - lims.left),
 		// 		vScope = (lims.bottom - lims.top);
@@ -527,29 +511,46 @@ proto.value = {
 };
 
 
+/**
+ * Update all pickers limits & position
+ * according to values
+ */
+proto.update = function () {
+	//update pickers limits & placement
+	//pickers size might depend on doc size
+	this.pickers.forEach(function (picker) {
+		picker.update();
+	});
+
+	//if single picker - treat value as
+	// if (this.pickers.length === 1) {
+	// 	this.updatePicker(this.pickers[0], this.value);
+	// }
+	// else {
+	// 	for (var i = 0, l = this.pickers.length; i<l; i++) {
+	// 		this.updatePicker(this.pickers[i], this.value[i]);
+	// 	}
+	// }
+};
 
 
 /**
- * Create a new picker
+ * Create a new picker.
+ * It is better to keep it discrete, not as like `addPicker`
+ * as it leaves controlling the list of pickers.
  *
- * @return {Draggable} New picker created
+ * @param {Object} options Options for draggable
+ *
+ * @return {Picker} New picker instance
  */
-proto.createPicker = function () {
-	var self = this;
+proto.createPicker = function (options) {
+	options = options || {};
+	options.within = this.element;
 
-	var pickerEl = document.createElement('div');
-	pickerEl.className = this.pickerClass;
+	var picker = new Picker(null, options);
 
-	//create picker
-	var picker = new Draggable(pickerEl, {
-		within: this.element,
-		pin: false,
-		hideCursor: true,
-		threshold: 0,
-		axis: this.axis
-	});
-
-	this.element.appendChild(pickerEl);
+	//place picker to self
+	this.element.appendChild(picker.element);
 
 	return picker;
 };
@@ -568,9 +569,9 @@ proto.getClosestPicker = function (x,y) {
 	var minR = 9999, picker, minPicker;
 
 	this.pickers.forEach(function (picker) {
-		var xy = picker.getCoords();
-		var dx = (x - xy[0] - picker.pin[0]);
-		var dy = (y - xy[1] - picker.pin[1]);
+		var xy = picker.draggable.getCoords();
+		var dx = (x - xy[0] - picker.draggable.pin[0]);
+		var dy = (y - xy[1] - picker.draggable.pin[1]);
 
 		var r = Math.sqrt( dx*dx + dy*dy );
 
@@ -581,19 +582,4 @@ proto.getClosestPicker = function (x,y) {
 	});
 
 	return minPicker;
-};
-
-
-/** Go by all pickers, update their’s limits & position
- */
-proto.updatePickersPosition = function () {
-	var pickers = this.pickers;
-	if (this.pickers.length === 1) {
-		this.updatePickerPosition(pickers[0], this.value);
-	}
-	else {
-		for (var i = 0, l = pickers.length; i<l; i++) {
-			this.updatePickerPosition(pickers[i], this.value[i]);
-		}
-	}
 };
