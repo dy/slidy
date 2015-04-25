@@ -24,16 +24,17 @@ document.body.appendChild(slidy.element);
 |---|---|
 | `Slidy#createPicker(options?)` | Create and append a new picker. |
 | `Slidy#picker` | Active picker. |
-| `Slidy#value` | Active picker value. Same as `picker.value` |
+| `Slidy#value` | Active picker value. |
 | `Slidy#values` | Values of all pickers. |
 | `Slidy#pickers` | List of picker instances. |
 | `Slidy#getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
+| `Slidy#update()` | Update all pickers sizes and positions acc |
 
 ## Picker API
 
 | Name | Description |
 |---|---|
-| `Picker#value` | Current value of a picker. |
+| `Picker#value` | Current raw value of a picker. |
 | `Picker#min` | Minimum value. |
 | `Picker#max` | Maximum value. |
 | `Picker#type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`. |
