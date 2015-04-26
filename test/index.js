@@ -27,7 +27,7 @@ describe("Slidy", function () {
 			var slidy = Slidy.cache.get(this);
 
 			for (var i = 0, l = slidy.pickers.length; i < l; i++){
-				slidy.pickers[i].element.innerHTML = slidy.value;
+				slidy.pickers[i].element.innerHTML = slidy.pickers[i].value.toFixed(2);
 			}
 		}
 

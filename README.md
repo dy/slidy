@@ -22,11 +22,11 @@ document.body.appendChild(slidy.element);
 
 | Name | Description |
 |---|---|
-| `Slidy#createPicker(options?)` | Create and append a new picker. |
-| `Slidy#picker` | Active picker. |
-| `Slidy#value` | Active picker value. |
-| `Slidy#values` | Values of all pickers. |
+| `Slidy#min` | Minimum value. |
+| `Slidy#max` | Maximum value. |
+| `Slidy#value` | Picker value. In case of multiple pickers - first picker's value. |
 | `Slidy#pickers` | List of picker instances. |
+| `Slidy#createPicker(options?)` | Create and append a new picker. |
 | `Slidy#getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
 | `Slidy#update()` | Update all pickers sizes and positions acc |
 
@@ -40,5 +40,7 @@ document.body.appendChild(slidy.element);
 | `Picker#type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`. |
 | `Picker#move(x, y)` | Move picker to relative `x`, `y` coordinates. |
 | `Picker#startDrag()` | Start drag mode for the picker. |
+| `Picker#renderValue(value)` | Move picker so to visually reflect value passed. |
+| `Picker#calcValue()` | Calculate value from picker’s position. |
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)
