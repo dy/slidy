@@ -40,7 +40,7 @@ document.body.appendChild(slidy.element);
 | `Picker#type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`. |
 | `Picker#move(x, y)` | Move picker to relative `x`, `y` coordinates. |
 | `Picker#startDrag()` | Start drag mode for the picker. |
-| `Picker#renderValue(value)` | Move picker so to visually reflect value passed. |
+| `Picker#renderValue(value)` | Move picker so to visually reflect the value passed. |
 | `Picker#calcValue()` | Calculate value from picker’s position. |
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)

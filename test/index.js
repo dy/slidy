@@ -27,7 +27,12 @@ describe("Slidy", function () {
 			var slidy = Slidy.cache.get(this);
 
 			for (var i = 0, l = slidy.pickers.length; i < l; i++){
-				slidy.pickers[i].element.innerHTML = slidy.pickers[i].value.toFixed(2);
+				if (slidy.pickers[i].value instanceof Array) {
+					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value[0].toFixed(2) + ',' + slidy.pickers[i].value[1].toFixed(2);
+				}
+				else {
+					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value.toFixed(2);
+				}
 			}
 		}
 
@@ -37,7 +42,6 @@ describe("Slidy", function () {
 		//show min/max
 		el.children[0].innerHTML = slidy.min.length ? slidy.min : slidy.min.toFixed(2);
 		el.children[1].innerHTML = slidy.max.length ? slidy.max : slidy.max.toFixed(2);
-
 
 		return el;
 	}
