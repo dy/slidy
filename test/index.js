@@ -2,7 +2,7 @@ var Slidy = require('slidy');
 var css = require('mucss');
 
 
-describe("Slidy", function(){
+describe("Slidy", function () {
 
 	//TODO: handle same-value case for 2 & more pickers
 	//TODO: centrize position
@@ -21,17 +21,13 @@ describe("Slidy", function(){
 
 
 		//update value
-		el.addEventListener("change", updateValue);
+		el.addEventListener('change', updateValue);
 
-		function updateValue(){
-			var slidy = this.slidy;
+		function updateValue () {
+			var slidy = Slidy.cache.get(this);
 
-			if (slidy.pickers.length === 1){
-				slidy.pickers[0].element.innerHTML = slidy.value;
-			} else {
-				for (var i = 0, l = slidy.pickers.length; i < l; i++){
-					slidy.pickers[i].element.innerHTML = slidy.value[i];
-				}
+			for (var i = 0, l = slidy.pickers.length; i < l; i++){
+				slidy.pickers[i].element.innerHTML = slidy.value;
 			}
 		}
 
@@ -48,9 +44,9 @@ describe("Slidy", function(){
 
 
 
-	describe("shapes", function(){
-		it("horizonal", function(){
-			var el = createSlider("horizontal", {
+	describe('shapes', function () {
+		it('horizonal', function () {
+			var el = createSlider('horizontal', {
 				min: -1,
 				max: 1,
 				value: .5
@@ -58,22 +54,22 @@ describe("Slidy", function(){
 
 			//click somewhere in between area
 			//TODO: pass mouse coordinates
-			// var e = createMouseEvt("click", 0);
+			// var e = createMouseEvt('click', 0);
 			// dispatchEvt(el, )
 
 			//drag to somewhere
 		});
 
-		it("h inverted", function(){
-			var el = createSlider("horizontal", {
+		it('h inverted', function () {
+			var el = createSlider('horizontal', {
 				min: 1,
 				max: -1,
 				value: .5
 			});
 		});
 
-		it("vertical", function(){
-			var el = createSlider("vertical", {
+		it('vertical', function () {
+			var el = createSlider('vertical', {
 				min:-1,
 				max: 1,
 				value: -0.2,
@@ -81,8 +77,8 @@ describe("Slidy", function(){
 			});
 		});
 
-		it("v inverted", function(){
-			var el = createSlider("vertical", {
+		it('v inverted', function () {
+			var el = createSlider('vertical', {
 				min:1,
 				max:-1,
 				value: 0.2,
@@ -90,8 +86,8 @@ describe("Slidy", function(){
 			});
 		});
 
-		it("rectangular", function(){
-			var el = createSlider("rectangular", {
+		it('rectangular', function () {
+			var el = createSlider('rectangular', {
 				min:[0,0],
 				max:[100,100],
 				value: [40,70],
@@ -99,11 +95,11 @@ describe("Slidy", function(){
 			});
 		});
 
-		it("circular", function(){
-			var pointer = document.createElement("div");
-			pointer.className = "pointer";
+		it('circular', function () {
+			var pointer = document.createElement('div');
+			pointer.className = 'pointer';
 
-			var el = createSlider("circular", {
+			var el = createSlider('circular', {
 				min: Math.PI,
 				max: - Math.PI,
 				value: 0,
@@ -111,7 +107,7 @@ describe("Slidy", function(){
 				change: function(e){
 					// console.log(123, this.value);
 					css(pointer, {
-						"-webkit-transform": "rotate(" + (-this.value * 180 / 3.14) + "deg)"
+						'-webkit-transform': 'rotate(' + (-this.value * 180 / 3.14) + 'deg)'
 					});
 				}
 			});
@@ -119,11 +115,11 @@ describe("Slidy", function(){
 			el.appendChild(pointer);
 		});
 
-		it("round", function(){
-			var pointer = document.createElement("div");
-			pointer.className = "pointer";
+		it('round', function () {
+			var pointer = document.createElement('div');
+			pointer.className = 'pointer';
 
-			var el = createSlider("circular", {
+			var el = createSlider('circular', {
 				min: [0, 0],
 				max: [360, 100],
 				value: [0, 40],
@@ -131,8 +127,8 @@ describe("Slidy", function(){
 				change: function(e){
 					// console.log(e.detail);
 					css(pointer, {
-						"-webkit-transform": "rotate(" + ((this.value[0]) + 180) + "deg)",
-						"width": this.value[1] + "px"
+						'-webkit-transform': 'rotate(' + ((this.value[0]) + 180) + 'deg)',
+						'width': this.value[1] + 'px'
 					});
 				}
 			});
@@ -140,52 +136,52 @@ describe("Slidy", function(){
 			el.appendChild(pointer);
 		});
 
-		// it("sector", function(){
+		// it('sector', function () {
 		// 	xxx
 		// });
 
-		// it("svg shape", function(){
+		// it('svg shape', function () {
 		// 	xxx
 		// });
 	});
 
 
-	describe("features", function(){
-		it("multiple thumbs", function(){
-			var el = createSlider("multi horizontal", {
-				type: "horizontal",
+	describe('features', function () {
+		it('multiple thumbs', function () {
+			var el = createSlider('multi horizontal', {
+				type: 'horizontal',
 				min: 100,
 				max: 0,
 				value: [10, 50, 80]
 			});
 		});
 
-		it("rectangular multiple thumbs", function(){
-			var el = createSlider("multi rectangular", {
-				type: "rectangular",
+		it('rectangular multiple thumbs', function () {
+			var el = createSlider('multi rectangular', {
+				type: 'rectangular',
 				min: [100, -100],
 				max: [-100, 100],
 				value: [[-10, 50], [80, -10], [10,20], [-100,-100]]
 			});
 		});
 
-		it("circular multiple thumbs", function(){
-			var el = createSlider("multi circular", {
-				type: "circular",
+		it('circular multiple thumbs', function () {
+			var el = createSlider('multi circular', {
+				type: 'circular',
 				min: [100, -100],
 				max: [-100, 100],
 				values: [[-10, 50], [80, -10], [10,20], [-100,-100]]
 			});
 		});
 
-		it("repeat x", function(){
+		it('repeat x', function () {
 			var el = document.createElement('ad');
 			var slidy = new Slidy({
-				title: "repeat x",
-				className: "horizontal",
-				change: function(){this.activePicker.innerHTML = this.value;},
+				title: 'repeat x',
+				className: 'horizontal',
+				change: function () {this.activePicker.innerHTML = this.value;},
 
-				type: "horizontal",
+				type: 'horizontal',
 				min: -10,
 				max: 10,
 				value: 1,
@@ -195,75 +191,75 @@ describe("Slidy", function(){
 			});
 		});
 
-		it("repeat y", function(){
+		it('repeat y', function () {
 			xxx
 		});
 
-		it("repeat rect", function(){
+		it('repeat rect', function () {
 			xxx
 		});
 
-		// it("expose data", function(){
+		// it('expose data', function () {
 		// 	xxx
 		// });
 
-		// it("steps (small number of them)", function(){
+		// it('steps (small number of them)', function () {
 		// 	xxx
 		// });
 
-		// it("snapping (random grid)", function(){
+		// it('snapping (random grid)', function () {
 		// 	xxx
 		// });
 
-		// it("loose boundaries", function(){
+		// it('loose boundaries', function () {
 		// 	xxx
 		// });
 
-		// it("image slider example", function(){
+		// it('image slider example', function () {
 		// 	xxx
 		// });
 	});
 
 
-	describe("interaction", function(){
-		it("focusable", function(){
+	describe('interaction', function () {
+		it('focusable', function () {
 			xxx
 		});
 
-		it("focused keyboard control", function(){
+		it('focused keyboard control', function () {
 			xxx
 		});
 
-		it("touches", function(){
+		it('touches', function () {
 			xxx
 		});
 
-		it("scroll x", function(){
+		it('scroll x', function () {
 			xxx
 		});
 
-		it("scroll y", function(){
+		it('scroll y', function () {
 			xxx
 		});
 
-		it("scroll xy", function(){
+		it('scroll xy', function () {
 			xxx
 		});
 	});
 
 
-	describe("corner cases", function(){
-		it.skip("out of bounds initial values", function(){
+	describe('corner cases', function () {
+		it.skip('out of bounds initial values', function () {
 
 		});
 
-		it.skip("wrong initial values", function(){
+		it.skip('wrong initial values', function () {
 
 		});
 
-		it.skip("empty initial values array", function(){
+		it.skip('empty initial values array', function () {
 
-		})
+		});
 	});
 
 });

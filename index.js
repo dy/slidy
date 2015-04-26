@@ -56,12 +56,17 @@ function Slidy(target, options) {
 	//init instance
 	target.classList.add('slidy');
 
+	//adopt passed options
+	//it may contain value/min/max, so create picker later
+	extend(self, options);
+
 	//create initial number of pickers (at least one picker exists)
 	self.picker = this.createPicker();
 	self.pickers = [self.picker];
 
-	//adopt passed options
-	extend(self, options);
+	//picker value should be inited after picker is added to pickers list
+	//because setting value triggers callback, which should get full-featured env
+	self.picker.value = this.value;
 
 
 	///Events
@@ -110,7 +115,6 @@ var proto = Slidy.prototype = Object.create(Emitter.prototype);
 
 /**
  * Default range
- * @type {number}
  */
 proto.min = 0;
 proto.max = 100;
@@ -161,32 +165,6 @@ proto.repeat = {
 };
 
 
-Object.defineProperties(proto, {
-	/** Set or get value of active picker */
-	value: {
-		get: function () {
-			return this.picker.value;
-		},
-		set: function (value) {
-			this.picker.value = value;
-		}
-	},
-	/** Set or get list of values for pickers */
-	values: {
-		get: function () {
-			return this.pickers.map(function (picker) {
-				return picker.value;
-			});
-		},
-		set: function (values) {
-			values.forEach(function (value, i) {
-				this.pickers[i].value = value;
-			});
-		}
-	}
-});
-
-
 /**
  * Update all pickers limits & position
  * according to values
@@ -217,10 +195,13 @@ proto.createPicker = function (options) {
 		max: this.max
 	}, options);
 
-	var picker = new Picker(null, options);
+	var el = document.createElement('div');
 
 	//place picker to self
-	this.element.appendChild(picker.element);
+	//need to be appended before to bubble events
+	this.element.appendChild(el);
+
+	var picker = new Picker(el, options);
 
 	return picker;
 };
