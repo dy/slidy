@@ -23,9 +23,10 @@ describe("Slidy", function () {
 		//update value
 		el.addEventListener('change', updateValue);
 
-		function updateValue () {
+		function updateValue (e) {
 			var slidy = Slidy.cache.get(this);
 
+			//update value in slide
 			for (var i = 0, l = slidy.pickers.length; i < l; i++){
 				if (slidy.pickers[i].value instanceof Array) {
 					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value[0].toFixed(2) + ',' + slidy.pickers[i].value[1].toFixed(2);
@@ -34,6 +35,9 @@ describe("Slidy", function () {
 					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value.toFixed(2);
 				}
 			}
+
+			//update rotation
+			if (opts.change) opts.change.call(slidy, e);
 		}
 
 		//create slidy
@@ -106,10 +110,9 @@ describe("Slidy", function () {
 			var el = createSlider('circular', {
 				min: Math.PI,
 				max: - Math.PI,
-				value: 0,
+				value: 1,
 				type: 'circular',
-				change: function(e){
-					// console.log(123, this.value);
+				change: function (e) {
 					css(pointer, {
 						'-webkit-transform': 'rotate(' + (-this.value * 180 / 3.14) + 'deg)'
 					});
@@ -128,7 +131,7 @@ describe("Slidy", function () {
 				max: [360, 100],
 				value: [0, 40],
 				type: 'round',
-				change: function(e){
+				change: function (e) {
 					// console.log(e.detail);
 					css(pointer, {
 						'-webkit-transform': 'rotate(' + ((this.value[0]) + 180) + 'deg)',

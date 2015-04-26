@@ -61,13 +61,18 @@ function Slidy(target, options) {
 	extend(self, options);
 
 	//create initial number of pickers (at least one picker exists)
-	self.picker = this.createPicker();
+	self.picker = self.createPicker();
 	self.pickers = [self.picker];
 
 	//picker value should be inited after picker is added to pickers list
-	//because setting value triggers callback, which should get full-featured env
-	self.picker.value = this.value;
+	//because setting value triggers callback, which should get full-featured slidy
+	self.picker.value = self.value;
 
+	//define value as first picker value
+	Object.defineProperty(self, 'value', {
+		set: function (value) {self.picker.value = value;},
+		get: function () {return self.picker.value;}
+	});
 
 	///Events
 	// Update pickers position on the first load and resize
