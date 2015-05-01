@@ -65,18 +65,25 @@ function Slidy(target, options) {
 	if (options.type !== undefined) self.type = options.type;
 
 	//create pickers, if passed a list
+	self.pickers = [];
 	if (isArray(options.pickers) && options.pickers.length) {
-		self.pickers = options.pickers.map(self.createPicker, self);
+		options.pickers.forEach(function (opts) {
+			var picker = self.createPicker(opts);
+			self.pickers.push(picker);
+
+			//update picker’s value, to trigger change
+			if (opts.value !== undefined) picker.value = opts.value;
+		});
 		self.picker = self.pickers[0];
 	}
 	//ensure at least one picker exists
 	else {
 		self.picker = self.createPicker();
-		self.pickers = [self.picker];
+		self.pickers.push(self.picker);
+		//init first picker’s value
+		if (options.value !== undefined) self.value = options.value;
 	}
 
-	//set up value
-	self.value = options.value;
 
 
 	///Events
@@ -131,8 +138,12 @@ proto.max = 100;
 
 /** Define value as active picker value */
 Object.defineProperty(proto, 'value', {
-	set: function (value) { this.picker.value = value; },
-	get: function () { return this.picker.value; }
+	set: function (value) {
+		this.picker.value = value;
+	},
+	get: function () {
+		return this.picker.value;
+	}
 });
 
 
