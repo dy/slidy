@@ -172,16 +172,26 @@ describe("Slidy", function () {
 				type: 'rectangular',
 				min: [100, -100],
 				max: [-100, 100],
-				value: [[-10, 50], [80, -10], [10,20], [-100,-100]]
+				pickers: [
+					{ value: [-10, 50]},
+					{ value: [80, -10]},
+					{ value: [10, 20]},
+					{ value: [-100,-100]}
+				]
 			});
 		});
 
-		it('circular multiple thumbs', function () {
+		it('round multiple thumbs', function () {
 			var el = createSlider('multi circular', {
-				type: 'circular',
+				type: 'round',
 				min: [100, -100],
 				max: [-100, 100],
-				values: [[-10, 50], [80, -10], [10,20], [-100,-100]]
+				pickers: [
+					{ value: [-10, 50] },
+					{ value: [80, -10] },
+					{ value: [10,20] },
+					{ value: [-100,-100] }
+				]
 			});
 		});
 
