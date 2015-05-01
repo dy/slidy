@@ -6,6 +6,7 @@ describe("Slidy", function () {
 
 	//TODO: handle same-value case for 2 & more pickers
 	//TODO: centrize position
+
 	var uid = 0;
 
 	function createSlider(name, opts){
@@ -26,7 +27,7 @@ describe("Slidy", function () {
 		function updateValue (e) {
 			var slidy = Slidy.cache.get(this);
 
-			//update value in slide
+			//update value in picker
 			for (var i = 0, l = slidy.pickers.length; i < l; i++){
 				if (slidy.pickers[i].value instanceof Array) {
 					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value[0].toFixed(2) + ',' + slidy.pickers[i].value[1].toFixed(2);
@@ -129,7 +130,7 @@ describe("Slidy", function () {
 			var el = createSlider('circular', {
 				min: [0, 0],
 				max: [360, 100],
-				value: [0, 40],
+				value: [20, 40],
 				type: 'round',
 				change: function (e) {
 					// console.log(e.detail);
@@ -156,10 +157,13 @@ describe("Slidy", function () {
 	describe('features', function () {
 		it('multiple thumbs', function () {
 			var el = createSlider('multi horizontal', {
-				type: 'horizontal',
 				min: 100,
 				max: 0,
-				value: [10, 50, 80]
+				pickers: [
+					{value: 10},
+					{value: 50},
+					{value: 80}
+				]
 			});
 		});
 

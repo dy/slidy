@@ -45,6 +45,8 @@ function Slidy(target, options) {
 	//force constructor
 	if (!(this instanceof Slidy)) return new Slidy(target, options);
 
+	options = options || {};
+
 	//ensure element, if not defined
 	if (!target) target = doc.createElement('div');
 
@@ -56,23 +58,26 @@ function Slidy(target, options) {
 	//init instance
 	target.classList.add('slidy');
 
-	//adopt passed options
-	//it may contain value/min/max, so create picker later
-	extend(self, options);
+	//adopt min/max/value
+	//can’t just simply extend options, as init is crucial to order
+	if (options.min !== undefined) self.min = options.min;
+	if (options.max !== undefined) self.max = options.max;
+	if (options.type !== undefined) self.type = options.type;
 
-	//create initial number of pickers (at least one picker exists)
-	self.picker = self.createPicker();
-	self.pickers = [self.picker];
+	//create pickers, if passed a list
+	if (isArray(options.pickers) && options.pickers.length) {
+		self.pickers = options.pickers.map(self.createPicker, self);
+		self.picker = self.pickers[0];
+	}
+	//ensure at least one picker exists
+	else {
+		self.picker = self.createPicker();
+		self.pickers = [self.picker];
+	}
 
-	//picker value should be inited after picker is added to pickers list
-	//because setting value triggers callback, which should get full-featured slidy
-	self.picker.value = self.value;
+	//set up value
+	self.value = options.value;
 
-	//define value as first picker value
-	Object.defineProperty(self, 'value', {
-		set: function (value) {self.picker.value = value;},
-		get: function () {return self.picker.value;}
-	});
 
 	///Events
 	// Update pickers position on the first load and resize
@@ -123,7 +128,12 @@ var proto = Slidy.prototype = Object.create(Emitter.prototype);
  */
 proto.min = 0;
 proto.max = 100;
-proto.value = 0;
+
+/** Define value as active picker value */
+Object.defineProperty(proto, 'value', {
+	set: function (value) { this.picker.value = value; },
+	get: function () { return this.picker.value; }
+});
 
 
 /** Default placing type is horizontal */
@@ -193,18 +203,20 @@ proto.update = function () {
  * @return {Picker} New picker instance
  */
 proto.createPicker = function (options) {
+	var self = this;
+
 	options = extend({
-		within: this.element,
-		type: this.type,
-		min: this.min,
-		max: this.max
+		within: self.element,
+		type: self.type,
+		min: self.min,
+		max: self.max
 	}, options);
 
 	var el = document.createElement('div');
 
 	//place picker to self
 	//need to be appended before to bubble events
-	this.element.appendChild(el);
+	self.element.appendChild(el);
 
 	var picker = new Picker(el, options);
 
