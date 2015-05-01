@@ -18,31 +18,30 @@ var slidy = new Slidy({
 document.body.appendChild(slidy.element);
 ```
 
-## Slider API
+## Slidy API
 
 | Name | Description |
 |---|---|
-| `Slidy#min` | Minimum value. |
-| `Slidy#max` | Maximum value. |
-| `Slidy#value` | Picker value. In case of multiple pickers - first picker's value. |
-| `Slidy#pickers` | List of picker instances. Can be passed in options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
-| `Slidy#createPicker(options?)` | Create a new picker. |
-| `Slidy#getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
-| `Slidy#update()` | Update all pickers sizes and positions. |
+| `Slidy.prototype.min` | Minimum value. |
+| `Slidy.prototype.max` | Maximum value. |
+| `Slidy.prototype.value` | Picker value. In case of multiple pickers - first picker's value. |
+| `Slidy.prototype.type` | Type of pickers placement, see `Picker.prototype.type`. |
+| `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
+| `Slidy.prototype.getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
+| `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 
 
 ## Picker API
 
 | Name | Description |
 |---|---|
-| `Picker#min` | Minimum value. |
-| `Picker#max` | Maximum value. |
-| `Picker#value` | Current raw value of a picker. |
-| `Picker#type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`. |
-| `Picker#move(x, y)` | Move picker to relative `x`, `y` coordinates. |
-| `Picker#startDrag()` | Start dragging for the picker. |
-| `Picker#renderValue(value)` | Move picker so to visually reflect the value passed. |
-| `Picker#calcValue()` | Calculate value from picker’s position. |
+| `Picker.prototype.min` | Minimum value. |
+| `Picker.prototype.max` | Maximum value. |
+| `Picker.prototype.value` | Current value of a picker. |
+| `Picker.prototype.type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`. |
+| `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
+| `Picker.prototype.startDrag()` | Start dragging for the picker. |
+| `Picker.prototype.update()` | Update size and position according to the value. |
 
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)
