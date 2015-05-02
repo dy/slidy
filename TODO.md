@@ -1,6 +1,8 @@
 * Focusable
 * Keyboard
-* Touches
+* Multitouches
+* Accessibility
+* Mousewheel control
 * interfaces component/vanilla/npm ...
 * grid
 * web-component
@@ -13,4 +15,6 @@
 * Bank split input, like Artlebedev
 * Jackpot machine muttiple touch sliders
 * Triangle illustrator-like color picker
-* Youtube video slider
+* Video slider
+* HuSL dynamically restricted picker
+* Gauge picker

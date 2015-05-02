@@ -144,9 +144,9 @@ describe("Slidy", function () {
 			el.appendChild(pointer);
 		});
 
-		// it('sector', function () {
-		// 	xxx
-		// });
+		it('gauge', function () {
+			xxx
+		});
 
 		// it('svg shape', function () {
 		// 	xxx
@@ -200,20 +200,28 @@ describe("Slidy", function () {
 				type: 'horizontal',
 				min: 0,
 				max: 100,
-				repeat: 'x'
+				value: 30,
+				repeat: true
 			});
 		});
 
 		it('repeat y', function () {
-			xxx
+			var el = createSlider('repeat vertical', {
+				type: 'vertical',
+				min: 0,
+				max: 100,
+				value: 30,
+				repeat: true
+			});
 		});
 
 		it('repeat rect', function () {
 			var el = createSlider('repeat rectangular', {
 				type: 'rectangular',
-				min: 0,
-				max: 100,
-				repeat: 'x'
+				min: [0,0],
+				max: [100,100],
+				value: [50,50],
+				repeat: true
 			});
 		});
 

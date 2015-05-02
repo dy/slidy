@@ -63,6 +63,7 @@ function Slidy(target, options) {
 	if (options.min !== undefined) self.min = options.min;
 	if (options.max !== undefined) self.max = options.max;
 	if (options.type !== undefined) self.type = options.type;
+	if (options.repeat !== undefined) self.repeat = options.repeat;
 
 	//create pickers, if passed a list
 	self.pickers = [];
@@ -178,17 +179,13 @@ proto.focusable = true;
 proto.keyboard = false;
 
 
-/** Repeat either by one axis if one dimension
- * or by both axis or one pointed if two dimensions
+/**
+ * Repeat either by one or both axis
  *
  * @enum {bool}
  * @default true
  */
-proto.repeat = {
-	init: false,
-	changed: function (repeat) {
-	}
-};
+proto.repeat = false;
 
 
 /**
@@ -220,7 +217,8 @@ proto.createPicker = function (options) {
 		within: self.element,
 		type: self.type,
 		min: self.min,
-		max: self.max
+		max: self.max,
+		repeat: self.repeat
 	}, options);
 
 	var el = document.createElement('div');
