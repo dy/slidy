@@ -26,6 +26,7 @@ document.body.appendChild(slidy.element);
 | `Slidy.prototype.max` | Maximum value. |
 | `Slidy.prototype.value` | Picker value. In case of multiple pickers - first picker's value. |
 | `Slidy.prototype.type` | Type of pickers placement, see `Picker.prototype.type`. |
+| `Slidy.prototype.repeat` | Repeat picker by axis: x, y or both, |
 | `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
 | `Slidy.prototype.getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
@@ -39,6 +40,7 @@ document.body.appendChild(slidy.element);
 | `Picker.prototype.max` | Maximum value. |
 | `Picker.prototype.value` | Current value of a picker. |
 | `Picker.prototype.type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`. |
+| `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
 | `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
 | `Picker.prototype.startDrag()` | Start dragging for the picker. |
 | `Picker.prototype.update()` | Update size and position according to the value. |

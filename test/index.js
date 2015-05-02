@@ -60,13 +60,6 @@ describe("Slidy", function () {
 				max: 1,
 				value: .5
 			});
-
-			//click somewhere in between area
-			//TODO: pass mouse coordinates
-			// var e = createMouseEvt('click', 0);
-			// dispatchEvt(el, )
-
-			//drag to somewhere
 		});
 
 		it('h inverted', function () {
@@ -133,7 +126,6 @@ describe("Slidy", function () {
 				value: [20, 40],
 				type: 'round',
 				change: function (e) {
-					// console.log(e.detail);
 					css(pointer, {
 						'-webkit-transform': 'rotate(' + ((this.value[0]) + 180) + 'deg)',
 						'width': this.value[1] + 'px'
@@ -143,14 +135,6 @@ describe("Slidy", function () {
 
 			el.appendChild(pointer);
 		});
-
-		it('gauge', function () {
-			xxx
-		});
-
-		// it('svg shape', function () {
-		// 	xxx
-		// });
 	});
 
 

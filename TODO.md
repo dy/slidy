@@ -7,13 +7,16 @@
 * grid
 * web-component
 * demo-page
+* polyfill native slider
+* Fulfill ARIAs on the container http://www.w3.org/TR/wai-aria/roles#slider
+* Add sniper mode to ARIA
 
 ## Cases
 
 * Equalizer
 * Mixer
-* Bank split input, like Artlebedev
-* Jackpot machine muttiple touch sliders
+* Bank splitted input, like Artlebedev
+* Jackpot machine multiple touch sliders
 * Triangle illustrator-like color picker
 * Video slider
 * HuSL dynamically restricted picker

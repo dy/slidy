@@ -5,9 +5,6 @@
  */
 
 
-//TODO: pre-created pickers
-//TODO: fix case where target is native slider (polyfill or extend)
-
 var Picker = require('./lib/picker');
 
 var extend = require('xtend/mutable');
@@ -64,6 +61,8 @@ function Slidy(target, options) {
 	if (options.max !== undefined) self.max = options.max;
 	if (options.type !== undefined) self.type = options.type;
 	if (options.repeat !== undefined) self.repeat = options.repeat;
+	if (options.step !== undefined) self.step = options.step;
+
 
 	//create pickers, if passed a list
 	self.pickers = [];
@@ -84,7 +83,6 @@ function Slidy(target, options) {
 		//init first picker’s value
 		if (options.value !== undefined) self.value = options.value;
 	}
-
 
 
 	///Events
@@ -137,6 +135,7 @@ var proto = Slidy.prototype = Object.create(Emitter.prototype);
 proto.min = 0;
 proto.max = 100;
 
+
 /** Define value as active picker value */
 Object.defineProperty(proto, 'value', {
 	set: function (value) {
@@ -152,31 +151,6 @@ Object.defineProperty(proto, 'value', {
 proto.type = 'horizontal';
 
 
-/** Minimal step to bind final value
- */
-proto.step = {
-	init: function (value) {
-		var range;
-		if (value !== undefined) return value;
-
-		//detect step automatically based on min/max range (1/100 by default)
-		if (this.max) {
-			range = Math.abs(this.max - this.min);
-			return range <= 100 ? .01 : 1;
-		} else {
-			return 1;
-		}
-	}
-};
-
-
-/** Snapping function
- * @todo
- * @note or precision?
- */
-proto.snap = false;
-proto.focusable = true;
-proto.keyboard = false;
 
 
 /**
@@ -218,7 +192,8 @@ proto.createPicker = function (options) {
 		type: self.type,
 		min: self.min,
 		max: self.max,
-		repeat: self.repeat
+		repeat: self.repeat,
+		step: self.step
 	}, options);
 
 	var el = document.createElement('div');
