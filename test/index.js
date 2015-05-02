@@ -111,7 +111,7 @@ describe("Slidy", function () {
 			var el = createSlider('circular', {
 				min: Math.PI,
 				max: - Math.PI,
-				value: 1,
+				value: 0.5,
 				type: 'circular',
 				change: function (e) {
 					css(pointer, {
@@ -196,19 +196,11 @@ describe("Slidy", function () {
 		});
 
 		it('repeat x', function () {
-			var el = document.createElement('ad');
-			var slidy = new Slidy({
-				title: 'repeat x',
-				className: 'horizontal',
-				change: function () {this.activePicker.innerHTML = this.value;},
-
+			var el = createSlider('repeat horizontal', {
 				type: 'horizontal',
-				min: -10,
-				max: 10,
-				value: 1,
-				step: 2,
-				snap: true,
-				repeat: true
+				min: 0,
+				max: 100,
+				repeat: 'x'
 			});
 		});
 
@@ -217,7 +209,12 @@ describe("Slidy", function () {
 		});
 
 		it('repeat rect', function () {
-			xxx
+			var el = createSlider('repeat rectangular', {
+				type: 'rectangular',
+				min: 0,
+				max: 100,
+				repeat: 'x'
+			});
 		});
 
 		// it('expose data', function () {
