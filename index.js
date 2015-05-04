@@ -62,6 +62,7 @@ function Slidy(target, options) {
 	if (options.type !== undefined) self.type = options.type;
 	if (options.repeat !== undefined) self.repeat = options.repeat;
 	if (options.step !== undefined) self.step = options.step;
+	if (options.pickerClass !== undefined) self.pickerClass = options.pickerClass;
 
 
 	//create pickers, if passed a list
