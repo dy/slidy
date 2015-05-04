@@ -193,7 +193,8 @@ proto.createPicker = function (options) {
 		min: self.min,
 		max: self.max,
 		repeat: self.repeat,
-		step: self.step
+		step: self.step,
+		pickerClass: self.pickerClass
 	}, options);
 
 	var el = document.createElement('div');

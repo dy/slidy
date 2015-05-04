@@ -28,6 +28,7 @@ document.body.appendChild(slidy.element);
 | `Slidy.prototype.type` | Type of pickers placement, see `Picker.prototype.type`. |
 | `Slidy.prototype.repeat` | Repeat picker by axis: x, y or both, |
 | `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
+| `Slidy.prototype.pickerClass` | Class to add to each picker. |
 | `Slidy.prototype.getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 
