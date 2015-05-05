@@ -1,3 +1,6 @@
+* Stepping
+* Inverted width
+* Changed callback
 * Multitouches
 * Accessibility
 * Mousewheel control

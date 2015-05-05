@@ -20,12 +20,8 @@ describe("Slidy", function () {
 		el.id = 'slidy-' + uid++;
 		document.body.appendChild(el);
 
-
-		//update value
-		el.addEventListener('change', updateValue);
-
 		function updateValue (e) {
-			var slidy = Slidy.cache.get(this);
+			var slidy = this;
 
 			//update value in picker
 			for (var i = 0, l = slidy.pickers.length; i < l; i++){
@@ -43,6 +39,8 @@ describe("Slidy", function () {
 
 		//create slidy
 		var slidy = new Slidy(el, opts);
+		updateValue.call(slidy);
+		slidy.on('change', updateValue);
 
 		//show min/max
 		el.children[0].innerHTML = slidy.min.length ? slidy.min : slidy.min.toFixed(2);

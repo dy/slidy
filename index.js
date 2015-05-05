@@ -206,6 +206,11 @@ proto.createPicker = function (options) {
 
 	var picker = new Picker(el, options);
 
+	//on picker change trigger own change
+	picker.on('change', function (value) {
+		self.emit('change', value);
+	});
+
 	return picker;
 };
 
