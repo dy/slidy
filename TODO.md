@@ -1,10 +1,9 @@
-* Stepping
 * Inverted size
 * Multitouches
 * Accessibility
 * Mousewheel control
 * interfaces component/vanilla/npm ...
-* grid
+* display grid
 * web-component
 * demo-page
 * polyfill native slider

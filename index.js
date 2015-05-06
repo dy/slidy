@@ -62,6 +62,7 @@ function Slidy(target, options) {
 	if (options.type !== undefined) self.type = options.type;
 	if (options.repeat !== undefined) self.repeat = options.repeat;
 	if (options.step !== undefined) self.step = options.step;
+	if (options.snap !== undefined) self.snap = options.snap;
 	if (options.pickerClass !== undefined) self.pickerClass = options.pickerClass;
 
 
@@ -195,6 +196,7 @@ proto.createPicker = function (options) {
 		max: self.max,
 		repeat: self.repeat,
 		step: self.step,
+		snap: self.snap,
 		pickerClass: self.pickerClass
 	}, options);
 

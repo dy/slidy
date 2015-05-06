@@ -220,11 +220,26 @@ describe("Slidy", function () {
 		});
 
 		it.skip('non-linear value', function () {
-
+			var el = createSlider('step horizontal', {
+				type: 'horizontal',
+				min: 0,
+				max: 100,
+				value: 10,
+				step: function (value) {
+					return value < 1 ? .01 : value > 50 ? 10 : value > 10 ? 5 : 1;
+				}
+			});
 		});
 
-		it.skip('loose boundaries', function () {
-			xxx
+		it('snap', function () {
+			var el = createSlider('snap horizontal', {
+				type: 'horizontal',
+				min: 0,
+				max: 100,
+				step: 10,
+				value: 10,
+				snap: true
+			});
 		});
 	});
 

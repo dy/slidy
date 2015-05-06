@@ -32,7 +32,7 @@ document.body.appendChild(slidy.element);
 | `Slidy.prototype.getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 | `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
-| `Slidy.prototype.loose` | Move thumb loosely so that it is snapped to grid only when released. |
+| `Slidy.prototype.snap` | Whether to move thumb loosely so that it is snapped only when released. |
 
 
 ## Picker API
