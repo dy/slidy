@@ -7,9 +7,10 @@
     "test": "test"
   },
   "dependencies": {
+    "contains": "^0.1.1",
     "define-state": "^1.0.0",
     "draggy": "^1.0.5",
-    "emmy": "^5.2.0",
+    "emmy": "^5.2.5",
     "get-client-xy": "^1.0.1",
     "is-array": "^1.0.1",
     "is-function": "^1.0.1",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "mocha": "*"
   },
+  "style": "index.css",
   "scripts": {
     "watch": "watchify -r ./index.js:slidy -r mucss -d -o test/bundle.js",
     "build": "browserify -r ./index:slidy -r mucss -o test/bundle.js",

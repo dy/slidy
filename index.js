@@ -102,7 +102,7 @@ function Slidy(target, options) {
 	lifecycle.enable(self.element);
 
 	//move closest picker to the place of click
-	on(self.element, 'mousedown', function (e) {
+	on(self.element, 'mousedown touchstart', function (e) {
 		var clickCoords = self.element.getBoundingClientRect();
 
 		//get coords relative to the container (this)

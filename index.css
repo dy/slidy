@@ -1,0 +1,15 @@
+.slidy {
+	min-height: 32px;
+	min-width: 32px;
+	position: relative;
+}
+
+.slidy-picker {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+.slidy-picker.focus, .slidy-picker:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(40,160,240,.5);
+};
