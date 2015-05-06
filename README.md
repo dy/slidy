@@ -48,6 +48,8 @@ document.body.appendChild(slidy.element);
 | `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
 | `Picker.prototype.startDrag()` | Start dragging for the picker. |
 | `Picker.prototype.update()` | Update size and position according to the value. |
+| `Picker.prototype.align` | Align picker to the side `0..1`. Default is `0.5`, i. e. align by center. |
+| `Picker.prototype.release` | Apply after-animation. |
 
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)

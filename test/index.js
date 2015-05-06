@@ -238,7 +238,8 @@ describe("Slidy", function () {
 				max: 100,
 				step: 10,
 				value: 10,
-				snap: true
+				snap: true,
+				release: true
 			});
 		});
 
@@ -246,10 +247,11 @@ describe("Slidy", function () {
 			var el = createSlider('inverted', {
 				type: 'horizontal',
 				min: 0,
-				max: 5,
+				max: 3,
 				step: 1,
 				value: 0,
-				instant: false
+				instant: false,
+				align: 0
 			});
 		});
 	});
