@@ -142,7 +142,7 @@ describe("Slidy", function () {
 				min: 100,
 				max: 0,
 				pickers: [
-					{value: 10},
+					{value: 10, step: 5},
 					{value: 50},
 					{value: 80}
 				]
@@ -207,34 +207,33 @@ describe("Slidy", function () {
 			});
 		});
 
-		// it('expose data', function () {
-		// 	xxx
-		// });
+		it('stepping function', function () {
+			var el = createSlider('step horizontal', {
+				type: 'horizontal',
+				min: 0,
+				max: 100,
+				value: 10,
+				step: function (value) {
+					return value < 1 ? .01 : value > 50 ? 10 : value > 10 ? 5 : 1;
+				}
+			});
+		});
 
-		// it('steps (small number of them)', function () {
-		// 	xxx
-		// });
+		it.skip('non-linear value', function () {
 
-		// it('snapping (random grid)', function () {
-		// 	xxx
-		// });
+		});
 
-		// it('loose boundaries', function () {
-		// 	xxx
-		// });
-
-		// it('image slider example', function () {
-		// 	xxx
-		// });
+		it.skip('loose boundaries', function () {
+			xxx
+		});
 	});
 
-
-	describe('interaction', function () {
+	describe('interactions', function () {
 		it('focusable', function () {
 			xxx
 		});
 
-		it('focused keyboard control', function () {
+		it('keyboard', function () {
 			xxx
 		});
 
