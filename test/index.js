@@ -200,9 +200,9 @@ describe("Slidy", function () {
 		it('repeat rect', function () {
 			var el = createSlider('repeat rectangular', {
 				type: 'rectangular',
-				min: [0,0],
-				max: [100,100],
-				value: [50,50],
+				min: [-50,-50],
+				max: [50,50],
+				value: [10,-10],
 				repeat: true
 			});
 		});
