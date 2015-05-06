@@ -1,6 +1,6 @@
 {
   "name": "slidy",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Slider component",
   "main": "index.js",
   "directories": {
