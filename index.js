@@ -64,6 +64,7 @@ function Slidy(target, options) {
 	if (options.step !== undefined) self.step = options.step;
 	if (options.snap !== undefined) self.snap = options.snap;
 	if (options.pickerClass !== undefined) self.pickerClass = options.pickerClass;
+	if (options.instant !== undefined) self.instant = options.instant;
 
 
 	//create pickers, if passed a list
@@ -111,7 +112,9 @@ function Slidy(target, options) {
 		self.picker = self.getClosestPicker(x, y);
 
 		//move picker to the point of click
-		self.picker.move(x,y).startDrag();
+		if (self.instant) {
+			self.picker.move(x,y).startDrag();
+		}
 
 		//disable every picker except for the active one
 		// - some other pickers might be clicked occasionally
@@ -153,8 +156,6 @@ Object.defineProperty(proto, 'value', {
 proto.type = 'horizontal';
 
 
-
-
 /**
  * Repeat either by one or both axis
  *
@@ -162,6 +163,12 @@ proto.type = 'horizontal';
  * @default true
  */
 proto.repeat = false;
+
+
+/**
+ * Move picker instantly to the place of click
+ */
+proto.instant = true;
 
 
 /**

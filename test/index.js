@@ -241,6 +241,17 @@ describe("Slidy", function () {
 				snap: true
 			});
 		});
+
+		it('inverted size', function () {
+			var el = createSlider('inverted', {
+				type: 'horizontal',
+				min: 0,
+				max: 5,
+				step: 1,
+				value: 0,
+				instant: false
+			});
+		});
 	});
 
 	describe('interactions', function () {
