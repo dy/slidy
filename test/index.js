@@ -17,7 +17,7 @@ describe("Slidy", function () {
 			'<span class="min">-</span>',
 			'<span class="max">+</span>',
 		].join("");
-		el.id = 'slidy-' + uid++;
+		// el.id = 'slidy-' + uid++;
 		document.body.appendChild(el);
 
 		function updateValue (e) {

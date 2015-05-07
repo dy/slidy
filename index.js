@@ -22,6 +22,7 @@ var emit = require('emmy/emit');
 var throttle = require('emmy/throttle');
 var getClientX = require('get-client-xy').x;
 var getClientY = require('get-client-xy').y;
+var getUid = require('get-uid');
 
 
 var win = window, doc = document;
@@ -42,18 +43,26 @@ function Slidy(target, options) {
 	//force constructor
 	if (!(this instanceof Slidy)) return new Slidy(target, options);
 
+	var self = this;
+
 	options = options || {};
+
 
 	//ensure element, if not defined
 	if (!target) target = doc.createElement('div');
 
 	//save refrence
-	var self = this;
 	self.element = target;
 	instancesCache.set(target, self);
 
+	//generate id
+	self.id = getUid();
+	if (!self.element.id) self.element.id = 'slidy-' + self.id;
+
 	//init instance
 	target.classList.add('slidy');
+
+
 
 	//adopt min/max/value
 	//can’t just simply extend options, as init is crucial to order
@@ -87,7 +96,23 @@ function Slidy(target, options) {
 	}
 
 
-	///Events
+	//set unfocusable
+	target.setAttribute('tabindex', -1);
+
+	//update ARIA controls
+	target.setAttribute('aria-controls', self.pickers.map(
+		function (item) {
+			return item.element.id;
+		}).join(' '));
+
+	//set role
+	self.element.setAttribute('role', 'slider');
+	target.setAttribute('aria-valuemax', self.max);
+	target.setAttribute('aria-valuemin', self.min);
+	target.setAttribute('aria-orientation', self.type);
+
+
+	//Events
 	// Update pickers position on the first load and resize
 	throttle(win, 'resize', 20, function () {
 		self.update();
@@ -138,7 +163,6 @@ function Slidy(target, options) {
 
 		//disable every picker except for the active one
 		// - some other pickers might be clicked occasionally
-		//FIXME: the case of multitouch
 		self.pickers.forEach(function (ipicker) {
 			if (pickers.indexOf(ipicker) < 0) {
 				ipicker.draggable.state = 'idle';
@@ -186,6 +210,15 @@ proto.type = 'horizontal';
 proto.repeat = false;
 
 
+/** Enable/disable */
+proto.enable = function () {
+	//TODO
+};
+
+proto.disable = function () {
+	//TODO
+};
+
 
 /**
  * Update all pickers limits & position
@@ -226,6 +259,9 @@ proto.createPicker = function (options) {
 
 	var el = document.createElement('div');
 
+	//add ARIA
+	el.setAttribute('aria-describedby', self.element.id);
+
 	//place picker to self
 	//need to be appended before to bubble events
 	self.element.appendChild(el);
@@ -234,6 +270,10 @@ proto.createPicker = function (options) {
 
 	//on picker change trigger own change
 	picker.on('change', function (value) {
+		//set aria value
+		self.element.setAttribute('aria-valuenow', value);
+		self.element.setAttribute('aria-valuetext', value);
+
 		self.emit('change', value);
 	});
 
