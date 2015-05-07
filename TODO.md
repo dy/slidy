@@ -1,8 +1,10 @@
 * Add sniper mode to kbd
-* interfaces component/vanilla/npm ...
 * display grid
 * Non-linear value
 * Polyfill native slider
+* Travis build
+* interfaces component/vanilla/npm ...
+* Web-component
 * demo-page
 * x Inverted size: undefined min/max
 	* For image sliders use swiper
@@ -19,4 +21,3 @@
 * HuSL dynamically restricted picker
 * Gauge picker
 * Image slider
-* Web-component

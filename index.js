@@ -7,17 +7,12 @@
 var Picker = require('./lib/picker');
 
 var extend = require('xtend/mutable');
-var round = require('mumath/round');
-var between = require('mumath/between');
-var state = require('st8');
 var isArray = require('is-array');
-var defineState = require('define-state');
 
 var lifecycle = require('lifecycle-events');
 var Emitter = require('events');
 var on = require('emmy/on');
 var off = require('emmy/off');
-var emit = require('emmy/emit');
 var throttle = require('emmy/throttle');
 var getClientX = require('get-client-xy').x;
 var getClientY = require('get-client-xy').y;
@@ -31,7 +26,7 @@ module.exports = Slidy;
 
 
 /** Cache of instances. Just as it is safer than keeping them on targets. */
-var instancesCache = Slidy.cache = new WeakMap;
+var instancesCache = Slidy.cache = new WeakMap();
 
 
 /**
@@ -64,19 +59,7 @@ function Slidy(target, options) {
 
 
 	//adopt min/max/value
-	//can’t just simply extend options, as init is crucial to order
-	if (options.min !== undefined) self.min = options.min;
-	if (options.max !== undefined) self.max = options.max;
-	if (options.type !== undefined) self.type = options.type;
-	if (options.repeat !== undefined) self.repeat = options.repeat;
-	if (options.step !== undefined) self.step = options.step;
-	if (options.snap !== undefined) self.snap = options.snap;
-	if (options.pickerClass !== undefined) self.pickerClass = options.pickerClass;
-	if (options.align !== undefined) self.align = options.align;
-	if (options.release !== undefined) self.release = options.release;
-	if (options.keyboard !== undefined) self.keyboard = options.keyboard;
-	if (options.aria !== undefined) self.aria = options.aria;
-	if (options.wheel !== undefined) self.wheel = options.wheel;
+	extend(self, options);
 
 
 	//create pickers, if passed a list
@@ -135,6 +118,7 @@ proto.max = 100;
 /** Define value as active picker value */
 Object.defineProperty(proto, 'value', {
 	set: function (value) {
+		if (!this.pickers) return;
 		this.pickers[0].value = value;
 	},
 	get: function () {
@@ -407,7 +391,7 @@ proto.createPicker = function (options) {
  */
 proto.getClosestPicker = function (pickers, x,y) {
 	//between all pickers choose the one with closest x,y
-	var minR = 9999, picker, minPicker;
+	var minR = 9999, minPicker;
 
 	pickers.forEach(function (picker) {
 		var xy = picker.draggable.getCoords();
