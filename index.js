@@ -161,6 +161,8 @@ function Slidy(target, options) {
 			picker.move(x,y).startDrag(e);
 		}
 
+		self.element.focus();
+
 		//disable every picker except for the active one
 		// - some other pickers might be clicked occasionally
 		self.pickers.forEach(function (ipicker) {
