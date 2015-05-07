@@ -258,10 +258,11 @@ describe("Slidy", function () {
 
 	describe('interactions', function () {
 		it('focusable', function () {
-			xxx
+			var el = createSlider('focusable horizontal', {
+			});
 		});
 
-		it('keyboard', function () {
+		it.skip('keyboard', function () {
 			xxx
 		});
 
@@ -279,15 +280,7 @@ describe("Slidy", function () {
 			});
 		});
 
-		it('scroll x', function () {
-			xxx
-		});
-
-		it('scroll y', function () {
-			xxx
-		});
-
-		it('scroll xy', function () {
+		it.skip('scroll', function () {
 			xxx
 		});
 	});
