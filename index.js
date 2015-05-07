@@ -96,20 +96,23 @@ function Slidy(target, options) {
 	}
 
 
+	//a11y
+	//@ref http://www.w3.org/TR/wai-aria/roles#slider
+
 	//set unfocusable
 	target.setAttribute('tabindex', -1);
-
-	//update ARIA controls
-	target.setAttribute('aria-controls', self.pickers.map(
-		function (item) {
-			return item.element.id;
-		}).join(' '));
 
 	//set role
 	self.element.setAttribute('role', 'slider');
 	target.setAttribute('aria-valuemax', self.max);
 	target.setAttribute('aria-valuemin', self.min);
 	target.setAttribute('aria-orientation', self.type);
+
+	//update ARIA controls
+	target.setAttribute('aria-controls', self.pickers.map(
+		function (item) {
+			return item.element.id;
+		}).join(' '));
 
 
 	//Events
@@ -161,6 +164,8 @@ function Slidy(target, options) {
 			picker.move(x,y).startDrag(e);
 		}
 
+		//focus on container programmatically
+		//in that case might be a multifocus
 		self.element.focus();
 
 		//disable every picker except for the active one
