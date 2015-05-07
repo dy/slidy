@@ -2,6 +2,15 @@
 
 Range slider component. [Tests](TODO).
 
+## Features
+
+* Accessibility
+* Looping
+* Sniper mode
+* Different shapes
+* Multitouch
+*
+
 ## Usage
 
 `$ npm install slidy`
@@ -32,8 +41,7 @@ document.body.appendChild(slidy.element);
 | `Slidy.prototype.getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 | `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
-| `Slidy.prototype.snap` | Whether to move thumb loosely so that it is snapped only when released. |
-| `Slidy.prototype.instant` | Instantly move picker to the place of click, centered. By default is true. Disable, if you need image slider-like behaviour. |
+| `Slidy.prototype.snap` | Whether to move thumb rigidly or loosely, so that it is snapped always or when released. |
 
 
 ## Picker API
@@ -43,13 +51,19 @@ document.body.appendChild(slidy.element);
 | `Picker.prototype.min` | Minimum value. |
 | `Picker.prototype.max` | Maximum value. |
 | `Picker.prototype.value` | Current value of a picker. |
-| `Picker.prototype.type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`. |
+| `Picker.prototype.type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`, `'round'`. |
 | `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
 | `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
 | `Picker.prototype.startDrag()` | Start dragging for the picker. |
 | `Picker.prototype.update()` | Update size and position according to the value. |
 | `Picker.prototype.align` | Align picker to the side `0..1`. Default is `0.5`, i. e. align by center. |
 | `Picker.prototype.release` | Apply after-animation. |
+
+
+## What slidy is not
+
+* Image slider. Use swiper, dragdealer or alike to create huge thumbs. It is conceptually bound to value and it’s limits. Slidy is (almost) single-purpose value slider.
+*
 
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)

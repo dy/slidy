@@ -243,7 +243,7 @@ describe("Slidy", function () {
 			});
 		});
 
-		it('inverted size', function () {
+		it.skip('inverted size', function () {
 			var el = createSlider('inverted', {
 				type: 'horizontal',
 				min: 0,
@@ -266,7 +266,17 @@ describe("Slidy", function () {
 		});
 
 		it('touches', function () {
-			xxx
+			var el = createSlider('multitouch rectangular huge', {
+				type: 'rectangular',
+				min: [100, -100],
+				max: [-100, 100],
+				pickers: [
+					{ value: [-10, 50]},
+					{ value: [80, -10]},
+					{ value: [10, 20]},
+					{ value: [-100,-100]}
+				]
+			});
 		});
 
 		it('scroll x', function () {

@@ -64,7 +64,6 @@ function Slidy(target, options) {
 	if (options.step !== undefined) self.step = options.step;
 	if (options.snap !== undefined) self.snap = options.snap;
 	if (options.pickerClass !== undefined) self.pickerClass = options.pickerClass;
-	if (options.instant !== undefined) self.instant = options.instant;
 	if (options.align !== undefined) self.align = options.align;
 	if (options.release !== undefined) self.release = options.release;
 
@@ -79,12 +78,10 @@ function Slidy(target, options) {
 			//update picker’s value, to trigger change
 			if (opts.value !== undefined) picker.value = opts.value;
 		});
-		self.picker = self.pickers[0];
 	}
 	//ensure at least one picker exists
 	else {
-		self.picker = self.createPicker();
-		self.pickers.push(self.picker);
+		self.pickers.push(self.createPicker());
 		//init first picker’s value
 		if (options.value !== undefined) self.value = options.value;
 	}
@@ -102,31 +99,53 @@ function Slidy(target, options) {
 	});
 	lifecycle.enable(self.element);
 
-	//move closest picker to the place of click
-	on(self.element, 'mousedown touchstart', function (e) {
-		var clickCoords = self.element.getBoundingClientRect();
+	//distribute multitouch event to closest pickers
+	on(self.element, 'touchstart mousedown', function (e) {
+		e.preventDefault();
 
-		//get coords relative to the container (this)
-		var x = getClientX(e) - clickCoords.left;
-		var y = getClientY(e) - clickCoords.top;
+		var selfClientRect = self.element.getBoundingClientRect();
 
-		//make closest picker active
-		self.picker = self.getClosestPicker(x, y);
+		//list of active pickers
+		var pickers = [], picker, x, y;
 
-		//move picker to the point of click
-		if (self.instant) {
-			self.picker.move(x,y).startDrag();
+		if (e.touches) {
+			//get coords relative to the container (this)
+			for (var i = 0, l = e.touches.length; i < l; i++) {
+				x = getClientX(e, i) - selfClientRect.left;
+				y = getClientY(e, i) - selfClientRect.top;
+
+				//find closest picker not taken already
+				picker = self.getClosestPicker(self.pickers.filter(function (p) {
+					return pickers.indexOf(p) < 0;
+				}), x, y);
+				pickers.push(picker);
+
+				//move picker to the point of click
+				picker.move(x,y).startDrag(e);
+			}
+		} else {
+			//get coords relative to the container (this)
+			x = getClientX(e) - selfClientRect.left;
+			y = getClientY(e) - selfClientRect.top;
+
+			//make closest picker active
+			picker = self.getClosestPicker(self.pickers, x, y);
+			pickers.push(picker);
+
+			//move picker to the point of click
+			picker.move(x,y).startDrag(e);
 		}
 
 		//disable every picker except for the active one
 		// - some other pickers might be clicked occasionally
 		//FIXME: the case of multitouch
 		self.pickers.forEach(function (ipicker) {
-			if (ipicker !== self.picker) {
+			if (pickers.indexOf(ipicker) < 0) {
 				ipicker.draggable.state = 'idle';
 			}
 		});
 	});
+
 
 	//emit callback
 	self.emit('created');
@@ -146,10 +165,10 @@ proto.max = 100;
 /** Define value as active picker value */
 Object.defineProperty(proto, 'value', {
 	set: function (value) {
-		this.picker.value = value;
+		this.pickers[0].value = value;
 	},
 	get: function () {
-		return this.picker.value;
+		return this.pickers[0].value;
 	}
 });
 
@@ -166,11 +185,6 @@ proto.type = 'horizontal';
  */
 proto.repeat = false;
 
-
-/**
- * Move picker instantly to the place of click
- */
-proto.instant = true;
 
 
 /**
@@ -235,11 +249,11 @@ proto.createPicker = function (options) {
  *
  * @return {Draggy} A picker instance
  */
-proto.getClosestPicker = function (x,y) {
+proto.getClosestPicker = function (pickers, x,y) {
 	//between all pickers choose the one with closest x,y
 	var minR = 9999, picker, minPicker;
 
-	this.pickers.forEach(function (picker) {
+	pickers.forEach(function (picker) {
 		var xy = picker.draggable.getCoords();
 		var dx = (x - xy[0] - picker.draggable.pin[0]);
 		var dy = (y - xy[1] - picker.draggable.pin[1]);

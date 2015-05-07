@@ -64,6 +64,10 @@
 		height: 200px;
 		box-shadow: inset 0 0 0 2px black;
 	}
+	.slidy.huge{
+		width: 90%;
+		height: 350px;
+	}
 
 	.slidy-picker{
 		cursor: default;
@@ -85,6 +89,11 @@
 		background: rgba(0,0,0,.1);
 		border-radius: 0;
 	}
+	.slidy.huge .slidy-picker{
+		width: 50px;
+		height: 50px;
+		border-radius: 25px;
+	}
 
 	.min, .value, .max{
 		position: absolute;
@@ -105,7 +114,6 @@
 		top: 0;
 		bottom: auto;
 	}
-
 	.pointer {
 		position: absolute;
 		top: 50%;
@@ -116,13 +124,45 @@
 		background: black;
 		-webkit-transform-origin: 0 0;
 	}
+
+
+	/** Native slider comparison */
+	input[type="range"] {
+		display: block;
+		width: 200px;
+		height: 32px;
+		position: relative;
+		-webkit-appearance: none;
+	}
+	input[type="range"]:after{
+		content: "";
+		position: absolute;
+		top: 50%;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: black;
+		margin-top: -1px;
+	}
+	input[type="range"]::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		position: relative;
+		border: none;
+		cursor: default;
+		width: 32px;
+		height: 32px;
+		background: white;
+		border-radius: 20px;
+		box-shadow: inset 0 0 0 2px black;
+		text-align: center;
+		line-height: 32px;
+		z-index: 1;
+	}
 </style>
 
 <div id="mocha"></div>
 
-
-<canvas class="painter"></canvas>
-
+<input type="range"/>
 
 <script src="../node_modules/mocha/mocha.js"></script>
 
