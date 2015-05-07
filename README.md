@@ -40,6 +40,8 @@ document.body.appendChild(slidy.element);
 | `Slidy.prototype.pickerClass` | Class to add to each picker. |
 | `Slidy.prototype.getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
+| `Slidy.prototype.disable()` | Disable interactivity. |
+| `Slidy.prototype.enable()` | Enable interactivity. |
 | `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
 | `Slidy.prototype.snap` | Whether to move thumb rigidly or loosely, so that it is snapped always or when released. |
 

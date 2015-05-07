@@ -57,11 +57,11 @@ function Slidy(target, options) {
 
 	//generate id
 	self.id = getUid();
-	if (!self.element.id) self.element.id = 'slidy-' + self.id;
+	self._ns = 'slidy-' + self.id;
+	if (!self.element.id) self.element.id = self._ns;
 
 	//init instance
 	target.classList.add('slidy');
-
 
 
 	//adopt min/max/value
@@ -98,37 +98,87 @@ function Slidy(target, options) {
 
 	//a11y
 	//@ref http://www.w3.org/TR/wai-aria/roles#slider
-
-	//set unfocusable
-	target.setAttribute('tabindex', -1);
-
-	//set role
 	self.element.setAttribute('role', 'slider');
 	target.setAttribute('aria-valuemax', self.max);
 	target.setAttribute('aria-valuemin', self.min);
 	target.setAttribute('aria-orientation', self.type);
+	target.setAttribute('aria-atomic', true);
 
-	//update ARIA controls
+	//update controls
 	target.setAttribute('aria-controls', self.pickers.map(
 		function (item) {
 			return item.element.id;
 		}).join(' '));
 
 
+	//turn on events etc
+	if (!self.element.hasAttribute('disabled')) self.enable();
+
+	//emit callback
+	self.emit('created');
+}
+
+
+var proto = Slidy.prototype = Object.create(Emitter.prototype);
+
+
+/**
+ * Default range
+ */
+proto.min = 0;
+proto.max = 100;
+
+
+/** Define value as active picker value */
+Object.defineProperty(proto, 'value', {
+	set: function (value) {
+		this.pickers[0].value = value;
+	},
+	get: function () {
+		return this.pickers[0].value;
+	}
+});
+
+
+/** Default placing type is horizontal */
+proto.type = 'horizontal';
+
+
+/**
+ * Repeat either by one or both axis
+ *
+ * @enum {bool}
+ * @default true
+ */
+proto.repeat = false;
+
+
+/** Enable/disable */
+proto.enable = function () {
+	var self = this;
+
+	if (self.isEnabled) return self;
+	self.isEnabled = true;
+
+	//ARIAs
+	self.element.removeAttribute('aria-disabled');
+	self.element.removeAttribute('disabled');
+
+
 	//Events
 	// Update pickers position on the first load and resize
-	throttle(win, 'resize', 20, function () {
+	throttle(win, 'resize.' + self._ns, 20, function () {
 		self.update();
 	});
 
 	//observe when slider is inserted
-	on(self.element, 'attached', function (e) {
+	on(self.element, 'attached.' + self._ns, function (e) {
 		self.update();
 	});
 	lifecycle.enable(self.element);
 
 	//distribute multitouch event to closest pickers
-	on(self.element, 'touchstart mousedown', function (e) {
+	on(self.element, 'touchstart.'  + self._ns + ' mousedown.' + self._ns, function (e) {
 		e.preventDefault();
 
 		var selfClientRect = self.element.getBoundingClientRect();
@@ -177,53 +227,44 @@ function Slidy(target, options) {
 		});
 	});
 
+	//set unfocusable always (redirect to first picker)
+	self.element.setAttribute('tabindex', -1);
 
-	//emit callback
-	self.emit('created');
-}
+	//enable pickers
+	self.pickers.forEach(function (picker) {
+		picker.enable();
+	});
 
-
-var proto = Slidy.prototype = Object.create(Emitter.prototype);
-
-
-/**
- * Default range
- */
-proto.min = 0;
-proto.max = 100;
-
-
-/** Define value as active picker value */
-Object.defineProperty(proto, 'value', {
-	set: function (value) {
-		this.pickers[0].value = value;
-	},
-	get: function () {
-		return this.pickers[0].value;
-	}
-});
-
-
-/** Default placing type is horizontal */
-proto.type = 'horizontal';
-
-
-/**
- * Repeat either by one or both axis
- *
- * @enum {bool}
- * @default true
- */
-proto.repeat = false;
-
-
-/** Enable/disable */
-proto.enable = function () {
-	//TODO
+	return self;
 };
 
+
+/**
+ * Disable interactivity
+ *
+ * @return {Slidy}
+ */
 proto.disable = function () {
-	//TODO
+	var self = this;
+
+	self.isEnabled = false;
+
+	//ARIAs
+	self.element.setAttribute('aria-disabled', true);
+	self.element.setAttribute('disabled', true);
+
+	//unbind events
+	off(win, 'resize.' + self._ns );
+	off(self.element, 'attached.' + self._ns );
+	off(self.element, 'mousedown.' + self._ns );
+	off(self.element, 'touchstart.' + self._ns );
+
+	//unbind pickers
+	self.pickers.forEach(function (picker) {
+		picker.disable();
+	});
+
+	return self;
 };
 
 
