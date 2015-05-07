@@ -1,4 +1,3 @@
-* Mousewheel control
 * Add sniper mode to kbd
 * interfaces component/vanilla/npm ...
 * display grid

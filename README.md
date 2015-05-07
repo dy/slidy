@@ -50,7 +50,7 @@ All these values can be passed to options or redefined straightly on the prototy
 | `Slidy.prototype.snap` | Snap always or only when released. |
 | `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
 | `Slidy.prototype.keyboard` | Enable keyboard interactions. |
-| `Slidy.prototype.scroll` | Enable scroll interactions. |
+| `Slidy.prototype.wheel` | Enable mousewheel interactions. |
 | `Slidy.prototype.aria` | Enable aria roles management. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 | `Slidy.prototype.disable()` | Disable interactivity. |

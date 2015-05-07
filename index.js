@@ -76,7 +76,7 @@ function Slidy(target, options) {
 	if (options.release !== undefined) self.release = options.release;
 	if (options.keyboard !== undefined) self.keyboard = options.keyboard;
 	if (options.aria !== undefined) self.aria = options.aria;
-	if (options.scroll !== undefined) self.scroll = options.scroll;
+	if (options.wheel !== undefined) self.wheel = options.wheel;
 
 
 	//create pickers, if passed a list
@@ -159,7 +159,7 @@ proto.repeat = false;
 /** Interaction settings */
 proto.keyboard = true;
 proto.aria = true;
-proto.scroll = true;
+proto.wheel = true;
 
 
 /** Enable/disable */
@@ -238,8 +238,55 @@ proto.enable = function () {
 		});
 	});
 
-	//set unfocusable always (redirect to first picker)
-	self.element.setAttribute('tabindex', -1);
+	if (self.wheel) {
+		on(self.element, 'wheel.' + self._ns + ' mousewheel' + self._ns, function (e) {
+			//get focused element
+			var focusEl = doc.activeElement, picker;
+
+			var selfClientRect = self.element.getBoundingClientRect();
+
+			//detect picker closest to the place of wheel
+			if (focusEl === self.element) {
+				var x = getClientX(e) - selfClientRect.left;
+				var y = getClientY(e) - selfClientRect.top;
+
+				picker = self.getClosestPicker(self.pickers, x, y);
+
+				picker.focus();
+			}
+			//handle current picker
+			else if (focusEl.parentNode === self.element) {
+				picker = self.pickers.filter(function (p) {
+					return p.element === focusEl;
+				})[0];
+			}
+			//ignore unfocused things
+			else return;
+
+			//ignore doc scroll
+			e.preventDefault();
+
+			//move it according to the wheel diff
+			var stepX = 0, stepY = 0;
+			if (e.deltaX !== 0) {
+				stepX = e.deltaX * 2 / (selfClientRect.width);
+				stepX = stepX > 0 ? Math.ceil(stepX) : Math.floor(stepX);
+				//invert x
+				stepX = -stepX;
+			}
+			if (e.deltaY !== 0) {
+				stepY = e.deltaY * 2 / (selfClientRect.height);
+				stepY = stepY > 0 ? Math.ceil(stepY) : Math.floor(stepY);
+			}
+
+			picker.inc(stepX, stepY);
+		});
+	}
+
+	if (self.keyboard) {
+		//set unfocusable always (redirect to first picker)
+		self.element.setAttribute('tabindex', -1);
+	}
 
 	//enable pickers
 	self.pickers.forEach(function (picker) {
@@ -319,7 +366,7 @@ proto.createPicker = function (options) {
 		release: self.release,
 		aria: self.aria,
 		keyboard: self.keyboard,
-		scroll: self.scroll
+		wheel: self.wheel
 	}, options);
 
 	var el = document.createElement('div');
