@@ -1,3 +1,4 @@
+* Fix kbd animation sluggishness
 * Inverted size
 * Multitouches
 * Accessibility

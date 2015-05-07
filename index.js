@@ -66,6 +66,7 @@ function Slidy(target, options) {
 	if (options.pickerClass !== undefined) self.pickerClass = options.pickerClass;
 	if (options.instant !== undefined) self.instant = options.instant;
 	if (options.align !== undefined) self.align = options.align;
+	if (options.release !== undefined) self.release = options.release;
 
 
 	//create pickers, if passed a list
@@ -205,7 +206,8 @@ proto.createPicker = function (options) {
 		step: self.step,
 		snap: self.snap,
 		pickerClass: self.pickerClass,
-		align: self.align
+		align: self.align,
+		release: self.release
 	}, options);
 
 	var el = document.createElement('div');

@@ -213,6 +213,7 @@ describe("Slidy", function () {
 				min: 0,
 				max: 100,
 				value: 10,
+				release: true,
 				step: function (value) {
 					return value < 1 ? .01 : value > 50 ? 10 : value > 10 ? 5 : 1;
 				}
@@ -238,8 +239,7 @@ describe("Slidy", function () {
 				max: 100,
 				step: 10,
 				value: 10,
-				snap: true,
-				release: true
+				snap: true
 			});
 		});
 
