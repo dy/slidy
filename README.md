@@ -1,4 +1,4 @@
-# slidy
+# Slidy [![Build Status](https://travis-ci.org/dfcreative/slidy.svg?branch=master)](https://travis-ci.org/dfcreative/slidy) [![Code Climate](https://codeclimate.com/github/dfcreative/slidy/badges/gpa.svg)](https://codeclimate.com/github/dfcreative/slidy)
 
 Customizable range slider component. [Demo](TODO).
 
@@ -12,7 +12,8 @@ Customizable range slider component. [Demo](TODO).
 * Multiple dimensions
 * Multuple pickers
 * Animations
-* Mousewheel
+* Wheel control
+* Keyboard controls
 * Grid display
 * Native-compliant behaviour/polyfill
 
@@ -34,7 +35,7 @@ document.body.appendChild(slidy.element);
 
 ## API
 
-### `Slidy`
+### Slidy
 
 All these values can be passed to options or redefined straightly on the prototype.
 
@@ -57,7 +58,7 @@ All these values can be passed to options or redefined straightly on the prototy
 | `Slidy.prototype.enable()` | Enable interactivity. |
 
 
-### `Picker`
+### Picker
 
 Per-picker options can redefine slidy default options.
 
@@ -65,18 +66,19 @@ Per-picker options can redefine slidy default options.
 |---|---|
 | `Picker.prototype.min` | Minimum value. |
 | `Picker.prototype.max` | Maximum value. |
-| `Picker.prototype.value` | Current value of a picker. |
+| `Picker.prototype.value` | Current value of a picker. Changing it doesn’t update position of a picker, to do that, call `picker.renderValue(this.value)` or just `picker.update()`. |
 | `Picker.prototype.type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`, `'round'`. |
 | `Picker.prototype.align` | Align picker to the side `0..1`. Default is `0.5`, i. e. align by center. |
 | `Picker.prototype.release` | Apply after-animation. |
 | `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
 | `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
+| `Picker.prototype.inc(times [, timesY])` | Increment/decrement picker value on `this.step` `times`. |
 | `Picker.prototype.update()` | Update size and position according to the value. |
 
 
 ## What slidy is not
 
-* Image slider. Use swiper, dragdealer or alike to create huge thumbs. Slidy is conceptually bound to value and it’s limits. Slidy is (almost) single-purpose value slider.
+* Image slider. Use swiper, dragdealer or alike to create huge thumbs. Slidy is conceptually bound to value and it’s range. Slidy is (almost) single-purpose value slider.
 * Content scroller. You can use slidy as a scrollbar, but scrolling content is not slidy’s duty.
 
 
