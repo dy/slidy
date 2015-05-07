@@ -4,16 +4,16 @@ Customizable range slider component. [Demo](TODO).
 
 ## Features
 
+* 2d mode
+* Polar/circular mode
+* Multuple thumbs
 * Multitouch
 * Looping
 * Accessibility
+* Wheel
+* Keyboard
 * Sniper mode
-* Circular/gauge mode
-* Multiple dimensions
-* Multuple pickers
 * Animations
-* Wheel control
-* Keyboard controls
 * Grid display
 * Native-compliant behaviour/polyfill
 
@@ -80,6 +80,7 @@ Per-picker options can redefine slidy default options.
 
 * Image slider. Use swiper, dragdealer or alike to create huge thumbs. Slidy is conceptually bound to value and it’s range. Slidy is (almost) single-purpose value slider.
 * Content scroller. You can use slidy as a scrollbar, but scrolling content is not slidy’s duty.
+* Range slider. It doesn’t paint range or any other visual region, because it is domain-specific data, and it is farmed out to user to interpret set of point values. Slider just provides reliable mechanism of input.
 
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)
