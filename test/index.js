@@ -259,6 +259,7 @@ describe("Slidy", function () {
 	describe('interactions', function () {
 		it('focusable', function () {
 			var el = createSlider('focusable horizontal', {
+				aria: false
 			});
 		});
 

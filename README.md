@@ -1,15 +1,20 @@
 # slidy
 
-Range slider component. [Tests](TODO).
+Customizable range slider component. [Demo](TODO).
 
 ## Features
 
-* Accessibility
-* Looping
-* Sniper mode
-* Different shapes
 * Multitouch
-*
+* Looping
+* Accessibility
+* Sniper mode
+* Circular/gauge mode
+* Multiple dimensions
+* Multuple pickers
+* Animations
+* Mousewheel
+* Grid display
+* Native-compliant behaviour/polyfill
 
 ## Usage
 
@@ -27,26 +32,34 @@ var slidy = new Slidy({
 document.body.appendChild(slidy.element);
 ```
 
-## Slidy API
+## API
+
+### `Slidy`
+
+All these values can be passed to options or redefined straightly on the prototype.
 
 | Name | Description |
 |---|---|
-| `Slidy.prototype.min` | Minimum value. |
-| `Slidy.prototype.max` | Maximum value. |
-| `Slidy.prototype.value` | Picker value. In case of multiple pickers - first picker's value. |
+| `Slidy.prototype.min` | Minimum value. By default 0. |
+| `Slidy.prototype.max` | Maximum value. By default 100. |
+| `Slidy.prototype.value` | Picker value. In case of multiple pickers - first picker's value. By default - `( min - max ) / 2`. |
 | `Slidy.prototype.type` | Type of pickers placement, see `Picker.prototype.type`. |
-| `Slidy.prototype.repeat` | Repeat picker by axis: x, y or both, |
-| `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
+| `Slidy.prototype.repeat` | Repeat picker by axis: `'x'`, `'y'` or `'both'`, |
 | `Slidy.prototype.pickerClass` | Class to add to each picker. |
-| `Slidy.prototype.getClosestPicker(x, y)` | Get picker closest to the relative `x`, `y` coordinates within the slidy container. |
+| `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
+| `Slidy.prototype.snap` | Snap always or only when released. |
+| `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
+| `Slidy.prototype.keyboard` | Enable keyboard interactions. |
+| `Slidy.prototype.scroll` | Enable scroll interactions. |
+| `Slidy.prototype.aria` | Enable aria roles management. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 | `Slidy.prototype.disable()` | Disable interactivity. |
 | `Slidy.prototype.enable()` | Enable interactivity. |
-| `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
-| `Slidy.prototype.snap` | Whether to move thumb rigidly or loosely, so that it is snapped always or when released. |
 
 
-## Picker API
+### `Picker`
+
+Per-picker options can redefine slidy default options.
 
 | Name | Description |
 |---|---|
@@ -54,18 +67,17 @@ document.body.appendChild(slidy.element);
 | `Picker.prototype.max` | Maximum value. |
 | `Picker.prototype.value` | Current value of a picker. |
 | `Picker.prototype.type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`, `'round'`. |
-| `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
-| `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
-| `Picker.prototype.startDrag()` | Start dragging for the picker. |
-| `Picker.prototype.update()` | Update size and position according to the value. |
 | `Picker.prototype.align` | Align picker to the side `0..1`. Default is `0.5`, i. e. align by center. |
 | `Picker.prototype.release` | Apply after-animation. |
+| `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
+| `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
+| `Picker.prototype.update()` | Update size and position according to the value. |
 
 
 ## What slidy is not
 
-* Image slider. Use swiper, dragdealer or alike to create huge thumbs. It is conceptually bound to value and it’s limits. Slidy is (almost) single-purpose value slider.
-*
+* Image slider. Use swiper, dragdealer or alike to create huge thumbs. Slidy is conceptually bound to value and it’s limits. Slidy is (almost) single-purpose value slider.
+* Content scroller. You can use slidy as a scrollbar, but scrolling content is not slidy’s duty.
 
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)

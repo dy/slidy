@@ -1,9 +1,8 @@
 /**
- * Slidy - customizable range-slider component.
+ * Slidy - customizable slider component.
  *
  * @module slidy
  */
-
 
 var Picker = require('./lib/picker');
 
@@ -75,6 +74,9 @@ function Slidy(target, options) {
 	if (options.pickerClass !== undefined) self.pickerClass = options.pickerClass;
 	if (options.align !== undefined) self.align = options.align;
 	if (options.release !== undefined) self.release = options.release;
+	if (options.keyboard !== undefined) self.keyboard = options.keyboard;
+	if (options.aria !== undefined) self.aria = options.aria;
+	if (options.scroll !== undefined) self.scroll = options.scroll;
 
 
 	//create pickers, if passed a list
@@ -96,20 +98,21 @@ function Slidy(target, options) {
 	}
 
 
-	//a11y
-	//@ref http://www.w3.org/TR/wai-aria/roles#slider
-	self.element.setAttribute('role', 'slider');
-	target.setAttribute('aria-valuemax', self.max);
-	target.setAttribute('aria-valuemin', self.min);
-	target.setAttribute('aria-orientation', self.type);
-	target.setAttribute('aria-atomic', true);
+	if (self.aria) {
+		//a11y
+		//@ref http://www.w3.org/TR/wai-aria/roles#slider
+		self.element.setAttribute('role', 'slider');
+		target.setAttribute('aria-valuemax', self.max);
+		target.setAttribute('aria-valuemin', self.min);
+		target.setAttribute('aria-orientation', self.type);
+		target.setAttribute('aria-atomic', true);
 
-	//update controls
-	target.setAttribute('aria-controls', self.pickers.map(
-		function (item) {
-			return item.element.id;
-		}).join(' '));
-
+		//update controls
+		target.setAttribute('aria-controls', self.pickers.map(
+			function (item) {
+				return item.element.id;
+			}).join(' '));
+	}
 
 	//turn on events etc
 	if (!self.element.hasAttribute('disabled')) self.enable();
@@ -153,6 +156,12 @@ proto.type = 'horizontal';
 proto.repeat = false;
 
 
+/** Interaction settings */
+proto.keyboard = true;
+proto.aria = true;
+proto.scroll = true;
+
+
 /** Enable/disable */
 proto.enable = function () {
 	var self = this;
@@ -160,10 +169,12 @@ proto.enable = function () {
 	if (self.isEnabled) return self;
 	self.isEnabled = true;
 
-	//ARIAs
-	self.element.removeAttribute('aria-disabled');
-	self.element.removeAttribute('disabled');
+	if (self.aria) {
+		//ARIAs
+		self.element.removeAttribute('aria-disabled');
+	}
 
+	self.element.removeAttribute('disabled');
 
 	//Events
 	// Update pickers position on the first load and resize
@@ -249,8 +260,11 @@ proto.disable = function () {
 
 	self.isEnabled = false;
 
-	//ARIAs
-	self.element.setAttribute('aria-disabled', true);
+	if (self.aria) {
+		//ARIAs
+		self.element.setAttribute('aria-disabled', true);
+	}
+
 	self.element.setAttribute('disabled', true);
 
 	//unbind events
@@ -302,13 +316,18 @@ proto.createPicker = function (options) {
 		snap: self.snap,
 		pickerClass: self.pickerClass,
 		align: self.align,
-		release: self.release
+		release: self.release,
+		aria: self.aria,
+		keyboard: self.keyboard,
+		scroll: self.scroll
 	}, options);
 
 	var el = document.createElement('div');
 
-	//add ARIA
-	el.setAttribute('aria-describedby', self.element.id);
+	if (self.aria) {
+		//add ARIA
+		el.setAttribute('aria-describedby', self.element.id);
+	}
 
 	//place picker to self
 	//need to be appended before to bubble events
@@ -318,9 +337,11 @@ proto.createPicker = function (options) {
 
 	//on picker change trigger own change
 	picker.on('change', function (value) {
-		//set aria value
-		self.element.setAttribute('aria-valuenow', value);
-		self.element.setAttribute('aria-valuetext', value);
+		if (self.aria) {
+			//set aria value
+			self.element.setAttribute('aria-valuenow', value);
+			self.element.setAttribute('aria-valuetext', value);
+		}
 
 		self.emit('change', value);
 	});

@@ -1,5 +1,3 @@
-* Accessibility - emulate native slider behaviour, focus on container, not the picker
-* Fulfill ARIAs on the container http://www.w3.org/TR/wai-aria/roles#slider
 * Mousewheel control
 * Add sniper mode to kbd
 * interfaces component/vanilla/npm ...

@@ -1,7 +1,7 @@
 {
   "name": "slidy",
   "version": "0.3.0",
-  "description": "Slider component",
+  "description": "Range slider component",
   "main": "index.js",
   "directories": {
     "test": "test"
