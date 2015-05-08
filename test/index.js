@@ -238,10 +238,9 @@ describe("Slidy", function () {
 			var el = createSlider('step horizontal', {
 				type: 'horizontal',
 				min: 0,
-				max: 100,
-				value: 10,
-				step: function (value) {
-					return value < 1 ? .01 : value > 50 ? 10 : value > 10 ? 5 : 1;
+				max: 1000,
+				value: function (value) {
+					return value < 1 ? .1 : value < 10 ? 1 : value < 100 ? 10 : 100;
 				}
 			});
 		});
@@ -276,8 +275,27 @@ describe("Slidy", function () {
 				value: 2,
 				click: false,
 				align: 0,
+				// repeat: 'x',
 				pickers: [thumb]
 			}, false);
+		});
+
+		it.skip('form input', function () {
+			var formEl = document.createElement('form');
+			formEl.className = 'slidy-form';
+			// formEl.action = location.search;
+			// formEl.method = 'post';
+			formEl.innerHTML = '<input type="range" name="x"/><input type="submit"/>';
+			var inputEl = formEl.elements.x;
+
+			var slidy = new Slidy(inputEl);
+			slidy.element.classList.add('horizontal');
+
+			formEl.addEventListener('submit', function (e) {
+				e.preventDefault();
+			});
+
+			document.body.appendChild(formEl);
 		});
 	});
 

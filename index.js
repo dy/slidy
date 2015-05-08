@@ -41,25 +41,26 @@ function Slidy(target, options) {
 
 	options = options || {};
 
-
 	//ensure element, if not defined
 	if (!target) target = doc.createElement('div');
 
-	//save refrence
+
+	//get preferred element
 	self.element = target;
-	instancesCache.set(target, self);
+
+	//adopt options
+	extend(self, options);
+
+	//save refrence
+	instancesCache.set(self.element, self);
 
 	//generate id
 	self.id = getUid();
-	self._ns = 'slidy-' + self.id;
-	if (!self.element.id) self.element.id = self._ns;
+	self.ns = 'slidy-' + self.id;
+	if (!self.element.id) self.element.id = self.ns;
 
 	//init instance
-	target.classList.add('slidy');
-
-
-	//adopt min/max/value
-	extend(self, options);
+	self.element.classList.add('slidy');
 
 
 	//create pickers, if passed a list
@@ -81,6 +82,7 @@ function Slidy(target, options) {
 	//ensure at least one picker exists
 	else {
 		self.pickers.push(self.createPicker());
+
 		//init first picker’s value
 		if (options.value !== undefined) self.value = options.value;
 	}
@@ -151,6 +153,7 @@ proto.wheel = true;
 proto.click = true;
 proto.point = false;
 
+
 /** Picker alignment relative to the mouse */
 proto.align = 0.5;
 
@@ -171,19 +174,19 @@ proto.enable = function () {
 
 	//Events
 	// Update pickers position on the first load and resize
-	throttle(win, 'resize.' + self._ns, 20, function () {
+	throttle(win, 'resize.' + self.ns, 20, function () {
 		self.update();
 	});
 
 	//observe when slider is inserted
-	on(self.element, 'attached.' + self._ns, function (e) {
+	on(self.element, 'attached.' + self.ns, function (e) {
 		self.update();
 	});
 	lifecycle.enable(self.element);
 
 	//distribute multitouch event to closest pickers
 	if (self.click) {
-		on(self.element, 'touchstart.'  + self._ns + ' mousedown.' + self._ns, function (e) {
+		on(self.element, 'touchstart.'  + self.ns + ' mousedown.' + self.ns, function (e) {
 			e.preventDefault();
 
 			//focus on container programmatically
@@ -238,7 +241,7 @@ proto.enable = function () {
 	}
 
 	if (self.wheel) {
-		on(self.element, 'wheel.' + self._ns + ' mousewheel' + self._ns, function (e) {
+		on(self.element, 'wheel.' + self.ns + ' mousewheel' + self.ns, function (e) {
 			//get focused element
 			var focusEl = doc.activeElement, picker;
 
@@ -314,10 +317,10 @@ proto.disable = function () {
 	self.element.setAttribute('disabled', true);
 
 	//unbind events
-	off(win, 'resize.' + self._ns );
-	off(self.element, 'attached.' + self._ns );
-	off(self.element, 'mousedown.' + self._ns );
-	off(self.element, 'touchstart.' + self._ns );
+	off(win, 'resize.' + self.ns );
+	off(self.element, 'attached.' + self.ns );
+	off(self.element, 'mousedown.' + self.ns );
+	off(self.element, 'touchstart.' + self.ns );
 
 	//unbind pickers
 	self.pickers.forEach(function (picker) {

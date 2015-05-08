@@ -1,5 +1,3 @@
-* Non-linear value
-* Polyfill native slider
 * Travis build
 * interfaces component/vanilla/npm ...
 * Web-component
@@ -17,3 +15,11 @@
 * HuSL dynamically restricted picker
 * Gauge picker
 * Image slider
+* Non-linear value picker
+* Svg curve
+* Range slider
+* Photo region picker (photo editor)
+* Thubmler iOS-like
+* Swipe left
+* Scrollbar
+* Form input polyfill
