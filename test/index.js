@@ -207,6 +207,16 @@ describe("Slidy", function () {
 			});
 		});
 
+		it('point picker', function () {
+			var el = createSlider('point rectangular', {
+				type: 'rectangular',
+				point: true,
+				min: [-50,-50],
+				max: [50,50],
+				value: [20,40]
+			});
+		});
+
 		it('stepping function', function () {
 			var el = createSlider('step horizontal', {
 				type: 'horizontal',

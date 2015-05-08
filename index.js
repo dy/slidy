@@ -145,7 +145,7 @@ proto.keyboard = true;
 proto.aria = true;
 proto.wheel = true;
 proto.click = true;
-
+proto.point = false;
 
 /** Picker alignment relative to the mouse */
 proto.align = 0.5;
@@ -361,7 +361,8 @@ proto.createPicker = function (options) {
 		release: self.release,
 		aria: self.aria,
 		keyboard: self.keyboard,
-		wheel: self.wheel
+		wheel: self.wheel,
+		point: self.point
 	}, options);
 
 	var el = document.createElement('div');
@@ -406,8 +407,8 @@ proto.getClosestPicker = function (pickers, x,y) {
 
 	pickers.forEach(function (picker) {
 		var xy = picker.draggable.getCoords();
-		var dx = (x - xy[0] - picker.draggable.pin[0] + picker.draggable.pin.width * 0.5);
-		var dy = (y - xy[1] - picker.draggable.pin[1] + picker.draggable.pin.height * 0.5);
+		var dx = (x - xy[0] - picker.draggable.pin[0] - picker.draggable.pin.width * picker.align);
+		var dy = (y - xy[1] - picker.draggable.pin[1] - picker.draggable.pin.height * picker.align);
 
 		var r = Math.sqrt( dx*dx + dy*dy );
 
