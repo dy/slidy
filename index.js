@@ -176,10 +176,15 @@ proto.enable = function () {
 	on(self.element, 'touchstart.'  + self._ns + ' mousedown.' + self._ns, function (e) {
 		e.preventDefault();
 
+		//focus on container programmatically
+		//in that case might be a multifocus
+		self.element.focus();
+
 		var selfClientRect = self.element.getBoundingClientRect();
 
 		//list of active pickers
 		var pickers = [], picker, x, y;
+
 
 		if (e.touches) {
 			//get coords relative to the container (this)
@@ -207,11 +212,10 @@ proto.enable = function () {
 
 			//move picker to the point of click
 			picker.move(x,y).startDrag(e);
-		}
 
-		//focus on container programmatically
-		//in that case might be a multifocus
-		self.element.focus();
+			//focus picker (not always focusable)
+			picker.focus();
+		}
 
 		//disable every picker except for the active one
 		// - some other pickers might be clicked occasionally

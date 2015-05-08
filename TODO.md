@@ -1,13 +1,10 @@
-* Add sniper mode to kbd
-* display grid
+* inverted mode: thumb is static, container is movable
 * Non-linear value
 * Polyfill native slider
 * Travis build
 * interfaces component/vanilla/npm ...
 * Web-component
 * demo-page
-* x Inverted size: undefined min/max
-	* For image sliders use swiper
 
 ## Cases
 
