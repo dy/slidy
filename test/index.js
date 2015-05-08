@@ -213,7 +213,8 @@ describe("Slidy", function () {
 				point: true,
 				min: [-50,-50],
 				max: [50,50],
-				value: [20,40]
+				value: [20,40],
+				repeat: 'x'
 			});
 		});
 

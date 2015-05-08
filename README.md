@@ -53,6 +53,7 @@ All these values can be passed to options or redefined straightly on the prototy
 | `Slidy.prototype.keyboard` | Enable keyboard interactions. |
 | `Slidy.prototype.wheel` | Enable mousewheel interactions. |
 | `Slidy.prototype.aria` | Enable aria roles management. |
+| `Slidy.prototype.point` | Make point picker so that it is limited by slider only in one point. |
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 | `Slidy.prototype.disable()` | Disable interactivity. |
 | `Slidy.prototype.enable()` | Enable interactivity. |
