@@ -29,7 +29,7 @@
   "style": "index.css",
   "scripts": {
     "watch": "watchify -r ./index.js:../ -r mucss -d -o ./bundle.js",
-    "build": "browserify -r ./index.js:../ -r mucss -r es5-shim -o ./bundle.js",
+    "build": "browserify -r ./index.js:../ -r mucss -o ./bundle.js",
     "test": "mochify"
   },
   "repository": {
