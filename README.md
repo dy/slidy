@@ -49,6 +49,7 @@ All these values can be passed to options or redefined straightly on the prototy
 | `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
 | `Slidy.prototype.snap` | Snap always or only when released. |
 | `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
+| `Slidy.prototype.click` | Enable click interaction or leave only drag. |
 | `Slidy.prototype.keyboard` | Enable keyboard interactions. |
 | `Slidy.prototype.wheel` | Enable mousewheel interactions. |
 | `Slidy.prototype.aria` | Enable aria roles management. |
@@ -71,7 +72,7 @@ Per-picker options can redefine slidy default options.
 | `Picker.prototype.release` | Apply after-animation. |
 | `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
 | `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
-| `Picker.prototype.inc(times [, timesY])` | Increment/decrement picker value on `this.step` `times`. |
+| `Picker.prototype.inc(times [, timesY])` | Increment/decrement picker value by `this.step` `times`. |
 | `Picker.prototype.update()` | Update size and position according to the value. |
 
 
@@ -79,7 +80,7 @@ Per-picker options can redefine slidy default options.
 
 * Image slider. Use swiper, dragdealer or alike to create huge thumbs. Slidy is conceptually bound to value and it’s range. Slidy is (almost) single-purpose value slider.
 * Content scroller. You can use slidy as a scrollbar, but scrolling content is not slidy’s duty.
-* Range slider. Slidy doesn’t paint range or any other visual region, because it is domain-specific data, and interpreting slidy input value[s] is farmed out to user. Slider just provides reliable mechanism of input.
+* Range slider. Slidy doesn’t paint range or any other visual information, because it is domain-specific data, and interpreting slidy input value[s] is farmed out to user. Slider just provides a reliable mechanism of input. To build domain-specific picker, create a new component, like [color-picker](https://github.com/dfcreative/picky).
 
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)

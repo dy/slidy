@@ -144,6 +144,11 @@ proto.repeat = false;
 proto.keyboard = true;
 proto.aria = true;
 proto.wheel = true;
+proto.click = true;
+
+
+/** Picker alignment relative to the mouse */
+proto.align = 0.5;
 
 
 /** Enable/disable */
@@ -173,58 +178,60 @@ proto.enable = function () {
 	lifecycle.enable(self.element);
 
 	//distribute multitouch event to closest pickers
-	on(self.element, 'touchstart.'  + self._ns + ' mousedown.' + self._ns, function (e) {
-		e.preventDefault();
+	if (self.click) {
+		on(self.element, 'touchstart.'  + self._ns + ' mousedown.' + self._ns, function (e) {
+			e.preventDefault();
 
-		//focus on container programmatically
-		//in that case might be a multifocus
-		self.element.focus();
+			//focus on container programmatically
+			//in that case might be a multifocus
+			self.element.focus();
 
-		var selfClientRect = self.element.getBoundingClientRect();
+			var selfClientRect = self.element.getBoundingClientRect();
 
-		//list of active pickers
-		var pickers = [], picker, x, y;
+			//list of active pickers
+			var pickers = [], picker, x, y;
 
 
-		if (e.touches) {
-			//get coords relative to the container (this)
-			for (var i = 0, l = e.touches.length; i < l; i++) {
-				x = getClientX(e, i) - selfClientRect.left;
-				y = getClientY(e, i) - selfClientRect.top;
+			if (e.touches) {
+				//get coords relative to the container (this)
+				for (var i = 0, l = e.touches.length; i < l; i++) {
+					x = getClientX(e, i) - selfClientRect.left;
+					y = getClientY(e, i) - selfClientRect.top;
 
-				//find closest picker not taken already
-				picker = self.getClosestPicker(self.pickers.filter(function (p) {
-					return pickers.indexOf(p) < 0;
-				}), x, y);
+					//find closest picker not taken already
+					picker = self.getClosestPicker(self.pickers.filter(function (p) {
+						return pickers.indexOf(p) < 0;
+					}), x, y);
+					pickers.push(picker);
+
+					//move picker to the point of click
+					picker.move(x,y).startDrag(e);
+				}
+			} else {
+				//get coords relative to the container (this)
+				x = getClientX(e) - selfClientRect.left;
+				y = getClientY(e) - selfClientRect.top;
+
+				//make closest picker active
+				picker = self.getClosestPicker(self.pickers, x, y);
 				pickers.push(picker);
 
 				//move picker to the point of click
 				picker.move(x,y).startDrag(e);
+
+				//focus picker (not always focusable)
+				picker.focus();
 			}
-		} else {
-			//get coords relative to the container (this)
-			x = getClientX(e) - selfClientRect.left;
-			y = getClientY(e) - selfClientRect.top;
 
-			//make closest picker active
-			picker = self.getClosestPicker(self.pickers, x, y);
-			pickers.push(picker);
-
-			//move picker to the point of click
-			picker.move(x,y).startDrag(e);
-
-			//focus picker (not always focusable)
-			picker.focus();
-		}
-
-		//disable every picker except for the active one
-		// - some other pickers might be clicked occasionally
-		self.pickers.forEach(function (ipicker) {
-			if (pickers.indexOf(ipicker) < 0) {
-				ipicker.draggable.state = 'idle';
-			}
+			//disable every picker except for the active one
+			// - some other pickers might be clicked occasionally
+			self.pickers.forEach(function (ipicker) {
+				if (pickers.indexOf(ipicker) < 0) {
+					ipicker.draggable.state = 'idle';
+				}
+			});
 		});
-	});
+	}
 
 	if (self.wheel) {
 		on(self.element, 'wheel.' + self._ns + ' mousewheel' + self._ns, function (e) {
@@ -399,8 +406,8 @@ proto.getClosestPicker = function (pickers, x,y) {
 
 	pickers.forEach(function (picker) {
 		var xy = picker.draggable.getCoords();
-		var dx = (x - xy[0] - picker.draggable.pin[0]);
-		var dy = (y - xy[1] - picker.draggable.pin[1]);
+		var dx = (x - xy[0] - picker.draggable.pin[0] + picker.draggable.pin.width * 0.5);
+		var dy = (y - xy[1] - picker.draggable.pin[1] + picker.draggable.pin.height * 0.5);
 
 		var r = Math.sqrt( dx*dx + dy*dy );
 

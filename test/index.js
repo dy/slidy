@@ -243,14 +243,13 @@ describe("Slidy", function () {
 			});
 		});
 
-		it.skip('inverted size', function () {
+		it('inverted size', function () {
 			var el = createSlider('inverted', {
-				type: 'horizontal',
 				min: 0,
 				max: 3,
 				step: 1,
 				value: 0,
-				instant: false,
+				click: false,
 				align: 0
 			});
 		});
