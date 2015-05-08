@@ -255,13 +255,17 @@ describe("Slidy", function () {
 		});
 
 		it('inverted size', function () {
+			var thumb = document.createElement('div');
+			thumb.className = 'carousel';
+
 			var el = createSlider('inverted', {
 				min: 0,
 				max: 3,
 				step: 1,
 				value: 0,
 				click: false,
-				align: 0
+				align: 0,
+				pickers: [thumb]
 			});
 		});
 	});

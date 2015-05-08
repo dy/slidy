@@ -66,6 +66,11 @@ function Slidy(target, options) {
 	self.pickers = [];
 	if (isArray(options.pickers) && options.pickers.length) {
 		options.pickers.forEach(function (opts) {
+			//if opts is element - treat it as element for the picker
+			if (opts instanceof Node) opts = {
+				element: opts
+			};
+
 			var picker = self.createPicker(opts);
 			self.pickers.push(picker);
 
@@ -365,7 +370,7 @@ proto.createPicker = function (options) {
 		point: self.point
 	}, options);
 
-	var el = document.createElement('div');
+	var el = options.element || document.createElement('div');
 
 	if (self.aria) {
 		//add ARIA
