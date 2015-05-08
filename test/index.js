@@ -9,7 +9,7 @@ describe("Slidy", function () {
 
 	var uid = 0;
 
-	function createSlider(name, opts){
+	function createSlider(name, opts, events){
 		var el = document.createElement("div");
 		el.title = name;
 		el.className = name + ' slidy';
@@ -39,8 +39,11 @@ describe("Slidy", function () {
 
 		//create slidy
 		var slidy = new Slidy(el, opts);
-		updateValue.call(slidy);
-		slidy.on('change', updateValue);
+
+		if (events !== false) {
+			updateValue.call(slidy);
+			slidy.on('change', updateValue);
+		}
 
 		//show min/max
 		el.children[0].innerHTML = slidy.min.length ? slidy.min : slidy.min.toFixed(2);
@@ -258,15 +261,23 @@ describe("Slidy", function () {
 			var thumb = document.createElement('div');
 			thumb.className = 'carousel';
 
+			for (var i = 0, item; i < 3; i++) {
+				item = document.createElement('div');
+				item.className = 'carousel-item';
+				thumb.appendChild(item);
+				item.innerHTML = i;
+			}
+
 			var el = createSlider('inverted', {
 				min: 0,
-				max: 3,
+				max: 2,
 				step: 1,
-				value: 0,
+				release: true,
+				value: 2,
 				click: false,
 				align: 0,
 				pickers: [thumb]
-			});
+			}, false);
 		});
 	});
 

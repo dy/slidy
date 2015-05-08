@@ -86,6 +86,17 @@ function Slidy(target, options) {
 	}
 
 
+	// Define value as active picker value
+	Object.defineProperty(self, 'value', {
+		set: function (value) {
+			this.pickers[0].value = value;
+		},
+		get: function () {
+			return this.pickers[0].value;
+		}
+	});
+
+
 	if (self.aria) {
 		//a11y
 		//@ref http://www.w3.org/TR/wai-aria/roles#slider
@@ -118,18 +129,6 @@ var proto = Slidy.prototype = Object.create(Emitter.prototype);
  */
 proto.min = 0;
 proto.max = 100;
-
-
-/** Define value as active picker value */
-Object.defineProperty(proto, 'value', {
-	set: function (value) {
-		if (!this.pickers) return;
-		this.pickers[0].value = value;
-	},
-	get: function () {
-		return this.pickers[0].value;
-	}
-});
 
 
 /** Default placing type is horizontal */
@@ -367,7 +366,8 @@ proto.createPicker = function (options) {
 		aria: self.aria,
 		keyboard: self.keyboard,
 		wheel: self.wheel,
-		point: self.point
+		point: self.point,
+		value: self.value
 	}, options);
 
 	var el = options.element || document.createElement('div');

@@ -1,4 +1,3 @@
-* inverted mode: thumb is static, container is movable
 * Non-linear value
 * Polyfill native slider
 * Travis build
