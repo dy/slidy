@@ -1,4 +1,11 @@
-var Slidy = require('slidy');
+require('babel/polyfill');
+if (!window.MutationObserver) {
+	window.MutationObserver = require('mutation-observer');
+}
+
+
+
+var Slidy = require('../');
 var css = require('mucss');
 
 

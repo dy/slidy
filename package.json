@@ -23,13 +23,14 @@
     "xtend": "^4.0.0"
   },
   "devDependencies": {
-    "mocha": "*"
+    "babel": "^5.2.17",
+    "mutation-observer": "^1.0.1"
   },
   "style": "index.css",
   "scripts": {
-    "watch": "watchify -r ./index.js:slidy -r mucss -d -o test/bundle.js",
-    "build": "browserify -r ./index:slidy -r mucss -o test/bundle.js",
-    "test": "mocha"
+    "watch": "watchify -r ./index.js:../ -r mucss -d -o ./bundle.js",
+    "build": "browserify -r ./index.js:../ -r mucss -r es5-shim -o ./bundle.js",
+    "test": "mochify"
   },
   "repository": {
     "type": "git",
