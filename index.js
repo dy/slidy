@@ -131,6 +131,7 @@ var proto = Slidy.prototype = Object.create(Emitter.prototype);
  */
 proto.min = 0;
 proto.max = 100;
+proto.value = 50;
 
 
 /** Default placing type is horizontal */
@@ -355,6 +356,7 @@ proto.update = function () {
  */
 proto.createPicker = function (options) {
 	var self = this;
+
 	options = extend({
 		within: self.element,
 		type: self.type,
