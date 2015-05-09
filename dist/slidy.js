@@ -734,7 +734,7 @@ proto.getClosestPicker = function (pickers, x,y) {
 
 	return minPicker;
 };
-},{"./lib/picker":3,"emmy/off":21,"emmy/on":22,"emmy/throttle":23,"events":1,"get-client-xy":24,"get-uid":25,"is-array":26,"lifecycle-events":28,"xtend/mutable":49}],3:[function(require,module,exports){
+},{"./lib/picker":3,"emmy/off":21,"emmy/on":22,"emmy/throttle":23,"events":1,"get-client-xy":24,"get-uid":25,"is-array":26,"lifecycle-events":28,"xtend/mutable":48}],3:[function(require,module,exports){
 /**
  * Picker class.
  * A controller for draggable.
@@ -753,7 +753,6 @@ var off = require('emmy/off');
 var css = require('mucss/css');
 var Emitter = require('events');
 var isFn = require('is-function');
-var isNumber = require('mutype/is-number');
 var round = require('mumath/round');
 var between = require('mumath/between');
 var loop = require('mumath/loop');
@@ -1312,12 +1311,12 @@ proto.type = {
 			var rRange = self.max[1] - self.min[1];
 			var normalRadiusValue = (value[1] - self.min[1]) / rRange;
 
-			var xRadius = hScope * normalRadiusValue * 0.5;
-			var yRadius = vScope * normalRadiusValue * 0.5;
+			var xRadius = centerX * normalRadiusValue;
+			var yRadius = centerY * normalRadiusValue;
 
 			self.move(
-				Math.cos(angle) * xRadius + hScope * 0.5,
-				Math.sin(angle) * yRadius + vScope * 0.5
+				Math.cos(angle) * xRadius + centerX,
+				Math.sin(angle) * yRadius + centerY
 			);
 		};
 
@@ -1418,7 +1417,6 @@ function handle2dkeys (keys, value, step, min, max) {
 /** Apply pressed keys on the 1d value */
 function handle1dkeys (keys, value, step, min, max) {
 	step = step || 1;
-	var pageStep = step * PAGE;
 
 	//up and right - increase by one
 	if (keys[38] || keys[39]) {
@@ -1452,7 +1450,7 @@ function handle1dkeys (keys, value, step, min, max) {
 
 	return value;
 }
-},{"define-state":5,"draggy":10,"emmy/emit":12,"emmy/off":21,"emmy/on":22,"events":1,"get-uid":25,"is-array":26,"is-function":27,"mucss/css":32,"mumath/between":42,"mumath/loop":43,"mumath/round":45,"mutype/is-number":47,"xtend/mutable":49}],4:[function(require,module,exports){
+},{"define-state":5,"draggy":10,"emmy/emit":12,"emmy/off":21,"emmy/on":22,"events":1,"get-uid":25,"is-array":26,"is-function":27,"mucss/css":32,"mumath/between":42,"mumath/loop":43,"mumath/round":45,"xtend/mutable":48}],4:[function(require,module,exports){
 var DOCUMENT_POSITION_CONTAINED_BY = 16
 
 module.exports = contains
@@ -2463,7 +2461,7 @@ function isZeroArray(arr) {
 
 
 module.exports = Draggable;
-},{"define-state":5,"emmy/emit":12,"emmy/off":21,"emmy/on":22,"events":1,"get-client-xy":24,"get-uid":25,"is-array":26,"is-function":27,"is-number":11,"mucss/css":32,"mucss/offsets":36,"mucss/parse-value":37,"mucss/selection":40,"mucss/translate":41,"mumath/between":42,"mumath/loop":43,"mumath/round":45,"xtend/mutable":49}],11:[function(require,module,exports){
+},{"define-state":5,"emmy/emit":12,"emmy/off":21,"emmy/on":22,"events":1,"get-client-xy":24,"get-uid":25,"is-array":26,"is-function":27,"is-number":11,"mucss/css":32,"mucss/offsets":36,"mucss/parse-value":37,"mucss/selection":40,"mucss/translate":41,"mumath/between":42,"mumath/loop":43,"mumath/round":45,"xtend/mutable":48}],11:[function(require,module,exports){
 /*!
  * is-number <https://github.com/jonschlinkert/is-number>
  *
@@ -3310,7 +3308,7 @@ function getObservee(node) {
 		if (contains(node, target)) return target;
 	}
 }
-},{"contains":4,"emmy/emit":12,"emmy/off":21,"emmy/on":22,"matches-selector":29,"mutation-observer":30,"tiny-element":48}],29:[function(require,module,exports){
+},{"contains":4,"emmy/emit":12,"emmy/off":21,"emmy/on":22,"matches-selector":29,"mutation-observer":30,"tiny-element":47}],29:[function(require,module,exports){
 'use strict';
 
 var proto = Element.prototype;
@@ -3794,10 +3792,6 @@ module.exports = function(fn){
 	};
 };
 },{}],47:[function(require,module,exports){
-module.exports = function(a){
-	return typeof a === 'number' || a instanceof Number;
-}
-},{}],48:[function(require,module,exports){
 var slice = [].slice;
 
 module.exports = function (selector, multiple) {
@@ -3807,7 +3801,7 @@ module.exports = function (selector, multiple) {
     ? (multiple) ? slice.call(ctx.querySelectorAll(selector), 0) : ctx.querySelector(selector)
     : (selector instanceof Node || selector === window || !selector.length) ? (multiple ? [selector] : selector) : slice.call(selector, 0);
 };
-},{}],49:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 module.exports = extend
 
 function extend(target) {
