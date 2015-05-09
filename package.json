@@ -18,7 +18,6 @@
   "homepage": "https://github.com/dfcreative/slidy",
   "dependencies": {
     "emmy": "^5.2.5",
-    "normalize.css": "^3.0.3",
     "queried": "^1.4.1",
     "slidy": "^0.5.4"
   },
