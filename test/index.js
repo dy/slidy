@@ -1,9 +1,3 @@
-// if (!window.MutationObserver) {
-// 	window.MutationObserver = require('mutation-observer');
-// }
-
-
-
 var Slidy = require('../');
 var css = require('mucss');
 
