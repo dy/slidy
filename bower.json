@@ -1,0 +1,15 @@
+{
+  "name": "slidy",
+  "location": "dfcreative/slidy",
+  "version": "1.0.0",
+  "description": "Range slider component",
+  "homepage": "http://dfcreative.github.io/slidy",
+  "main": [
+    "slidy.js"
+  ],
+  "ignore": [
+    "*",
+    "!slidy.dev.js",
+    "!slidy.js"
+  ]
+}

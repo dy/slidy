@@ -32,9 +32,9 @@
   "style": "index.css",
   "scripts": {
     "watch": "watchify -r ./index.js:../ -r mucss -d -o ./bundle.js",
-    "build": "browserify ./index.js -s Slidy > ./dist/slidy.js",
-    "min": "ccjs ./dist/slidy.js > ./dist/slidy.min.js && npm run size",
-    "size": "cat ./dist/slidy.min.js | gzip-size",
+    "build": "browserify ./index.js -s Slidy > ./slidy.dev.js",
+    "min": "ccjs ./slidy.dev.js > ./slidy.js && npm run size",
+    "size": "cat ./slidy.js | gzip-size",
     "test": "mochify"
   },
   "repository": {
@@ -48,7 +48,7 @@
     "picker",
     "input"
   ],
-  "author": "dfcreative",
+  "author": "Deema Ywanov <df.creative@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/dfcreative/slidy/issues"

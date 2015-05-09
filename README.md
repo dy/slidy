@@ -1,4 +1,4 @@
-# Slidy [![Build Status](https://travis-ci.org/dfcreative/slidy.svg?branch=master)](https://travis-ci.org/dfcreative/slidy) [![Code Climate](https://codeclimate.com/github/dfcreative/slidy/badges/gpa.svg)](https://codeclimate.com/github/dfcreative/slidy) ![deps](https://david-dm.org/dfcreative/slidy.svg) ![size](https://img.shields.io/badge/size-11.1kb-brightgreen.svg) [![unstable](http://badges.github.io/stability-badges/dist/unstable.svg)](http://github.com/badges/stability-badges)
+# Slidy [![Build Status](https://travis-ci.org/dfcreative/slidy.svg?branch=master)](https://travis-ci.org/dfcreative/slidy) [![Code Climate](https://codeclimate.com/github/dfcreative/slidy/badges/gpa.svg)](https://codeclimate.com/github/dfcreative/slidy) ![deps](https://david-dm.org/dfcreative/slidy.svg) ![size](https://img.shields.io/badge/size-10.8kb-brightgreen.svg) [![unstable](http://badges.github.io/stability-badges/dist/unstable.svg)](http://github.com/badges/stability-badges)
 
 Customizable range slider component. [Demo](http://dfcreative.github.io/slidy). [Tests](http://cdn.rawgit.com/dfcreative/slidy).
 
@@ -84,6 +84,5 @@ Per-picker options can redefine slidy default options.
 * Slidy doesn’t paint range or any other visual information, because it is domain-specific data, and interpreting slidy input value[s] is farmed out to user. Slider just provides a reliable mechanism of input. To build domain-specific picker, create a new component, like [color-picker](https://github.com/dfcreative/picky).
 * Slidy doesn’t do non-linear value picking by default, because it supposes linear mapping of screen plot to picking values. The best way to implement [logarithmic or similar non-linear picker](https://dfcreative.github.io/slidy#logarithmic) is to manage value separately in `change` callback.
 * It does not polyfill native input nor provide hidden form input. Both tasks are implementable externally quite easily via `change` callback, having them in code would mean useless lines not fitting exact user needs. It is difficult to decide beforehead how values are to be serialized, e. g. 2d values. Focus of the slidy is to provide reliable and agile mechanism of slider input, but not to provide bunch of interfaces.
-
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)

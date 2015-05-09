@@ -1,0 +1,10 @@
+{
+  "name": "slidy",
+  "repo": "dfcreative/slidy",
+  "version": "1.0.0",
+  "description": "Range slider component",
+  "scripts": [ "slidy.js" ],
+  "styles": [],
+  "dependencies": { },
+  "license": "MIT"
+}
