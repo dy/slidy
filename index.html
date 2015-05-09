@@ -4,24 +4,27 @@
 <title>Slidy — range slider component</title>
 
 
-<script type="text/javascript" src="./slidy.dev.js" class="case"></script>
-<link rel="stylesheet" type="text/css" href="./normalize.css" class="case">
+<script type="text/javascript" src="./index.js" class="case"></script>
+<link rel="stylesheet" type="text/css" href="./node_modules/normalize.css/normalize.css" class="case">
 
 
 <style>
 	body {
 		margin: 40px 40px;
 		text-align: center;
+		font-family:
 	}
 	h1 {
 		text-align: center;
 	}
 	.case{
+		vertical-align: top;
 		position: relative;
 		min-width: 100px;
 		min-height: 50px;
 		display: inline-block;
-		margin: 10px;
+		margin: 1rem;
+		padding: 1rem 0;
 		text-align: left;
 	}
 	.case:before {
@@ -35,10 +38,53 @@
 </style>
 
 
+<script>
+	var q = require('queried');
+	var on = require('emmy/on');
+</script>
+
+
 <h1>Slidy</h1>
 
 
-<article id="equalizer" class="case">
+<article id="equalizer" class="case equalizer">
+	<style>
+		.equalizer-play {
+			display: block;
+			width: 40px;
+			height: 40px;
+			border: 0;
+			background: none;
+			text-align: center;
+		}
+		.equalizer-play:after{
+			content: "▶"
+		}
+		.equalizer-play-pause:after{
+			content: "❙❙";
+			letter-spacing: -.5rem;
+			margin-left: -.7rem;
+		}
+	</style>
+
+	<audio src="assets/chopin.mp3" class="equalizer-audio"></audio>
+	<button class="equalizer-play equalizer-play-play"></button>
+
+	<script>
+		var eqPlayBtn = q('.equalizer-play');
+		var eqAudioEl = q('.equalizer-audio');
+
+		on(eqPlayBtn, 'click', function () {
+			if (eqAudioEl.paused) {
+				eqAudioEl.play();
+				eqPlayBtn.classList.add('equalizer-play-pause');
+			}
+			else {
+				eqAudioEl.pause();
+				eqPlayBtn.classList.remove('equalizer-play-pause');
+			}
+		});
+	</script>
 </article>
 
 
@@ -108,3 +154,9 @@
 
 <article id="web-component" class="case">
 </article>
+
+
+
+<script>
+	var Slidy = require('slidy');
+</script>

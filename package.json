@@ -1,0 +1,28 @@
+{
+  "name": "slidy-demo",
+  "version": "1.0.0",
+  "description": "Slidy demo cases",
+  "main": "index.js",
+  "scripts": {
+    "watch": "watchify -r slidy -r queried -r emmy/on -d -o index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfcreative/slidy.git"
+  },
+  "author": "Deema Ywanov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dfcreative/slidy/issues"
+  },
+  "homepage": "https://github.com/dfcreative/slidy",
+  "dependencies": {
+    "emmy": "^5.2.5",
+    "normalize.css": "^3.0.3",
+    "queried": "^1.4.1",
+    "slidy": "^0.5.4"
+  },
+  "devDependencies": {
+    "watchify": "^3.2.1"
+  }
+}
