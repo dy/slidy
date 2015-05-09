@@ -1,4 +1,3 @@
-* Web-component
 * demo-page
 
 ## Cases
@@ -23,3 +22,4 @@
 * Form input polyfill
 * Parallax effect on multiple thumbs
 * Panoramic slider
+* Web-component
