@@ -1,4 +1,3 @@
-* Travis build
 * interfaces component/vanilla/npm ...
 * Web-component
 * demo-page
@@ -23,3 +22,5 @@
 * Swipe left
 * Scrollbar
 * Form input polyfill
+* Parallax effect on multiple thumbs
+* Panoramic slider

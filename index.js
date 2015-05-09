@@ -88,7 +88,7 @@ function Slidy(target, options) {
 	}
 
 
-	// Define value as active picker value
+	// Define value as active picker value getter
 	Object.defineProperty(self, 'value', {
 		set: function (value) {
 			this.pickers[0].value = value;
