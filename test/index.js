@@ -1,7 +1,6 @@
-if (!window.MutationObserver) {
-	require('babel/polyfill');
-	window.MutationObserver = require('mutation-observer');
-}
+// if (!window.MutationObserver) {
+// 	window.MutationObserver = require('mutation-observer');
+// }
 
 
 

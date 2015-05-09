@@ -1,4 +1,3 @@
-* IE8ify
 * interfaces component/vanilla/npm ...
 * Web-component
 * demo-page
