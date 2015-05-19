@@ -1,3 +1,4 @@
+* remove focus by escape or outer click
 * demo-page
 
 ## Cases
@@ -8,7 +9,7 @@
 * Counter with multitouch, like ALS
 * Jackpot machine multiple touch sliders
 * Triangle illustrator-like color picker
-* Video slider
+* Video/audio progress slider
 * HuSL dynamically restricted picker
 * Gauge picker
 * Image slider

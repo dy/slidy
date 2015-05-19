@@ -3,13 +3,18 @@
   "version": "0.5.4",
   "description": "Range slider component",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "lib",
+    "index.css"
+  ],
   "directories": {
     "test": "test"
   },
   "dependencies": {
     "contains": "^0.1.1",
     "define-state": "^1.0.0",
-    "draggy": "^1.0.5",
+    "draggy": "^1.1.8",
     "emmy": "^5.2.5",
     "get-client-xy": "^1.0.1",
     "get-uid": "^1.0.1",
@@ -30,8 +35,8 @@
   "style": "index.css",
   "scripts": {
     "watch": "watchify -r ./index.js:../ -r mucss -d -o ./bundle.js",
-    "build": "browserify ./index.js -s Slidy > ./slidy.dev.js",
-    "min": "ccjs ./slidy.dev.js > ./slidy.js && npm run size",
+    "build": "browserify ./index.js -s Slidy > ./slidy.max.js",
+    "min": "ccjs ./slidy.max.js > ./slidy.js && npm run size",
     "size": "cat ./slidy.js | gzip-size",
     "test": "mochify"
   },

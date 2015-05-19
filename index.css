@@ -8,6 +8,12 @@
 	position: absolute;
 	top: 0;
 	left: 0;
+
+	/** Probably you want to redefine this */
+	min-height: 10px;
+	min-width: 10px;
+	border-radius: 10px;
+	border: 1px solid;
 }
 .slidy-picker:focus {
 };
