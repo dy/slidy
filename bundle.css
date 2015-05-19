@@ -422,3 +422,80 @@ td,
 th {
   padding: 0;
 }
+/**
+ * web-audio-stats styles.
+ */
+
+.wa-stats {
+	position: relative;
+	display: inline-block;
+}
+
+/** Canvas style is read in code, so adjust painting style by varying color and size */
+.wa-stats-canvas{
+	display: block;
+	width: 200px;
+	height: 100px;
+}
+
+/** Decorative elements repeat canvas’s size */
+.wa-stats-grid{
+	position: absolute;
+	width: 200px;
+	height: 100px;
+	top: 0;
+	left: 0;
+}
+.wa-stats-line{
+	/*opacity: .2;*/
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 0;
+}
+.wa-stats-line-h{
+	border-right: 1px dotted;
+	height: 100%;
+	width: 0px;
+}
+.wa-stats-line-h:after{
+	content: attr(data-frequency);
+	position: absolute;
+	bottom: -15px;
+	left: 0;
+	height: 15px;
+	line-height: 15px;
+	font-size: 12px;
+}
+.wa-stats-line-v{
+	border-bottom: 1px dotted;
+	width: 100%;
+	top: auto;
+	height: 0;
+}
+.wa-stats-line-v:after{
+	content: attr(data-magnitude);
+	position: absolute;
+	left: -20px;
+	bottom: -3px;
+	height: 12px;
+	line-height: 12px;
+	font-size: 12px;
+}
+.slidy {
+	min-height: 32px;
+	min-width: 32px;
+	position: relative;
+}
+
+.slidy-picker {
+	position: absolute;
+	top: 0;
+	left: 0;
+	min-height: 10px;
+	min-width: 10px;
+	border-radius: 10px;
+	border: 1px solid;
+}
+.slidy-picker:focus {
+}

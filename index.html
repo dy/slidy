@@ -1,11 +1,11 @@
 <!doctype html>
 <meta charset="utf-8">
 
-<title>Slidy — range slider component</title>
+<title>Slidy demos</title>
 
-<link rel="stylesheet" type="text/css" href="./normalize.css"/>
 
-<script type="text/javascript" src="./index.js"></script>
+<link rel="stylesheet" type="text/css" href="./bundle.css"/>
+<script type="text/javascript" src="./bundle.js"></script>
 
 
 <style>
@@ -44,7 +44,7 @@
 </script>
 
 
-<h1><a href="https://github.com/dfcreative/slidy">Slidy</a></h1>
+<h1><a href="https://github.com/dfcreative/slidy" title="Open in github">Slidy</a></h1>
 
 
 <article id="equalizer" class="case equalizer">
@@ -62,17 +62,25 @@
 		}
 		.equalizer-play-pause:after{
 			content: "❙❙";
-			letter-spacing: -.5rem;
-			margin-left: -.7rem;
+			letter-spacing: -.55rem;
+			margin-left: -.65rem;
 		}
 	</style>
 
 	<audio src="assets/chopin.mp3" class="equalizer-audio"></audio>
-	<button class="equalizer-play equalizer-play-play"></button>
+	<button class="equalizer-play"></button>
+	<div class="equalizer-chart"></div>
 
 	<script>
+		var Stats = require('web-audio-stats');
+		var Slidy = require('slidy');
 		var eqPlayBtn = q('.equalizer-play');
 		var eqAudioEl = q('.equalizer-audio');
+		var eqChartEl = q('.equalizer-chart');
+		var ctx = new AudioContext();
+
+
+		//Play button
 
 		on(eqPlayBtn, 'click', function () {
 			if (eqAudioEl.paused) {
@@ -83,6 +91,114 @@
 				eqAudioEl.pause();
 				eqPlayBtn.classList.remove('equalizer-play-pause');
 			}
+		});
+
+
+		//Equalizer
+
+		//Create volume controller
+		var gainNode = ctx.createGain();
+		gainNode.gain.value = 1;
+
+		//Create stats
+		var stats = new Stats(gainNode, ctx, {
+			grid:true,
+			element: eqChartEl
+		});
+
+		//Create filter processor
+		var filterNode = ctx.createBiquadFilter();
+
+		filterNode.type = 'peaking';
+		filterNode.Q.value = 5;
+		filterNode.frequency.value = 2000;
+		filterNode.gain.value = 20;
+
+		//Draw biquad filter response, BPF formulae
+		stats.on('draw', function () {
+			var self = this;
+			var cnvCtx = self.canvasContext;
+			var width = self.canvas.width;
+			var height = self.canvas.height;
+			var w;
+			var Fs = self.audioContext.sampleRate;
+			var gain = filterNode.gain.value;
+			var gainRange = self.maxDecibels - self.minDecibels;
+			var y, yDb;
+			var Q = filterNode.Q.value;
+			var w0 = 2 * Math.PI * filterNode.frequency.value / Fs;
+
+			var alpha = Math.sin(w0)/(2*Q)
+			var A  = Math.pow(10, (Math.abs(gain)/40))
+			var b0,b1,b2,a0,a1,a2;
+			//Peaking
+			b0 =   1 + alpha*A
+			b1 =  -2*Math.cos(w0)
+			b2 =   1 - alpha*A
+			a0 =   1 + alpha/A
+			a1 =  -2*Math.cos(w0)
+			a2 =   1 - alpha/A
+
+			cnvCtx.beginPath();
+			cnvCtx.moveTo(-10, height/2);
+			cnvCtx.strokeStyle = 'rgb(0,0,0)';
+
+			for (var x = 0, prevW, f; x < width; x++ ) {
+				f = self.unmap(x, width);
+				w = 2 * Math.PI * f / Fs;
+
+				//catch w0 - plot extra precise step
+				if (w >= w0 && prevW < w0) {
+					cnvCtx.lineTo(self.map(filterNode.frequency.value, width), height/2 + height * getMagnitude(w0) / gainRange );
+				}
+
+				yDb = getMagnitude(w);
+				cnvCtx.lineTo(x, height/2 + height * yDb / gainRange );
+
+				prevW = w;
+			}
+
+			cnvCtx.stroke();
+
+			//http://rs-met.com/documents/dsp/BasicDigitalFilters.pdf
+			function getMagnitude(w) {
+				var y = Math.sqrt(
+					(b0*b0 + b1*b1 + b2*b2 + 2*(b0*b1 + b1*b2)*Math.cos(w) + 2*b0*b2*Math.cos(2*w) ) /
+					(1 + a1*a1 + a2*a2 + 2*(a1 + a1*a2)*Math.cos(w) + 2*a2*Math.cos(2*w))
+				);
+
+				var	yDb = 20 * Math.log(y) / Math.log(10);
+
+				return (gain > 0 ? -yDb : yDb);
+			}
+		});
+
+		//Connect audio nodes
+		var sourceNode = ctx.createMediaElementSource(eqAudioEl);
+		sourceNode.connect(filterNode);
+		filterNode.connect(gainNode);
+		stats.connect(ctx.destination);
+
+
+		//Filter controller
+		var slidy = new Slidy(stats.element, {
+			type: 'rectangular',
+			value: [0,0],
+			step: 0.005,
+			min: [0,0],
+			max: [1,1],
+		});
+
+		slidy.on('change', function (value) {
+			//calc gain & frequency
+			var x = value[0] * stats.canvas.width;
+			var y = value[1] * stats.canvas.height;
+			var gainRange = stats.maxDecibels - stats.minDecibels;
+			var g = gainRange * value[1] - gainRange / 2;
+			var f = stats.unmap(x, stats.canvas.width);
+
+			filterNode.gain.value = g;
+			filterNode.frequency.value = f;
 		});
 	</script>
 </article>
@@ -154,9 +270,3 @@
 
 <article id="web-component" class="case">
 </article>
-
-
-
-<script>
-	var Slidy = require('slidy');
-</script>
