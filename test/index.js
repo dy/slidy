@@ -76,7 +76,7 @@ describe("Slidy", function () {
 				min:-1,
 				max: 1,
 				value: -0.2,
-				type: 'vertical'
+				orientation: 'vertical'
 			});
 		});
 
@@ -85,7 +85,7 @@ describe("Slidy", function () {
 				min:1,
 				max:-1,
 				value: 0.2,
-				type: 'vertical'
+				orientation: 'vertical'
 			});
 		});
 
@@ -94,7 +94,7 @@ describe("Slidy", function () {
 				min:[0,0],
 				max:[100,100],
 				value: [40,70],
-				type: 'rectangular'
+				orientation: 'cartesian'
 			});
 		});
 
@@ -106,7 +106,7 @@ describe("Slidy", function () {
 				min: Math.PI,
 				max: - Math.PI,
 				value: 0.5,
-				type: 'circular',
+				orientation: 'circular',
 				change: function (e) {
 					css(pointer, {
 						'-webkit-transform': 'rotate(' + (-this.value * 180 / 3.14) + 'deg)'
@@ -125,7 +125,7 @@ describe("Slidy", function () {
 				min: [0, 0],
 				max: [360, 100],
 				value: [20, 40],
-				type: 'round',
+				orientation: 'polar',
 				change: function (e) {
 					css(pointer, {
 						'-webkit-transform': 'rotate(' + ((this.value[0]) + 180) + 'deg)',
@@ -154,7 +154,7 @@ describe("Slidy", function () {
 
 		it('rectangular multiple thumbs', function () {
 			var el = createSlider('multi rectangular', {
-				type: 'rectangular',
+				orientation: 'cartesian',
 				min: [100, -100],
 				max: [-100, 100],
 				pickers: [
@@ -168,7 +168,7 @@ describe("Slidy", function () {
 
 		it('round multiple thumbs', function () {
 			var el = createSlider('multi circular', {
-				type: 'round',
+				orientation: 'polar',
 				min: [100, -100],
 				max: [-100, 100],
 				pickers: [
@@ -182,7 +182,7 @@ describe("Slidy", function () {
 
 		it('repeat x', function () {
 			var el = createSlider('repeat horizontal', {
-				type: 'horizontal',
+				orientation: 'horizontal',
 				min: 0,
 				max: 100,
 				value: 30,
@@ -192,7 +192,7 @@ describe("Slidy", function () {
 
 		it('repeat y', function () {
 			var el = createSlider('repeat vertical', {
-				type: 'vertical',
+				orientation: 'vertical',
 				min: 0,
 				max: 100,
 				value: 30,
@@ -202,7 +202,7 @@ describe("Slidy", function () {
 
 		it('repeat rect', function () {
 			var el = createSlider('repeat rectangular', {
-				type: 'rectangular',
+				orientation: 'cartesian',
 				min: [-50,-50],
 				max: [50,50],
 				value: [10,-10],
@@ -212,7 +212,7 @@ describe("Slidy", function () {
 
 		it('point picker', function () {
 			var el = createSlider('point rectangular', {
-				type: 'rectangular',
+				orientation: 'cartesian',
 				point: true,
 				min: [-50,-50],
 				max: [50,50],
@@ -223,7 +223,7 @@ describe("Slidy", function () {
 
 		it('stepping function', function () {
 			var el = createSlider('step horizontal', {
-				type: 'horizontal',
+				orientation: 'horizontal',
 				min: 0,
 				max: 100,
 				value: 10,
@@ -236,7 +236,7 @@ describe("Slidy", function () {
 
 		it.skip('non-linear value', function () {
 			var el = createSlider('step horizontal', {
-				type: 'horizontal',
+				orientation: 'horizontal',
 				min: 0,
 				max: 1000,
 				value: function (value) {
@@ -247,7 +247,7 @@ describe("Slidy", function () {
 
 		it('snap', function () {
 			var el = createSlider('snap horizontal', {
-				type: 'horizontal',
+				orientation: 'horizontal',
 				min: 0,
 				max: 100,
 				step: 10,
@@ -312,7 +312,7 @@ describe("Slidy", function () {
 
 		it('touches', function () {
 			var el = createSlider('multitouch rectangular huge', {
-				type: 'rectangular',
+				orientation: 'cartesian',
 				min: [100, -100],
 				max: [-100, 100],
 				pickers: [

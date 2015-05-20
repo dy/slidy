@@ -44,7 +44,7 @@ All these values can be passed to options or redefined straightly on the prototy
 | `Slidy.prototype.min` | Minimum value. By default 0. |
 | `Slidy.prototype.max` | Maximum value. By default 100. |
 | `Slidy.prototype.value` | Picker value. In case of multiple pickers - first picker's value. By default - `( min - max ) / 2`. |
-| `Slidy.prototype.type` | Type of pickers placement, see `Picker.prototype.type`. |
+| `Slidy.prototype.orientation` | Type of pickers placement: `horizontal`, `vertical`, `cartesian`, `circular`, `polar` |
 | `Slidy.prototype.repeat` | Repeat picker by axis: `'x'`, `'y'` or `'both'`, |
 | `Slidy.prototype.pickerClass` | Class to add to each picker. |
 | `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
@@ -69,7 +69,6 @@ Per-picker options can redefine slidy default options.
 | `Picker.prototype.min` | Minimum value. |
 | `Picker.prototype.max` | Maximum value. |
 | `Picker.prototype.value` | Current value of a picker. Changing it doesn’t update position of a picker, to do that, call `picker.renderValue(this.value)` or just `picker.update()`. |
-| `Picker.prototype.type` | Type of placement - `'horizontal'`, `'vertical'`, `'rectangular'`, `'circular'`, `'round'`. |
 | `Picker.prototype.release` | Apply after-animation. |
 | `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
 | `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |

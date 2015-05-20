@@ -105,7 +105,7 @@ function Slidy(target, options) {
 		self.element.setAttribute('role', 'slider');
 		target.setAttribute('aria-valuemax', self.max);
 		target.setAttribute('aria-valuemin', self.min);
-		target.setAttribute('aria-orientation', self.type);
+		target.setAttribute('aria-orientation', self.orientation);
 		target.setAttribute('aria-atomic', true);
 
 		//update controls
@@ -135,7 +135,7 @@ proto.value = 50;
 
 
 /** Default placing type is horizontal */
-proto.type = 'horizontal';
+proto.orientation = 'horizontal';
 
 
 /**
@@ -359,7 +359,7 @@ proto.createPicker = function (options) {
 
 	options = extend({
 		within: self.element,
-		type: self.type,
+		orientation: self.orientation,
 		min: self.min,
 		max: self.max,
 		repeat: self.repeat,
