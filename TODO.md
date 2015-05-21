@@ -1,4 +1,3 @@
-* bind callbacks via options
 * remove focus by escape or outer click
 * 2-dim step
 * trigger initial change event, value undefined → something event default (mimic native)
