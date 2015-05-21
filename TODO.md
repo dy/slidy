@@ -1,4 +1,3 @@
-* FF, IE9+
 * demo-page
 
 ## Cases
