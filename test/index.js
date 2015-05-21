@@ -257,6 +257,15 @@ describe("Slidy", function () {
 			});
 		});
 
+		it('2-dimensional step', function () {
+			var el = createSlider('2dimstep rectangular', {
+				orientation: 'cartesian',
+				min: [0,0],
+				step: [0.05, 5],
+				max: [1,100]
+			});
+		});
+
 		it('inverted size', function () {
 			var thumb = document.createElement('div');
 			thumb.className = 'carousel';

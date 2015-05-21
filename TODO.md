@@ -1,5 +1,3 @@
-* 2-dim step
-* trigger initial change event, value undefined → something event default (mimic native)
 * FF, IE9+
 * demo-page
 

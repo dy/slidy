@@ -41,7 +41,7 @@ function Slidy(target, options) {
 
 	//ensure target & options
 	if (!options) {
-		if (target instanceof HTMLElement) {
+		if (target instanceof Element) {
 			options = {};
 		}
 		else {
@@ -56,6 +56,18 @@ function Slidy(target, options) {
 
 	//adopt options
 	extend(self, options);
+
+	//calculate value & step
+	//detect step automatically based on min/max range (1/100 by default)
+	//native behaviour is always 1, so ignore it
+	if (options.step === undefined) {
+		self.step = Picker.detectStep(self.min, self.max);
+	}
+
+	//calc undefined valuea as a middle of range
+	if (options.value === undefined) {
+		self.value = Picker.detectValue(self.min, self.max);
+	}
 
 	//bind passed callbacks, if any
 	if (options.created) on(self, 'created', options.created);
@@ -77,7 +89,7 @@ function Slidy(target, options) {
 	if (isArray(options.pickers) && options.pickers.length) {
 		options.pickers.forEach(function (opts) {
 			//if opts is element - treat it as element for the picker
-			if (opts instanceof Node) opts = {
+			if (opts instanceof Element) opts = {
 				element: opts
 			};
 
@@ -93,6 +105,7 @@ function Slidy(target, options) {
 		self.pickers.push(self.createPicker());
 
 		//init first picker’s value
+		//FIXME: remove this
 		if (options.value !== undefined) self.value = options.value;
 	}
 
