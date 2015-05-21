@@ -296,8 +296,13 @@ proto.enable = function () {
 	}
 
 	if (self.keyboard) {
-		//set unfocusable always (redirect to first picker)
+		//set unfocusable always (redirect to the first picker)
 		self.element.setAttribute('tabindex', -1);
+
+		//in case of focused multitouch unfocus by escape
+		on(self.element, 'keydown', function (e) {
+			if (e.which === 27) self.element.blur();
+		});
 	}
 
 	//enable pickers
