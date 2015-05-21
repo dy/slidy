@@ -34,7 +34,7 @@
   },
   "style": "index.css",
   "scripts": {
-    "watch": "watchify -r ./index.js:../ -r mucss -d -o ./bundle.js",
+    "watch": "watchify -r ./index.js:../ -r mucss -r assert -d -o ./bundle.js",
     "build": "browserify ./index.js -s Slidy > ./slidy.max.js",
     "min": "ccjs ./slidy.max.js > ./slidy.js && npm run size",
     "size": "cat ./slidy.js | gzip-size",

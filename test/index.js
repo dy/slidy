@@ -1,5 +1,6 @@
 var Slidy = require('../');
 var css = require('mucss');
+var assert = require('assert');
 
 
 describe("Slidy", function () {
@@ -299,6 +300,7 @@ describe("Slidy", function () {
 		});
 	});
 
+
 	describe('interactions', function () {
 		it('focusable', function () {
 			var el = createSlider('focusable horizontal', {
@@ -330,7 +332,18 @@ describe("Slidy", function () {
 	});
 
 
-	describe('corner cases', function () {
+	describe('cases', function () {
+		it('bind callback via options', function () {
+			var i = 0;
+			var s = new Slidy({
+				value: 2,
+				change: function (value) {
+					i+=value;
+				}
+			});
+			assert.equal(i,2);
+		});
+
 		it.skip('out of bounds initial values', function () {
 
 		});

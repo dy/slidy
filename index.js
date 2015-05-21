@@ -39,10 +39,16 @@ function Slidy(target, options) {
 
 	var self = this;
 
-	options = options || {};
-
-	//ensure element, if not defined
-	if (!target) target = doc.createElement('div');
+	//ensure target & options
+	if (!options) {
+		if (target instanceof HTMLElement) {
+			options = {};
+		}
+		else {
+			options = target;
+			target = doc.createElement('div');
+		}
+	}
 
 
 	//get preferred element
@@ -50,6 +56,9 @@ function Slidy(target, options) {
 
 	//adopt options
 	extend(self, options);
+
+	//bind passed callbacks, if any
+	if (options.created) on(self, 'created', options.created);
 
 	//save refrence
 	instancesCache.set(self.element, self);
@@ -372,7 +381,8 @@ proto.createPicker = function (options) {
 		keyboard: self.keyboard,
 		wheel: self.wheel,
 		point: self.point,
-		value: self.value
+		value: self.value,
+		change: self.change
 	}, options);
 
 	var el = options.element || document.createElement('div');
