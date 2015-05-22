@@ -95,28 +95,20 @@ function Slidy(target, options) {
 
 			var picker = self.createPicker(opts);
 			self.pickers.push(picker);
-
-			//update picker’s value, to trigger change
-			if (opts.value !== undefined) picker.value = opts.value;
 		});
 	}
 	//ensure at least one picker exists
 	else {
 		self.pickers.push(self.createPicker());
-
-		//init first picker’s value
-		//FIXME: remove this
-		if (options.value !== undefined) self.value = options.value;
 	}
-
 
 	// Define value as active picker value getter
 	Object.defineProperty(self, 'value', {
 		set: function (value) {
-			this.pickers[0].value = value;
+			this.getActivePicker().value = value;
 		},
 		get: function () {
-			return this.pickers[0].value;
+			return this.getActivePicker().value;
 		}
 	});
 
@@ -281,9 +273,7 @@ proto.enable = function () {
 			}
 			//handle current picker
 			else if (focusEl.parentNode === self.element) {
-				picker = self.pickers.filter(function (p) {
-					return p.element === focusEl;
-				})[0];
+				picker = self.getActivePicker();
 			}
 			//ignore unfocused things
 			else return;
@@ -457,4 +447,17 @@ proto.getClosestPicker = function (pickers, x,y) {
 	});
 
 	return minPicker;
+};
+
+
+/**
+ * Return active picker
+ */
+proto.getActivePicker = function () {
+	var focusEl = doc.activeElement;
+	var picker = this.pickers.filter(function (p) {
+		return p.element === focusEl;
+	})[0];
+
+	return picker || this.pickers[0];
 };
