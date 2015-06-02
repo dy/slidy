@@ -225,39 +225,86 @@
 	<style>
 		.mixer {
 			box-sizing: border-box;
-			width: 300px;
-			height: 200px;
-			background: gray;
-			box-shadow: 0 1px 3px rgba(0,0,0,.4);
-			padding: 10px;
+			background: linear-gradient(160deg, rgb(232,233,235), rgb(222,220,219));
+			box-shadow: 1px 2px 2px -2px rgba(46, 45, 44, 0.23), 6px 5px 4px -4px rgba(149, 117, 101, 0.23), 8px 9px 14px -3px rgba(150, 165, 180, 0.3);
+			padding: 30px;
+			display: flex;
+			flex-flow: row;
 		}
 		.mixer-track {
-			height: 100%;
-			width: 5px;
-			border-radius: 2px;
-			background: black;
-			display: inline-block;
-			margin: 0 10px;
+			height: 200px;
+			width: 50px;
+			position: relative;
+			text-align: center;
 		}
 		.mixer-track:after {
 			content: '';
+			border-radius: 25px;
+			background: darkgray;
+			box-shadow: inset 0 1px 3px rgba(0,0,0,.5), 0 1px 1px 0 white;
+			width: 4px;
+			height: 100%;
+			display: inline-block;
 		}
 		.mixer-track-master {
 
 		}
+		.mixer-thumb {
+			border-radius: 0;
+			left: 0;
+			right: 0;
+			margin: 0 auto;
+			width: 40px;
+			height: 20px;
+			border: none;
+			box-shadow: inset 0 -1px 7px 3px rgb(0, 0, 0), 0 2px 3px 0px rgba(33, 31, 27, 0.58), 0 10px 12px -4px rgba(51, 62, 69, 0.4);
+		}
+		.mixer-thumb:after{
+			content: '';
+			position: absolute;
+			top: 10px;
+			background: white;
+			left: 3px;
+			right: 3px;
+			height: 1px;
+		}
+		.mixer-thumb:before{
+			background: black;
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			margin: auto;
+			height: 14px;
+			width: 100%;
+		}
 	</style>
 
 	<div class="mixer">
-		<div class="mixer-track" title="Beat"></div>
-		<div class="mixer-track" title="Pads"></div>
-		<div class="mixer-track" title="Bass"></div>
-		<div class="mixer-track" title="Lead"></div>
-		<div class="mixer-track" title="Info"></div>
-		<div class="mixer-track mixer-track-master" title="Master"></div>
+		<div class="mixer-track" title="Pads">
+			<div class="mixer-thumb"></div>
+		</div>
+		<div class="mixer-track" title="Bass">
+			<div class="mixer-thumb"></div>
+		</div>
+		<div class="mixer-track" title="Lead">
+			<div class="mixer-thumb"></div>
+		</div>
 	</div>
 
 	<script>
-
+		var mixerTrackEls = q.all('.mixer-track');
+		mixerTrackEls.forEach(function (mixerTrackEl) {
+			var mixerTrack = Slidy(mixerTrackEl, {
+				min: 0,
+				max: 100,
+				value: 50,
+				orientation: 'vertical',
+				picker: q('.mixer-thumb', mixerTrackEl)
+			});
+		});
 	</script>
 </article>
 
