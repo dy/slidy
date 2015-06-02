@@ -68,9 +68,9 @@ All these parameters can be passed to options or redefined straightly on the pro
 
 | Method | Description |
 |---|---|
-| `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
-| `Slidy.prototype.disable()` | Disable interactivity. |
-| `Slidy.prototype.enable()` | Enable interactivity. |
+| `update()` | Update all pickers sizes and positions according to their values. |
+| `disable()` | Disable interactivity. |
+| `enable()` | Enable interactivity. |
 
 
 ### Picker (thumb)
@@ -87,9 +87,9 @@ Per-picker options can redefine slidy default options.
 
 | Method | Description |
 |---|---|
-| `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
-| `Picker.prototype.inc(times [, timesY])` | Increment/decrement picker value by `this.step` `times`. |
-| `Picker.prototype.update()` | Update size and position according to the value. |
+| `move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
+| `inc(times [, timesY])` | Increment/decrement picker value by `this.step` `times`. |
+| `update()` | Update size and position according to the value. |
 
 
 ## What slidy is not
