@@ -392,18 +392,13 @@ function Slidy(target, options) {
 	self.pickers = [];
 	if (isArray(options.pickers) && options.pickers.length) {
 		options.pickers.forEach(function (opts) {
-			//if opts is element - treat it as element for the picker
-			if (opts instanceof Element) opts = {
-				element: opts
-			};
-
 			var picker = self.createPicker(opts);
 			self.pickers.push(picker);
 		});
 	}
 	//ensure at least one picker exists
 	else {
-		self.pickers.push(self.createPicker());
+		self.pickers.push(self.createPicker(options.picker));
 	}
 
 	// Define value as active picker value getter
@@ -678,6 +673,11 @@ proto.update = function () {
 proto.createPicker = function (options) {
 	var self = this;
 
+	//if opts is element - treat it as element for the picker
+	if (options instanceof Element) options = {
+		element: options
+	};
+
 	options = extend({
 		within: self.element,
 		orientation: self.orientation,
@@ -817,10 +817,6 @@ function Picker (el, options) {
 
 	var self = this;
 
-	//ensure element
-	if (!el) {
-		el = doc.createElement('div');
-	}
 	el.classList.add('slidy-picker');
 	self.element = el;
 
