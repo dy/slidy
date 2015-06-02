@@ -122,22 +122,38 @@
 			var height = self.canvas.height;
 			var w;
 			var Fs = self.audioContext.sampleRate;
+			var Fc = filterNode.frequency.value;
 			var gain = filterNode.gain.value;
 			var gainRange = self.maxDecibels - self.minDecibels;
 			var y, yDb;
 			var Q = filterNode.Q.value;
-			var w0 = 2 * Math.PI * filterNode.frequency.value / Fs;
+			var w0 = 2 * Math.PI * Fc / Fs;
 
-			var alpha = Math.sin(w0)/(2*Q)
-			var A  = Math.pow(10, (Math.abs(gain)/40))
-			var b0,b1,b2,a0,a1,a2;
-			//Peaking
-			b0 =   1 + alpha*A
-			b1 =  -2*Math.cos(w0)
-			b2 =   1 - alpha*A
-			a0 =   1 + alpha/A
-			a1 =  -2*Math.cos(w0)
-			a2 =   1 - alpha/A
+			// http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
+			// var alpha = Math.sin(w0)/(2*Q)
+			// var A  = Math.pow(10, (Math.abs(gain)/40))
+			// var b0,b1,b2,a0,a1,a2;
+
+			// b0 =   1 + alpha*A
+			// b1 =  -2*Math.cos(w0)
+			// b2 =   1 - alpha*A
+			// a0 =   1 + alpha/A
+			// a1 =  -2*Math.cos(w0)
+			// a2 =   1 - alpha/A
+
+
+			//https://ccrma.stanford.edu/~jos/fp/Peaking_Equalizers.html
+			var c = 1 / Math.tan(Math.PI*Fc/Fs);
+			//FIXME: find bw properly
+			var bw = Fs/20;
+			var cs = c*c;  var csp1 = cs+1; var Bc=(bw/Fs)*c; var gBc=gain*Bc;
+			var nrm = 1/(csp1 + Bc);
+			var b0 =  (csp1 + gBc)*nrm;
+			var b1 =  2*(1 - cs)*nrm;
+			var b2 =  (csp1 - gBc)*nrm;
+			var a0 =  1;
+			var a1 =  b1;
+			var a2 =  (csp1 - Bc)*nrm;
 
 			cnvCtx.beginPath();
 			cnvCtx.moveTo(-10, height/2);
@@ -149,7 +165,7 @@
 
 				//catch w0 - plot extra precise step
 				if (w >= w0 && prevW < w0) {
-					cnvCtx.lineTo(self.map(filterNode.frequency.value, width), height/2 + height * getMagnitude(w0) / gainRange );
+					cnvCtx.lineTo(self.map(Fc, width), height/2 + height * getMagnitude(w0) / gainRange );
 				}
 
 				yDb = getMagnitude(w);
@@ -161,7 +177,7 @@
 			cnvCtx.stroke();
 
 			//http://rs-met.com/documents/dsp/BasicDigitalFilters.pdf
-			function getMagnitude(w) {
+			function getMagnitude (w) {
 				var y = Math.sqrt(
 					(b0*b0 + b1*b1 + b2*b2 + 2*(b0*b1 + b1*b2)*Math.cos(w) + 2*b0*b2*Math.cos(2*w) ) /
 					(1 + a1*a1 + a2*a2 + 2*(a1 + a1*a2)*Math.cos(w) + 2*a2*Math.cos(2*w))
@@ -182,29 +198,67 @@
 
 		//Filter controller
 		var slidy = new Slidy(stats.element, {
-			type: 'rectangular',
-			value: [0,0],
-			step: 0.005,
+			orientation: 'cartesian',
 			min: [0,0],
 			max: [1,1],
-		});
+			value: [0.5, 0.8],
+			point: true,
+			change: function (value) {
+				//calc gain & frequency
+				var x = value[0] * stats.canvas.width;
+				var y = value[1] * stats.canvas.height;
+				var gainRange = stats.maxDecibels - stats.minDecibels;
+				var g = gainRange * value[1] - gainRange / 2;
+				if (g < 1 && g >= 0) g = 1;
+				if (g > -1 && g < 0) g = -1;
+				var f = stats.unmap(x, stats.canvas.width);
 
-		slidy.on('change', function (value) {
-			//calc gain & frequency
-			var x = value[0] * stats.canvas.width;
-			var y = value[1] * stats.canvas.height;
-			var gainRange = stats.maxDecibels - stats.minDecibels;
-			var g = gainRange * value[1] - gainRange / 2;
-			var f = stats.unmap(x, stats.canvas.width);
-
-			filterNode.gain.value = g;
-			filterNode.frequency.value = f;
+				filterNode.gain.value = g;
+				filterNode.frequency.value = f;
+			}
 		});
 	</script>
 </article>
 
 
 <article id="mixer" class="case">
+	<style>
+		.mixer {
+			box-sizing: border-box;
+			width: 300px;
+			height: 200px;
+			background: gray;
+			box-shadow: 0 1px 3px rgba(0,0,0,.4);
+			padding: 10px;
+		}
+		.mixer-track {
+			height: 100%;
+			width: 5px;
+			border-radius: 2px;
+			background: black;
+			display: inline-block;
+			margin: 0 10px;
+		}
+		.mixer-track:after {
+			content: '';
+		}
+		.mixer-track-master {
+
+		}
+	</style>
+
+	<div class="mixer">
+		<div class="mixer-track" title="Beat"></div>
+		<div class="mixer-track" title="Pads"></div>
+		<div class="mixer-track" title="Bass"></div>
+		<div class="mixer-track" title="Lead"></div>
+		<div class="mixer-track" title="Info"></div>
+		<div class="mixer-track mixer-track-master" title="Master"></div>
+	</div>
+
+	<script>
+
+	</script>
 </article>
 
 
