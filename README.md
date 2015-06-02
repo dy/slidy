@@ -45,40 +45,48 @@ In order to expand browser support you may need to polyfill `WeakMap`, `WeakSet`
 
 ### Slidy
 
-All these values can be passed to options or redefined straightly on the prototype.
+All these parameters can be passed to options or redefined straightly on the prototype.
 
-| Name | Description |
+| Option | Description |
 |---|---|
-| `Slidy.prototype.min` | Minimum value. By default 0. |
-| `Slidy.prototype.max` | Maximum value. By default 100. |
-| `Slidy.prototype.value` | Picker value. In case of multiple pickers - first picker's value. By default - `( min - max ) / 2`. |
-| `Slidy.prototype.orientation` | Type of pickers placement: `horizontal`, `vertical`, `cartesian`, `circular`, `polar` |
-| `Slidy.prototype.repeat` | Repeat picker by axis: `'x'`, `'y'` or `'both'`, |
-| `Slidy.prototype.pickerClass` | Class to add to each picker. |
-| `Slidy.prototype.step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
-| `Slidy.prototype.snap` | Snap always or only when released. |
-| `Slidy.prototype.pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
-| `Slidy.prototype.point` | Make point picker so that it is limited by slider only in one-pixel point. Useful for creating seamless repeating pickers, like hue range in color-picker. |
-| `Slidy.prototype.click` | Enable click interaction or leave only drag. |
-| `Slidy.prototype.keyboard` | Enable keyboard interactions. |
-| `Slidy.prototype.wheel` | Enable mousewheel interactions. |
-| `Slidy.prototype.aria` | Enable aria roles management. |
+| `min` | Minimum value. By default 0. |
+| `max` | Maximum value. By default 100. |
+| `value` | Picker value. In case of multiple pickers - first picker's value. By default - `( min - max ) / 2`. |
+| `orientation` | Type of pickers placement: `horizontal`, `vertical`, `cartesian`, `circular`, `polar` |
+| `repeat` | Repeat picker by axis: `'x'`, `'y'` or `'both'`, |
+| `pickerClass` | Class to add to each picker. |
+| `step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
+| `snap` | Snap always or only when released. |
+| `picker` | A picker element to init, if predefined already. Otherwise it will be created. If `pickers` passed - this option will be ignored. |
+| `pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
+| `point` | Make point picker so that it is limited by slider only in one-pixel point. Useful for creating seamless repeating pickers, like hue range in color-picker. |
+| `click` | Enable click interaction or leave only drag. |
+| `keyboard` | Enable keyboard interactions. |
+| `wheel` | Enable mousewheel interactions. |
+| `aria` | Enable aria roles management. |
+| `change` | Change callback, will be instantly bound. The only way to catch initial `change` event. |
+
+| Method | Description |
+|---|---|
 | `Slidy.prototype.update()` | Update all pickers sizes and positions according to their values. |
 | `Slidy.prototype.disable()` | Disable interactivity. |
 | `Slidy.prototype.enable()` | Enable interactivity. |
 
 
-### Picker
+### Picker (thumb)
 
 Per-picker options can redefine slidy default options.
 
-| Name | Description |
+| Option | Description |
 |---|---|
-| `Picker.prototype.min` | Minimum value. |
-| `Picker.prototype.max` | Maximum value. |
-| `Picker.prototype.value` | Current value of a picker. Changing it doesn’t update position of a picker, to do that, call `picker.renderValue(this.value)` or just `picker.update()`. |
-| `Picker.prototype.release` | Apply after-animation. |
-| `Picker.prototype.repeat` | Repeat picker by one of axis: x, y or both. |
+| `min` | Minimum value. |
+| `max` | Maximum value. |
+| `value` | Current value of a picker. Changing it doesn’t update position of a picker, to do that, call `picker.renderValue(this.value)` or just `picker.update()`. |
+| `release` | Apply after-animation. |
+| `repeat` | Repeat picker by one of axis: x, y or both. |
+
+| Method | Description |
+|---|---|
 | `Picker.prototype.move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
 | `Picker.prototype.inc(times [, timesY])` | Increment/decrement picker value by `this.step` `times`. |
 | `Picker.prototype.update()` | Update size and position according to the value. |

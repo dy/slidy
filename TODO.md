@@ -3,6 +3,7 @@
 ## Cases
 
 * Equalizer
+* player
 * Mixer
 * Bank splitted input, like Artlebedev
 * Counter with multitouch, like ALS
