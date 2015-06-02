@@ -33,11 +33,11 @@ var slidy = new Slidy({
 document.body.appendChild(slidy.element);
 ```
 
-In order to expand browser support you may need to polyfill `WeakMap`, `WeakSet`, `Node.prototype.contains`, `MutationObserver`:
+In order to extend supported browsers you may need to polyfill `WeakMap`, `WeakSet`, `Node.prototype.contains`, `MutationObserver`:
 
 
 ```html
-<script src="https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.prototype.contains"></script>
+https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.prototype.contains
 ```
 
 
