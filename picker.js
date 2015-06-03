@@ -19,10 +19,11 @@ var isFn = require('is-function');
 var round = require('mumath/round');
 var between = require('mumath/between');
 var loop = require('mumath/loop');
+var getTransformer = require('mumath/wrap');
 var getUid = require('get-uid');
 var isArray = require('is-array');
 var extend = require('xtend/mutable');
-var getTransformer = require('mumath/wrap');
+var slice = require('sliced');
 
 
 module.exports = Picker;
@@ -87,7 +88,7 @@ function Picker (el, options) {
 		self.step = Picker.detectStep(self.min, self.max);
 	}
 
-	//calc undefined valuea as a middle of range
+	//calc undefined value as a middle of the range
 	if (options.value === undefined) {
 		self.value = Picker.detectStep(self.min, self.max);
 	}
@@ -147,6 +148,9 @@ proto.enable = function () {
 
 	//events
 	on(self.draggable, 'dragstart.' + self.ns, function () {
+		self.startInteraction();
+
+		//hide cursor
 		css(root, 'cursor', 'none');
 		css(this.element, 'cursor', 'none');
 	});
@@ -157,6 +161,8 @@ proto.enable = function () {
 		var value = self.calcValue.apply(self, self.draggable.getCoords());
 
 		self.value = value;
+
+		self.interaction();
 
 		//display snapping
 		if (self.snap) {
@@ -170,7 +176,12 @@ proto.enable = function () {
 			self.draggable.isAnimated = true;
 		}
 
+		//move to a new position
 		self.renderValue(self.value);
+
+		self.endInteraction();
+
+		//get cursor back
 		css(root, 'cursor', null);
 		css(this.element, 'cursor', null);
 	});
@@ -194,7 +205,11 @@ proto.enable = function () {
 			if (e.which >= 33 && e.which <= 40) {
 				e.preventDefault();
 
+				self.startInteraction();
+
 				self.value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
+
+				self.interaction();
 
 				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
@@ -204,6 +219,8 @@ proto.enable = function () {
 		});
 		on(self.element, 'keyup.' + self.ns, function (e) {
 			self._pressedKeys[e.which] = false;
+
+			self.endInteraction();
 		});
 	}
 
@@ -234,6 +251,27 @@ proto.disable = function () {
 	}
 
 	return self;
+};
+
+
+/**
+ * Interaction methods
+ * just wrappers for native input/change event mechanics
+ */
+proto.startInteraction = function () {
+	this.lastValue = this.value;
+	return this;
+};
+proto.interaction = function () {
+	emit(this.element, 'input', this.value, true);
+	return this;
+};
+proto.endInteraction = function () {
+	//trigger native input-like change
+	if (!eq(this.lastValue, this.value)) {
+		emit(this.element, 'change', this.value, true);
+	}
+	return this;
 };
 
 
@@ -284,14 +322,18 @@ Object.defineProperties(proto, {
 				else value = round(value, this.step);
 			}
 
-			this._value = value;
+			//check whether value is actually changed
+			if (!eq(this._value, value)) {
+				this._value = value;
 
-			//trigger bubbling event, like all inputs do
-			this.emit('change', value);
-			emit(this.element, 'change', value, true);
+				//trigger change event on self
+				//not the same as native input change
+				this.emit('change', value);
+			}
 		},
 		get: function () {
-			return this._value;
+			//keep immutability
+			return isArray(this._value) ? slice(this._value) : this._value;
 		}
 	}
 });
@@ -434,8 +476,6 @@ proto.orientation = {
 				ratio = (value - min) / range,
 				x = ratio * scope;
 
-			// console.log('render', value, ' : ', x)
-
 			self.move(x);
 
 			return self;
@@ -451,7 +491,6 @@ proto.orientation = {
 				normalValue = (x - lims.left) / scope;
 
 			var value = normalValue * (max - min) + min;
-			// console.log('calc', x, ' : ', value);
 
 			//keep user format of value
 			if (self.value.length) value = [value];
@@ -680,9 +719,11 @@ proto.orientation = {
 
 /** Increment / decrement API */
 proto.inc = function (timesX, timesY) {
-	if (isArray(this.value)) {
-		this.value[0] = inc(this.value[0], this.step[0], timesX);
-		this.value[1] = inc(this.value[1], this.step[1], timesY);
+	if (isArray(this.value) && this.value.length > 1) {
+		var value = this.value;
+		value[0] = inc(value[0], this.step[0], timesX);
+		value[1] = inc(value[1], this.step[1], timesY);
+		this.value = value;
 		this.renderValue(this.value);
 	} else {
 		var times = timesY || timesX;
@@ -696,15 +737,19 @@ proto.inc = function (timesX, timesY) {
 function inc (value, step, mult) {
 	mult = mult || 0;
 
+	var isArr = isArray(value);
+	value = plainify(value);
+
 	if (isFn(step)) step = step(value + (mult > 0 ? + MIN_STEP : - MIN_STEP));
 
-	return value + step * mult;
+	value += step * mult;
+
+	return isArr ? [value] : value;
 }
 
 
 /** Apply pressed keys on the 2d value */
 function handle2dkeys (keys, value, step, min, max) {
-
 	//up and right - increase by one
 	if (keys[38]) {
 		value[1] = inc(value[1], step[1], 1);
@@ -789,4 +834,10 @@ function handle1dkeys (keys, value, step, min, max) {
 /** If value is an array - return first value of it */
 function plainify (value) {
 	return value.length ? value[0] : value;
+}
+
+/** Whether all inner a’s === b’s */
+function eq (a,b) {
+	if (a && a.length) return a[0] === b[0] && a[1] === b[1];
+	return a === b;
 }
