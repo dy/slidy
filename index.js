@@ -4,7 +4,7 @@
  * @module slidy
  */
 
-var Picker = require('./lib/picker');
+var Picker = require('./picker');
 
 var extend = require('xtend/mutable');
 var isArray = require('is-array');
