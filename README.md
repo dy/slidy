@@ -56,7 +56,7 @@ All these parameters can be passed to options or redefined straightly on the pro
 | `repeat` | Repeat picker by axis: `'x'`, `'y'` or `'both'`, |
 | `pickerClass` | Class to add to each picker. |
 | `step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
-| `snap` | Snap always or only when released. |
+| `snap` | Snap to steps always or only when released. |
 | `picker` | A picker element to init, if predefined already. Otherwise it will be created. If `pickers` passed - this option will be ignored. |
 | `pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
 | `point` | Make point picker so that it is limited by slider only in one-pixel point. Useful for creating seamless repeating pickers, like hue range in color-picker. |

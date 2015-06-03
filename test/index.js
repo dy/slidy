@@ -364,7 +364,7 @@ describe("Slidy", function () {
 		});
 
 		it('work with 1dim passed as array', function () {
-			var el = createSlider('horizontal', {
+			var el = createSlider('horizontal one-dim-array', {
 				min: [-50],
 				max: [50],
 				value: [20]
@@ -399,6 +399,10 @@ describe("Slidy", function () {
 				max: 0,
 				orientation: 'vertical'
 			});
+		});
+
+		it.skip('snap repeat', function () {
+
 		});
 	});
 

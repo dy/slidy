@@ -110,13 +110,8 @@ proto.enable = function () {
 
 		self.interaction(value, self.value);
 
-		self.value = value;
-
 		//display snapping
-		if (self.snap) {
-			self.renderValue(self.value);
-		}
-
+		self.setValue(value, !self.snap);
 	});
 	on(self.draggable, 'dragend.' + self.ns, function () {
 		if (self.release) {
@@ -156,12 +151,10 @@ proto.enable = function () {
 
 				self.interaction(value, self.value);
 
-				self.value = value;
-
 				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
 
-				self.renderValue(self.value);
+				self.value = value;
 			}
 		});
 		on(self.element, 'keyup.' + self.ns, function (e) {
@@ -219,7 +212,7 @@ proto.step = 1;
 
 
 /** Loose snapping while drag */
-proto.snap = false;
+proto.snap = true;
 
 
 /** Animate release movement */
@@ -234,37 +227,52 @@ proto.point = false;
 proto.align = 0.5;
 
 
+/**
+ * Set own value
+ *
+ * @param {number|Array} value A value to set
+ */
+proto.setValue = function (value, ignoreRelocation) {
+	if (value === undefined) throw Error('Picker value cannot be undefined.');
+
+	var self = this;
+
+	//apply repeat
+	if (self.repeat) {
+		if (value.length === 2 && self.repeat === 'x') value[0] = loop(value[0], self.min[0], self.max[0]);
+		else if (value.length === 2 && self.repeat === 'y') value[1] = loop(value[1], self.min[1], self.max[1]);
+		else value = loop(value, self.min, self.max);
+	}
+
+	//apply limiting
+	value = between(value, self.min, self.max);
+
+	//round value
+	if (self.step) {
+		if (isFn(self.step)) value = round(value, self.step(value));
+		else value = round(value, self.step);
+	}
+
+	//update position
+	if (!ignoreRelocation) self.renderValue(value);
+
+	//check whether value is actually changed
+	if (!eq(self._value, value)) {
+		self._value = value;
+
+		//trigger change event on self
+		//not the same as native input change
+		self.emit('change', value);
+	}
+
+	return value;
+};
+
+
 /** Current picker value wrapper */
 Object.defineProperties(proto, {
 	value: {
-		set: function (value) {
-			if (value === undefined) throw Error('Picker value cannot be undefined.');
-
-			//apply repeat
-			if (this.repeat) {
-				if (value.length === 2 && this.repeat === 'x') value[0] = loop(value[0], this.min[0], this.max[0]);
-				else if (value.length === 2 && this.repeat === 'y') value[1] = loop(value[1], this.min[1], this.max[1]);
-				else value = loop(value, this.min, this.max);
-			}
-
-			//apply limiting
-			value = between(value, this.min, this.max);
-
-			//round value
-			if (this.step) {
-				if (isFn(this.step)) value = round(value, this.step(value));
-				else value = round(value, this.step);
-			}
-
-			//check whether value is actually changed
-			if (!eq(this._value, value)) {
-				this._value = value;
-
-				//trigger change event on self
-				//not the same as native input change
-				this.emit('change', value);
-			}
-		},
+		set: proto.setValue,
 		get: function () {
 			//keep immutability
 			return isArray(this._value) ? slice(this._value) : this._value;
@@ -301,22 +309,24 @@ proto.handleKeys = function (key, value, step) {};
 
 /** Update self size, pin & position, according to the value */
 proto.update = function () {
+	var self = this;
+
 	//update pin - may depend on element’s size
 	//can’t use `draggable.offsets` here as they might be undefined
-	if (this.point) {
-		this.draggable.pin = [
-			this.element.offsetWidth * this.align,
-			this.element.offsetHeight * this.align
+	if (self.point) {
+		self.draggable.pin = [
+			self.element.offsetWidth * self.align,
+			self.element.offsetHeight * self.align
 		];
 	}
 
 	//update draggable limits
-	this.draggable.update();
+	self.draggable.update();
 
 	//update position according to the value
-	this.renderValue(this.value);
+	self.renderValue(self.value);
 
-	return this;
+	return self;
 };
 
 
@@ -326,24 +336,26 @@ proto.move = function (x, y) {
 
 	//correct point placement
 	if (self.point) {
-		var cx = this.draggable.pin.width * this.align;
-		var cy = this.draggable.pin.height * this.align;
-		x = x - this.draggable.pin[0] - cx;
-		y = y - this.draggable.pin[1] - cy;
+		var cx = self.draggable.pin.width * self.align;
+		var cy = self.draggable.pin.height * self.align;
+		x = x - self.draggable.pin[0] - cx;
+		y = y - self.draggable.pin[1] - cy;
 	}
 
 	//if thumb is more than visible area - subtract overflow coord
-	var overflowX = this.draggable.pin.width - this.element.parentNode.clientWidth;
-	var overflowY = this.draggable.pin.height - this.element.parentNode.clientHeight;
+	var overflowX = self.draggable.pin.width - self.element.parentNode.clientWidth;
+	var overflowY = self.draggable.pin.height - self.element.parentNode.clientHeight;
 	if (overflowX > 0) x -= overflowX;
 	if (overflowY > 0) y -= overflowY;
 
-	this.draggable.move(x, y);
+	self.draggable.move(x, y);
+
+	var value = self.calcValue(x, y);
 
 	//set value
-	this.value = this.calcValue(x, y);
+	self.setValue(value, true);
 
-	return this;
+	return self;
 };
 
 
@@ -427,7 +439,7 @@ proto.orientation = {
 			var value = normalValue * (max - min) + min;
 
 			//keep user format of value
-			if (self.value.length) value = [value];
+			if (isArray(self.value)) value = [value];
 
 			return value;
 		};
@@ -465,7 +477,7 @@ proto.orientation = {
 			var value = normalValue * (max - min) + min;
 
 			//keep user format of value
-			if (self.value.length) value = [value];
+			if (isArray(self.value)) value = [value];
 
 			return value;
 		};
@@ -567,7 +579,7 @@ proto.orientation = {
 			var value = normalValue * (max - min) + min;
 
 			//keep user format of value
-			if (self.value.length) value = [value];
+			if (isArray(self.value)) value = [value];
 
 			return value;
 		};
@@ -658,11 +670,9 @@ proto.inc = function (timesX, timesY) {
 		value[0] = inc(value[0], this.step[0], timesX);
 		value[1] = inc(value[1], this.step[1], timesY);
 		this.value = value;
-		this.renderValue(this.value);
 	} else {
 		var times = timesY || timesX;
 		this.value = inc(this.value, this.step, times);
-		this.renderValue(this.value);
 	}
 };
 
