@@ -1,6 +1,6 @@
 {
   "name": "slidy",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "description": "Range slider component",
   "main": "index.js",
   "files": [
