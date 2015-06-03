@@ -148,8 +148,6 @@ proto.enable = function () {
 
 	//events
 	on(self.draggable, 'dragstart.' + self.ns, function () {
-		self.startInteraction();
-
 		//hide cursor
 		css(root, 'cursor', 'none');
 		css(this.element, 'cursor', 'none');
@@ -161,8 +159,6 @@ proto.enable = function () {
 		var value = self.calcValue.apply(self, self.draggable.getCoords());
 
 		self.value = value;
-
-		self.interaction();
 
 		//display snapping
 		if (self.snap) {
@@ -178,8 +174,6 @@ proto.enable = function () {
 
 		//move to a new position
 		self.renderValue(self.value);
-
-		self.endInteraction();
 
 		//get cursor back
 		css(root, 'cursor', null);
@@ -205,11 +199,7 @@ proto.enable = function () {
 			if (e.which >= 33 && e.which <= 40) {
 				e.preventDefault();
 
-				self.startInteraction();
-
 				self.value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
-
-				self.interaction();
 
 				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
@@ -219,8 +209,6 @@ proto.enable = function () {
 		});
 		on(self.element, 'keyup.' + self.ns, function (e) {
 			self._pressedKeys[e.which] = false;
-
-			self.endInteraction();
 		});
 	}
 
@@ -253,26 +241,6 @@ proto.disable = function () {
 	return self;
 };
 
-
-/**
- * Interaction methods
- * just wrappers for native input/change event mechanics
- */
-proto.startInteraction = function () {
-	this.lastValue = this.value;
-	return this;
-};
-proto.interaction = function () {
-	emit(this.element, 'input', this.value, true);
-	return this;
-};
-proto.endInteraction = function () {
-	//trigger native input-like change
-	if (!eq(this.lastValue, this.value)) {
-		emit(this.element, 'change', this.value, true);
-	}
-	return this;
-};
 
 
 /** Default min/max values */

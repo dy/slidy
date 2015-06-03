@@ -221,8 +221,6 @@ proto.enable = function () {
 					}), x, y);
 					pickers.push(picker);
 
-					picker.startInteraction();
-
 					//move picker to the point of click
 					picker.move(x,y).startDrag(e);
 				}
@@ -234,8 +232,6 @@ proto.enable = function () {
 				//make closest picker active
 				picker = self.getClosestPicker(self.pickers, x, y);
 				pickers.push(picker);
-
-				picker.startInteraction();
 
 				//move picker to the point of click
 				picker.move(x,y).startDrag(e);
@@ -277,9 +273,6 @@ proto.enable = function () {
 			//ignore unfocused things
 			else return;
 
-			//save value
-			picker.startInteraction();
-
 			//ignore doc scroll
 			e.preventDefault();
 
@@ -297,11 +290,6 @@ proto.enable = function () {
 			}
 
 			picker.inc(stepX, stepY);
-
-			picker.interaction();
-
-			//trigger change if needed
-			picker.endInteraction();
 		});
 	}
 
