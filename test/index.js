@@ -353,12 +353,20 @@ describe("Slidy", function () {
 			assert.equal(i,2);
 		});
 
-		it.skip('create predefined picker via .picker', function () {
+		it.skip('predefine picker element via `picker` option', function () {
 
 		});
 
-		it.skip('check point picker placement after appending virtually created slidy', function () {
+		it.skip('check point-picker placement after appending virtually created slidy', function () {
 
+		});
+
+		it('work with 1dim passed as array', function () {
+			var el = createSlider('horizontal', {
+				min: [-50],
+				max: [50],
+				value: [20]
+			});
 		});
 
 		it.skip('out of bounds initial values', function () {

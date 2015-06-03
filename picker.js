@@ -166,6 +166,7 @@ proto.enable = function () {
 	});
 	on(self.draggable, 'dragend.' + self.ns, function () {
 		if (self.release) {
+			//set animation flag
 			self.draggable.isAnimated = true;
 		}
 
@@ -195,6 +196,7 @@ proto.enable = function () {
 
 				self.value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
 
+				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
 
 				self.renderValue(self.value);
@@ -289,10 +291,32 @@ Object.defineProperties(proto, {
 			emit(this.element, 'change', value, true);
 		},
 		get: function () {
-			return this._value;
+			return getFlattened(this._value);
+		}
+	},
+	min: {
+		set: function (value) {
+			this._min = value;
+		},
+		get: function () {
+			return getFlattened(this._min);
+		}
+	},
+	max: {
+		set: function (value) {
+			this._max = value;
+		},
+		get: function () {
+			return getFlattened(this._max);
 		}
 	}
 });
+
+
+/** If value is a single array - plainify it */
+function getFlattened (value) {
+	return value.length === 1 ? value[0] : value;
+}
 
 
 /**
