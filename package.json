@@ -5,7 +5,7 @@
   "main": "index.js",
   "files": [
     "index.js",
-    "lib",
+    "picker.js",
     "index.css"
   ],
   "directories": {

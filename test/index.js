@@ -353,6 +353,14 @@ describe("Slidy", function () {
 			assert.equal(i,2);
 		});
 
+		it.skip('create predefined picker via .picker', function () {
+
+		});
+
+		it.skip('check point picker placement after appending virtually created slidy', function () {
+
+		});
+
 		it.skip('out of bounds initial values', function () {
 
 		});
