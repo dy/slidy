@@ -29,7 +29,7 @@ describe("Slidy", function () {
 				if (slidy.pickers[i].value instanceof Array) {
 					slidy.pickers[i].element.innerHTML =
 						slidy.pickers[i].value[0].toFixed(2) +
-						(slidy.pickers[i].value[1] ? ',' + slidy.pickers[i].value[1].toFixed(2) : '');
+						(slidy.pickers[i].value[1] !== undefined ? ',' + slidy.pickers[i].value[1].toFixed(2) : '');
 				}
 				else {
 					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value.toFixed(2);
@@ -37,7 +37,7 @@ describe("Slidy", function () {
 			}
 
 			//update rotation
-			if (opts.change) opts.change.call(slidy, e);
+			// if (opts.change) opts.change.call(slidy, e);
 		}
 
 		//create slidy
@@ -371,6 +371,20 @@ describe("Slidy", function () {
 			});
 		});
 
+		it('input, change events', function () {
+			var el = createSlider('horizontal events', {
+				min: -1,
+				max: 1,
+				value: 0.5,
+				input: function (value) {
+					console.log('input:', value);
+				},
+				change: function (value) {
+					console.log('change:', value);
+				}
+			});
+		});
+
 		it.skip('out of bounds initial values', function () {
 
 		});
@@ -379,8 +393,12 @@ describe("Slidy", function () {
 
 		});
 
-		it.skip('empty initial values array', function () {
-
+		it('autodetect empty values', function () {
+			var el = createSlider('vertical autodetect', {
+				min: -3,
+				max: 0,
+				orientation: 'vertical'
+			});
 		});
 	});
 

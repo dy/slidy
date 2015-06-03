@@ -19,7 +19,6 @@ var isFn = require('is-function');
 var round = require('mumath/round');
 var between = require('mumath/between');
 var loop = require('mumath/loop');
-var getTransformer = require('mumath/wrap');
 var getUid = require('get-uid');
 var isArray = require('is-array');
 var extend = require('xtend/mutable');
@@ -72,67 +71,18 @@ function Picker (el, options) {
 	//define orientation of picker
 	defineState(self, 'orientation', self.orientation);
 
-	//add change listener, if passed one
-	if (isFn(options.change)) {
-		on(self, 'change', options.change);
-	}
-
 	//adopt options
 	//should go before enabled to set up proper flags
 	extend(self, options);
 
-	//calculate value & step
-	//detect step automatically based on min/max range (1/100 by default)
-	//native behaviour is always 1, so ignore it
-	if (options.step === undefined) {
-		self.step = Picker.detectStep(self.min, self.max);
-	}
-
-	//calc undefined value as a middle of the range
-	if (options.value === undefined) {
-		self.value = Picker.detectStep(self.min, self.max);
-	}
-
-	//go enabled
-	self.enable();
-
-	//apply type of placement
-	self.orientation = options.orientation;
+	//NOTE: you have to enable picker manually
 }
-
-
-/**
- * Default step detector
- * Step is 0.1 or 1
- */
-Picker.detectStep = function (min, max) {
-	var range = getTransformer(function (a, b) {
-		return Math.abs(a - b);
-	})(max, min);
-
-	var step = getTransformer(function (a) {
-		return a < 100 ? 0.01 : 1;
-	})(range);
-
-	return step;
-};
-
-
-/**
- * Default value detector
- * Default value is half of range
- */
-Picker.detectValue = function (min, max) {
-	return getTransformer(function (a, b) {
-		return (a + b) * 0.5;
-	})(min, max);
-};
 
 
 var proto = Picker.prototype = Object.create(Emitter.prototype);
 
 
-/** Enabled/Disabled state */
+/** Enable/disable picker */
 proto.enable = function () {
 	var self = this;
 
@@ -157,6 +107,8 @@ proto.enable = function () {
 		if (self.release && self.draggable.isAnimated) return;
 
 		var value = self.calcValue.apply(self, self.draggable.getCoords());
+
+		self.interaction(value, self.value);
 
 		self.value = value;
 
@@ -199,7 +151,12 @@ proto.enable = function () {
 			if (e.which >= 33 && e.which <= 40) {
 				e.preventDefault();
 
-				self.value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
+
+				var value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
+
+				self.interaction(value, self.value);
+
+				self.value = value;
 
 				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
@@ -209,8 +166,13 @@ proto.enable = function () {
 		});
 		on(self.element, 'keyup.' + self.ns, function (e) {
 			self._pressedKeys[e.which] = false;
+
 		});
 	}
+
+	//emit duplicate change
+	//as if change happens when picker is enabled
+	self.emit('change', self.value);
 
 	return self;
 };
@@ -241,6 +203,10 @@ proto.disable = function () {
 	return self;
 };
 
+
+proto.interaction = function (value, oldValue) {
+	if (!eq(value, oldValue)) emit(this, 'input', value, oldValue);
+};
 
 
 /** Default min/max values */

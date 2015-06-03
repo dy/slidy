@@ -17,6 +17,8 @@ var throttle = require('emmy/throttle');
 var getClientX = require('get-client-xy').x;
 var getClientY = require('get-client-xy').y;
 var getUid = require('get-uid');
+var isFn = require('is-function');
+var getTransformer = require('mumath/wrap');
 
 
 var win = window, doc = document;
@@ -61,12 +63,12 @@ function Slidy(target, options) {
 	//detect step automatically based on min/max range (1/100 by default)
 	//native behaviour is always 1, so ignore it
 	if (options.step === undefined) {
-		self.step = Picker.detectStep(self.min, self.max);
+		self.step = detectStep(self.min, self.max);
 	}
 
 	//calc undefined valuea as a middle of range
 	if (options.value === undefined) {
-		self.value = Picker.detectValue(self.min, self.max);
+		self.value = detectValue(self.min, self.max);
 	}
 
 	//bind passed callbacks, if any
@@ -182,6 +184,10 @@ proto.enable = function () {
 
 	self.element.removeAttribute('disabled');
 
+	//add change listenerw, if passed one
+	if (isFn(self.change)) on(self, 'change', self.change);
+	if (isFn(self.input)) on(self, 'input', self.input);
+
 	//Events
 	// Update pickers position on the first load and resize
 	throttle(win, 'resize.' + self.ns, 20, function () {
@@ -290,6 +296,8 @@ proto.enable = function () {
 			}
 
 			picker.inc(stepX, stepY);
+
+			self.emit('input', picker.value);
 		});
 	}
 
@@ -305,6 +313,22 @@ proto.enable = function () {
 
 	//enable pickers
 	self.pickers.forEach(function (picker) {
+		//on picker change trigger own change
+		picker.on('change', function (value) {
+			if (self.aria) {
+				//set aria value
+				self.element.setAttribute('aria-valuenow', value);
+				self.element.setAttribute('aria-valuetext', value);
+			}
+			self.emit('change', value);
+		})
+
+		//observe drag, treat as user input
+		.on('input', function (value, oldValue) {
+			self.emit('input', value, oldValue);
+		});
+
+		//enable picker - init value
 		picker.enable();
 	});
 
@@ -389,8 +413,7 @@ proto.createPicker = function (options) {
 		keyboard: self.keyboard,
 		wheel: self.wheel,
 		point: self.point,
-		value: self.value,
-		change: self.change
+		value: self.value
 	}, options);
 
 	var el = options.element || document.createElement('div');
@@ -405,17 +428,6 @@ proto.createPicker = function (options) {
 	self.element.appendChild(el);
 
 	var picker = new Picker(el, options);
-
-	//on picker change trigger own change
-	picker.on('change', function (value) {
-		if (self.aria) {
-			//set aria value
-			self.element.setAttribute('aria-valuenow', value);
-			self.element.setAttribute('aria-valuetext', value);
-		}
-
-		self.emit('change', value);
-	});
 
 	return picker;
 };
@@ -460,4 +472,33 @@ proto.getActivePicker = function () {
 	})[0];
 
 	return picker || this.pickers[0];
+};
+
+
+
+/**
+ * Default step detector
+ * Step is 0.1 or 1
+ */
+function detectStep (min, max) {
+	var range = getTransformer(function (a, b) {
+		return Math.abs(a - b);
+	})(max, min);
+
+	var step = getTransformer(function (a) {
+		return a < 100 ? 0.01 : 1;
+	})(range);
+
+	return step;
+};
+
+
+/**
+ * Default value detector
+ * Default value is half of range
+ */
+function detectValue (min, max) {
+	return getTransformer(function (a, b) {
+		return (a + b) * 0.5;
+	})(min, max);
 };

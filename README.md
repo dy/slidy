@@ -72,6 +72,11 @@ All these parameters can be passed to options or redefined straightly on the pro
 | `disable()` | Disable interactivity. |
 | `enable()` | Enable interactivity. |
 
+| Event | Description |
+|---|---|
+| `change` | Called on each value change. |
+| `input` | Called on each user input. |
+
 
 ### Picker (thumb)
 
@@ -99,6 +104,6 @@ Per-picker options can redefine slidy default options.
 * Slidy doesn’t paint range or any other visual information, because it is domain-specific data, and interpreting slidy input value[s] is farmed out to user. Slider just provides a reliable mechanism of input. To build domain-specific picker, create a new component, like [color-picker](https://github.com/dfcreative/picky).
 * Slidy doesn not do non-linear value picking by default, because it supposes linear mapping of screen plot to picking values. The best way to implement [logarithmic or similar non-linear picker](https://dfcreative.github.io/slidy#logarithmic) is to manage value separately in `change` callback.
 * It does not polyfill native input nor provide hidden form input. Both tasks are implementable externally quite easily via `change` callback, having them in code would mean useless lines not fitting exact user needs. It is difficult to decide beforehead how values are to be serialized, e. g. 2d values. Focus of the slidy is to provide reliable and agile mechanism of slider input, but not to provide bunch of interfaces.
-* It does not implement native input event mechanics (`change`, `input`): if you need them, you can implement it via callbacks. Otherwise every depending component would have to prevent slidy’s DOM events and trigger own instead.
+* It does not implement native input DOM event mechanics (`change`, `input`): if you need that, you can implement that via callbacks. It is done so to keep DOM space unpolluted.
 
 [![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)
