@@ -308,7 +308,7 @@ function isUndefined(arg) {
  * @module slidy
  */
 
-var Picker = require('./lib/picker');
+var Picker = require('./picker');
 
 var extend = require('xtend/mutable');
 var isArray = require('is-array');
@@ -765,759 +765,7 @@ proto.getActivePicker = function () {
 
 	return picker || this.pickers[0];
 };
-},{"./lib/picker":3,"emmy/off":25,"emmy/on":26,"emmy/throttle":27,"events":1,"get-client-xy":28,"get-uid":29,"is-array":30,"lifecycle-events":32,"xtend/mutable":65}],3:[function(require,module,exports){
-/**
- * Picker class.
- * A controller for draggable.
- * Because it has some intermediate API:
- * - update
- * - value
- *
- * Note that it’s not an extension of draggable due to method names conflict, like update.
- */
-
-var Draggable = require('draggy');
-var defineState = require('define-state');
-var emit = require('emmy/emit');
-var on = require('emmy/on');
-var off = require('emmy/off');
-var css = require('mucss/css');
-var Emitter = require('events');
-var isFn = require('is-function');
-var round = require('mumath/round');
-var between = require('mumath/between');
-var loop = require('mumath/loop');
-var getUid = require('get-uid');
-var isArray = require('is-array');
-var extend = require('xtend/mutable');
-var getTransformer = require('mumath/wrap');
-
-
-module.exports = Picker;
-
-
-var doc = document, root = document.documentElement;
-
-
-/** The most precise step available. */
-var MIN_STEP = 0.00001;
-
-
-/** Default pageup/pagedown size, in steps */
-var PAGE = 5;
-
-
-/**
- * Picker instance
- *
- * @constructor
- */
-function Picker (el, options) {
-	if (!(this instanceof Picker)) return new Picker(el, options);
-
-	var self = this;
-
-	el.classList.add('slidy-picker');
-	self.element = el;
-
-	if (options.pickerClass) el.classList.add(options.pickerClass);
-
-	//generate self id
-	self.id = getUid();
-	self.ns = 'slidy-picker-' + self.id;
-	if (!self.element.id) self.element.id = self.ns;
-
-	//init draggable
-	self.draggable = new Draggable(el, {
-		threshold: 0,
-		within: options.within,
-		sniperSlowdown: 0.85,
-		repeat: options.repeat,
-		releaseDuration: 80
-	});
-
-	//define orientation of picker
-	defineState(self, 'orientation', self.orientation);
-
-	//add change listener, if passed one
-	if (isFn(options.change)) {
-		on(self, 'change', options.change);
-	}
-
-	//adopt options
-	//should go before enabled to set up proper flags
-	extend(self, options);
-
-	//calculate value & step
-	//detect step automatically based on min/max range (1/100 by default)
-	//native behaviour is always 1, so ignore it
-	if (options.step === undefined) {
-		self.step = Picker.detectStep(self.min, self.max);
-	}
-
-	//calc undefined valuea as a middle of range
-	if (options.value === undefined) {
-		self.value = Picker.detectStep(self.min, self.max);
-	}
-
-	//go enabled
-	self.enable();
-
-	//apply type of placement
-	self.orientation = options.orientation;
-}
-
-
-/**
- * Default step detector
- * Step is 0.1 or 1
- */
-Picker.detectStep = function (min, max) {
-	var range = getTransformer(function (a, b) {
-		return Math.abs(a - b);
-	})(max, min);
-
-	var step = getTransformer(function (a) {
-		return a < 100 ? 0.01 : 1;
-	})(range);
-
-	return step;
-};
-
-
-/**
- * Default value detector
- * Default value is half of range
- */
-Picker.detectValue = function (min, max) {
-	return getTransformer(function (a, b) {
-		return (a + b) * 0.5;
-	})(min, max);
-};
-
-
-var proto = Picker.prototype = Object.create(Emitter.prototype);
-
-
-/** Enabled/Disabled state */
-proto.enable = function () {
-	var self = this;
-
-	if (self.isEnabled) return self;
-	self.isEnabled = true;
-
-	if (self.aria) {
-		//ARIAs
-		self.element.removeAttribute('aria-disabled');
-	}
-
-	self.element.removeAttribute('disabled');
-
-	//events
-	on(self.draggable, 'dragstart.' + self.ns, function () {
-		css(root, 'cursor', 'none');
-		css(this.element, 'cursor', 'none');
-	});
-	on(self.draggable, 'drag.' + self.ns, function () {
-		//ignore animated state to avoid collisions of value
-		if (self.release && self.draggable.isAnimated) return;
-
-		var value = self.calcValue.apply(self, self.draggable.getCoords());
-
-		self.value = value;
-
-		//display snapping
-		if (self.snap) {
-			self.renderValue(self.value);
-		}
-
-	});
-	on(self.draggable, 'dragend.' + self.ns, function () {
-		if (self.release) {
-			self.draggable.isAnimated = true;
-		}
-
-		self.renderValue(self.value);
-		css(root, 'cursor', null);
-		css(this.element, 'cursor', null);
-	});
-
-	if (self.keyboard) {
-		//make focusable
-		self.element.setAttribute('tabindex', 0);
-
-		//kbd events
-		//borrowed from native input range mixed with multithumb range
-		//@ref http://access.aol.com/dhtml-style-guide-working-group/#slidertwothumb
-		self._pressedKeys = [];
-		on(self.element, 'keydown.' + self.ns, function (e) {
-			//track pressed keys, to do diagonal movements
-			self._pressedKeys[e.which] = true;
-
-			if (e.which === 27) {
-				self.blur();
-			}
-
-			if (e.which >= 33 && e.which <= 40) {
-				e.preventDefault();
-
-				self.value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
-
-				if (self.release) self.draggable.isAnimated = true;
-
-				self.renderValue(self.value);
-			}
-		});
-		on(self.element, 'keyup.' + self.ns, function (e) {
-			self._pressedKeys[e.which] = false;
-		});
-	}
-
-	return self;
-};
-proto.disable = function () {
-	var self = this;
-
-	self.isEnabled = false;
-
-	if (self.aria) {
-		//ARIAs
-		self.element.setAttribute('aria-disabled', true);
-	}
-
-	self.element.setAttribute('disabled', true);
-
-	//unbind events
-	off(self.element,'dragstart.' + self.ns);
-	off(self.element,'drag.' + self.ns);
-	off(self.element,'dragend.' + self.ns);
-
-	if (self.keyboard) {
-		//make unfocusable
-		self.element.setAttribute('tabindex', -1);
-		off(self.element,'keydown.' + self.ns);
-		off(self.element,'keyup.' + self.ns);
-	}
-
-	return self;
-};
-
-
-/** Default min/max values */
-proto.min = 0;
-proto.max = 100;
-
-
-/** Default step to bind value. It is automatically detected, if isn’t passed. */
-proto.step = 1;
-
-
-/** Loose snapping while drag */
-proto.snap = false;
-
-
-/** Animate release movement */
-proto.release = false;
-
-
-/** Point picker isn’t constrained by it’s shape */
-proto.point = false;
-
-
-/** Picker alignment relative to the mouse. Redefined by slidy, but to prevent empty value it is set to number. */
-proto.align = 0.5;
-
-
-/** Current picker value wrapper */
-Object.defineProperties(proto, {
-	value: {
-		set: function (value) {
-			if (value === undefined) throw Error('Picker value cannot be undefined.');
-
-			//apply repeat
-			if (this.repeat) {
-				if (isArray(value) && this.repeat === 'x') value[0] = loop(value[0], this.min[0], this.max[0]);
-				else if (isArray(value) && this.repeat === 'y') value[1] = loop(value[1], this.min[1], this.max[1]);
-				else value = loop(value, this.min, this.max);
-			}
-
-			//apply limiting
-			value = between(value, this.min, this.max);
-
-			//round value
-			if (this.step) {
-				if (isFn(this.step)) value = round(value, this.step(value));
-				else value = round(value, this.step);
-			}
-
-			this._value = value;
-
-			//trigger bubbling event, like all inputs do
-			this.emit('change', value);
-			emit(this.element, 'change', value, true);
-		},
-		get: function () {
-			return this._value;
-		}
-	}
-});
-
-
-/**
- * Move picker visually to the value passed.
- * Supposed to be redefined by type
- *
- * @param {number} value Value to render
- *
- * @return {Picker} Self instance
- */
-proto.renderValue = function (value) {};
-
-
-/**
- * Calc value from the picker position
- * Supposed to be redefined by type
- *
- * @return {number} Value, min..max
- */
-proto.calcValue = function (x, y) {};
-
-
-/**
- * Update value based on keypress. Supposed to be redefined in type of picker.
- */
-proto.handleKeys = function (key, value, step) {};
-
-
-/** Update self size, pin & position, according to the value */
-proto.update = function () {
-	//update pin - may depend on element’s size
-	if (this.point) {
-		this.draggable.pin = [
-			this.draggable.offsets.width * this.align,
-			this.draggable.offsets.height * this.align
-		];
-	}
-
-	//update draggable limits
-	this.draggable.update();
-
-	//update position according to the value
-	this.renderValue(this.value);
-
-	return this;
-};
-
-
-/** Move picker to the x, y relative coordinates */
-proto.move = function (x, y) {
-	var self = this;
-
-	//correct point placement
-	if (self.point) {
-		var cx = this.draggable.pin.width * this.align;
-		var cy = this.draggable.pin.height * this.align;
-		x = x - this.draggable.pin[0] - cx;
-		y = y - this.draggable.pin[1] - cy;
-	}
-
-	//if thumb is more than visible area - subtract overflow coord
-	var overflowX = this.draggable.pin.width - this.element.parentNode.clientWidth;
-	var overflowY = this.draggable.pin.height - this.element.parentNode.clientHeight;
-	if (overflowX > 0) x -= overflowX;
-	if (overflowY > 0) y -= overflowY;
-
-	this.draggable.move(x, y);
-
-	//set value
-	this.value = this.calcValue(x, y);
-
-	return this;
-};
-
-
-/**
- * Move picker to the point of click with the centered drag point
- */
-proto.startDrag = function (e) {
-	var self = this;
-
-	//update drag limits based off event passed
-	self.draggable.setTouch(e).update(e);
-
-	//start drag
-	//ignore if already drags
-	if (self.draggable.state !== 'drag') {
-		self.draggable.state = 'drag';
-	}
-
-	//centrize picker
-	self.draggable.innerOffsetX = self.draggable.pin[0] + self.draggable.pin.width * 0.5;
-	self.draggable.innerOffsetY = self.draggable.pin[1] + self.draggable.pin.height * 0.5;
-
-	//emulate move
-	self.draggable.drag(e);
-
-	return this;
-};
-
-
-/** Make it active. */
-proto.focus = function () {
-	var self = this;
-	self.element.focus();
-};
-proto.blur = function () {
-	var self = this;
-	self.element.blur();
-};
-
-
-/**
- * Placing type
- * @enum {string}
- * @default 'horizontal'
- */
-proto.orientation = {
-	//default orientation is horizontal
-	_: 'horizontal',
-
-	horizontal: function () {
-		var self = this;
-
-		self.draggable.axis = 'x';
-
-		//place pickers according to the value
-		self.renderValue = function (value) {
-			var	lims = self.draggable.limits,
-				scope = lims.right - lims.left,
-				range = self.max - self.min,
-				ratio = (value - self.min) / range,
-				x = ratio * scope;
-
-			// console.log('render', value, ' : ', x)
-
-			self.move(x);
-
-			return self;
-		};
-
-		//round value on each drag
-		self.calcValue = function (x) {
-			var lims = self.draggable.limits,
-				scope = lims.right - lims.left,
-				normalValue = (x - lims.left) / scope;
-
-			var value = normalValue * (self.max - self.min) + self.min;
-			// console.log('calc', x, ' : ', value);
-
-			return value;
-		};
-
-		self.handleKeys = handle1dkeys;
-	},
-	vertical: function () {
-		var self = this;
-		self.draggable.axis = 'y';
-
-		//place pickers according to the value
-		self.renderValue = function (value) {
-			var	lims = self.draggable.limits,
-				scope = lims.bottom - lims.top,
-				range = self.max - self.min,
-				ratio = (-value + self.max) / range,
-				y = ratio * scope;
-			self.move(null, y);
-
-			return self;
-		};
-
-		//round value on each drag
-		self.calcValue = function (x, y) {
-			var lims = self.draggable.limits,
-				scope = lims.bottom - lims.top,
-				normalValue = (-y + lims.bottom) / scope;
-
-			return normalValue * (self.max - self.min) + self.min;
-		};
-
-		self.handleKeys = handle1dkeys;
-	},
-	cartesian: function () {
-		var self = this;
-		self.draggable.axis = null;
-
-		self.renderValue = function (value) {
-			var	lim = self.draggable.limits,
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top);
-			var hRange = self.max[0] - self.min[0],
-				vRange = self.max[1] - self.min[1],
-				ratioX = (value[0] - self.min[0]) / hRange,
-				ratioY = (-value[1] + self.max[1]) / vRange;
-
-			self.move(ratioX * hScope, ratioY * vScope);
-
-			return self;
-		};
-
-		self.calcValue = function (x, y) {
-			var lim = self.draggable.limits,
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top);
-
-			var normalValue = [(x - lim.left) / hScope, ( - y + lim.bottom) / vScope];
-
-			return [
-				normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
-				normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
-			];
-		};
-
-		self.handleKeys = handle2dkeys;
-	},
-	circular: function () {
-		var self = this;
-		self.draggable.axis = null;
-
-		//limit x/y by the circumference
-		self.draggable.move = function (x, y) {
-			var lim = this.limits;
-			var hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top);
-
-			var cx = hScope / 2 - this.pin[0],
-				cy = vScope / 2 - this.pin[1];
-
-			var angle = Math.atan2(y - cy, x - cx);
-
-			this.setCoords(
-				Math.cos(angle) * (cx + this.pin[0]) + cx,
-				Math.sin(angle) * (cy + this.pin[1]) + cy
-			);
-		};
-
-		self.renderValue = function (value) {
-			var	lim = self.draggable.limits,
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top),
-				centerX = hScope * 0.5,
-				centerY = vScope * 0.5;
-
-			var range = self.max - self.min;
-
-			var	normalValue = (value - self.min) / range;
-			var angle = (normalValue - 0.5) * 2 * Math.PI;
-			self.move(
-				Math.cos(angle) * centerX + centerX,
-				Math.sin(angle) * centerY + centerY
-			);
-		};
-
-		self.calcValue = function (x, y) {
-			var lim = self.draggable.limits,
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top);
-
-			x = x - hScope * 0.5 + self.draggable.pin[0];
-			y = y - vScope * 0.5 + self.draggable.pin[1];
-
-			//get angle
-			var angle = Math.atan2( y, x );
-
-			//get normal value
-			var normalValue = angle * 0.5 / Math.PI + 0.5;
-
-			//get value from coords
-			return normalValue * (self.max - self.min) + self.min;
-		};
-
-		self.handleKeys = handle1dkeys;
-	},
-	polar: function () {
-		var self = this;
-		self.draggable.axis = null;
-
-		//limit x/y within the circle
-		self.draggable.move = function (x, y) {
-			var lim = this.limits;
-			var hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top);
-
-			var cx = hScope / 2 - this.pin[0],
-				cy = vScope / 2 - this.pin[1];
-			var dx = x - cx,
-				dy = y - cy;
-
-			var angle = Math.atan2(y - cy, x - cx);
-			var r = Math.sqrt(dx * dx + dy * dy);
-
-			//limit max radius as a circumference
-			this.setCoords(
-				(r > hScope / 2) ? Math.cos(angle) * (cx + this.pin[0]) + cx : x,
-				(r > vScope / 2) ? Math.sin(angle) * (cy + this.pin[1]) + cy : y
-			);
-		};
-
-		self.renderValue = function (value) {
-			var	lim = self.draggable.limits,
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top),
-				centerX = hScope * 0.5,
-				centerY = vScope * 0.5;
-
-			//get angle normal value
-			var aRange = self.max[0] - self.min[0];
-			var	normalAngleValue = (value[0] - self.min[0]) / aRange;
-			var angle = (normalAngleValue - 0.5) * 2 * Math.PI;
-
-			//get radius normal value
-			var rRange = self.max[1] - self.min[1];
-			var normalRadiusValue = (value[1] - self.min[1]) / rRange;
-
-			var xRadius = centerX * normalRadiusValue;
-			var yRadius = centerY * normalRadiusValue;
-
-			self.move(
-				Math.cos(angle) * xRadius + centerX,
-				Math.sin(angle) * yRadius + centerY
-			);
-		};
-
-		self.calcValue = function (x, y) {
-			var lim = self.draggable.limits,
-				hScope = (lim.right - lim.left),
-				vScope = (lim.bottom - lim.top);
-
-			x = x + self.draggable.pin[0] - hScope * 0.5;
-			y = y + self.draggable.pin[1] - vScope * 0.5;
-
-			//get angle
-			var angle = Math.atan2( y, x );
-
-			//get normal value
-			var normalAngleValue = (angle * 0.5 / Math.PI + 0.5);
-			var normalRadiusValue = Math.sqrt( x*x + y*y ) / hScope * 2;
-
-			//get value from coords
-			return [
-				normalAngleValue * (self.max[0] - self.min[0]) + self.min[0],
-				normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1]
-			];
-		};
-
-		self.handleKeys = handle2dkeys;
-	}
-};
-
-
-/** Increment / decrement API */
-proto.inc = function (timesX, timesY) {
-	if (isArray(this.value)) {
-		this.value[0] = inc(this.value[0], this.step[0], timesX);
-		this.value[1] = inc(this.value[1], this.step[1], timesY);
-		this.renderValue(this.value);
-	} else {
-		var times = timesY || timesX;
-		this.value = inc(this.value, this.step, times);
-		this.renderValue(this.value);
-	}
-};
-
-
-/** Increment & decrement value by the step [N times] */
-function inc (value, step, mult) {
-	mult = mult || 0;
-
-	if (isFn(step)) step = step(value + (mult > 0 ? + MIN_STEP : - MIN_STEP));
-
-	return value + step * mult;
-}
-
-
-/** Apply pressed keys on the 2d value */
-function handle2dkeys (keys, value, step, min, max) {
-
-	//up and right - increase by one
-	if (keys[38]) {
-		value[1] = inc(value[1], step[1], 1);
-	}
-	if (keys[39]) {
-		value[0] = inc(value[0], step[0], 1);
-	}
-	if (keys[40]) {
-		value[1] = inc(value[1], step[1], -1);
-	}
-	if (keys[37]) {
-		value[0] = inc(value[0], step[0], -1);
-	}
-
-	//meta
-	var coordIdx = 1;
-	if (keys[18] || keys[91] || keys[17] || keys[16]) coordIdx = 0;
-
-	//home - min
-	if (keys[36]) {
-		value[coordIdx] = min[coordIdx];
-	}
-
-	//end - max
-	if (keys[35]) {
-		value[coordIdx] = max[coordIdx];
-	}
-
-	//pageup
-	if (keys[33]) {
-		value[coordIdx] = inc(value[coordIdx], step[coordIdx], PAGE);
-	}
-
-	//pagedown
-	if (keys[34]) {
-		value[coordIdx] = inc(value[coordIdx], step[coordIdx], -PAGE);
-	}
-
-
-	return value;
-}
-
-
-/** Apply pressed keys on the 1d value */
-function handle1dkeys (keys, value, step, min, max) {
-	step = step || 1;
-
-	//up and right - increase by one
-	if (keys[38] || keys[39]) {
-		value = inc(value, step, 1);
-	}
-
-	//down and left - decrease by one
-	if (keys[40] || keys[37]) {
-		value = inc(value, step, -1);
-	}
-
-	//home - min
-	if (keys[36]) {
-		value = min;
-	}
-
-	//end - max
-	if (keys[35]) {
-		value = max;
-	}
-
-	//pageup
-	if (keys[33]) {
-		value = inc(value, step, PAGE);
-	}
-
-	//pagedown
-	if (keys[34]) {
-		value = inc(value, step, -PAGE);
-	}
-
-	return value;
-}
-},{"define-state":4,"draggy":9,"emmy/emit":20,"emmy/off":25,"emmy/on":26,"events":1,"get-uid":29,"is-array":30,"is-function":31,"mucss/css":44,"mumath/between":54,"mumath/loop":55,"mumath/round":57,"mumath/wrap":58,"xtend/mutable":65}],4:[function(require,module,exports){
+},{"./picker":65,"emmy/off":24,"emmy/on":25,"emmy/throttle":26,"events":1,"get-client-xy":27,"get-uid":28,"is-array":29,"lifecycle-events":31,"xtend/mutable":64}],3:[function(require,module,exports){
 /**
  * Define stateful property on an object
  */
@@ -1565,7 +813,7 @@ function defineState (target, property, descriptor, isFn) {
 
 	return target;
 }
-},{"st8":5}],5:[function(require,module,exports){
+},{"st8":4}],4:[function(require,module,exports){
 /**
  * @module  st8
  *
@@ -1747,7 +995,7 @@ function getValue(holder, meth, ctx){
 
 
 module.exports = State;
-},{"events":1,"is-function":6,"is-plain-object":7}],6:[function(require,module,exports){
+},{"events":1,"is-function":5,"is-plain-object":6}],5:[function(require,module,exports){
 module.exports = isFunction
 
 var toString = Object.prototype.toString
@@ -1764,7 +1012,7 @@ function isFunction (fn) {
       fn === window.prompt))
 };
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /*!
  * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
  *
@@ -1803,7 +1051,7 @@ module.exports = function isPlainObject(o) {
   return true;
 };
 
-},{"isobject":8}],8:[function(require,module,exports){
+},{"isobject":7}],7:[function(require,module,exports){
 /*!
  * isobject <https://github.com/jonschlinkert/isobject>
  *
@@ -1824,7 +1072,7 @@ module.exports = function isObject(o) {
   return o != null && typeof o === 'object'
     && !Array.isArray(o);
 };
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /**
  * Simple draggable component
  *
@@ -2513,7 +1761,7 @@ function isZeroArray(arr) {
 
 
 module.exports = Draggable;
-},{"define-state":4,"emmy/emit":10,"emmy/off":18,"emmy/on":19,"events":1,"get-client-xy":28,"get-uid":29,"is-array":30,"is-function":31,"mucss/css":44,"mucss/offsets":48,"mucss/parse-value":49,"mucss/selection":52,"mucss/translate":53,"mumath/between":54,"mumath/loop":55,"mumath/round":57,"mutype/is-number":62,"xtend/mutable":65}],10:[function(require,module,exports){
+},{"define-state":3,"emmy/emit":9,"emmy/off":17,"emmy/on":18,"events":1,"get-client-xy":27,"get-uid":28,"is-array":29,"is-function":30,"mucss/css":43,"mucss/offsets":47,"mucss/parse-value":48,"mucss/selection":51,"mucss/translate":52,"mumath/between":53,"mumath/loop":54,"mumath/round":56,"mutype/is-number":61,"xtend/mutable":64}],9:[function(require,module,exports){
 /**
  * @module emmy/emit
  */
@@ -2633,7 +1881,7 @@ function emit(target, eventName, data, bubbles){
 
 	return target;
 }
-},{"./listeners":11,"icicle":12,"mutype/is-event":13,"mutype/is-node":14,"mutype/is-string":15,"sliced":16}],11:[function(require,module,exports){
+},{"./listeners":10,"icicle":11,"mutype/is-event":12,"mutype/is-node":13,"mutype/is-string":14,"sliced":15}],10:[function(require,module,exports){
 /**
  * A storage of per-target callbacks.
  * WeakMap is the most safe solution.
@@ -2746,7 +1994,7 @@ function hasTags(cb, tags){
 
 
 module.exports = listeners;
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /**
  * @module Icicle
  */
@@ -2818,22 +2066,22 @@ function isLocked(target, name){
 	var locks = lockCache.get(target);
 	return (locks && locks[name]);
 }
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = function(target){
 	return typeof Event !== 'undefined' && target instanceof Event;
 };
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports = function(target){
 	return typeof document !== 'undefined' && target instanceof Node;
 };
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports = function(a){
 	return typeof a === 'string' || a instanceof String;
 }
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports = exports = require('./lib/sliced');
 
-},{"./lib/sliced":17}],17:[function(require,module,exports){
+},{"./lib/sliced":16}],16:[function(require,module,exports){
 
 /**
  * An Array.prototype.slice.call(arguments) alternative
@@ -2868,7 +2116,7 @@ module.exports = function (args, slice, sliceEnd) {
 }
 
 
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /**
  * @module emmy/off
  */
@@ -2962,7 +2210,7 @@ function off(target, evt, fn) {
 
 	return target;
 }
-},{"./listeners":11,"icicle":12,"sliced":16}],19:[function(require,module,exports){
+},{"./listeners":10,"icicle":11,"sliced":15}],18:[function(require,module,exports){
 /**
  * @module emmy/on
  */
@@ -3037,21 +2285,21 @@ on.wrap = function(target, evt, fn, condition){
 
 	return cb;
 };
-},{"./listeners":11,"icicle":12}],20:[function(require,module,exports){
+},{"./listeners":10,"icicle":11}],19:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"./listeners":20,"dup":9,"icicle":21,"mutype/is-event":58,"mutype/is-node":60,"mutype/is-string":62,"sliced":22}],20:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"./listeners":21,"dup":10,"icicle":22,"mutype/is-event":59,"mutype/is-node":61,"mutype/is-string":63,"sliced":23}],21:[function(require,module,exports){
+},{"dup":10}],21:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
 },{"dup":11}],22:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}],23:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"./lib/sliced":23,"dup":15}],23:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"./lib/sliced":24,"dup":16}],24:[function(require,module,exports){
+},{"dup":16}],24:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],25:[function(require,module,exports){
+},{"./listeners":20,"dup":17,"icicle":21,"sliced":22}],25:[function(require,module,exports){
 arguments[4][18][0].apply(exports,arguments)
-},{"./listeners":21,"dup":18,"icicle":22,"sliced":23}],26:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"./listeners":21,"dup":19,"icicle":22}],27:[function(require,module,exports){
+},{"./listeners":20,"dup":18,"icicle":21}],26:[function(require,module,exports){
 /**
  * Throttle function call.
  *
@@ -3125,7 +2373,7 @@ throttle.wrap = function (target, evt, fn, interval) {
 
 	return cb;
 };
-},{"./off":25,"./on":26,"mutype/is-fn":60}],28:[function(require,module,exports){
+},{"./off":24,"./on":25,"mutype/is-fn":59}],27:[function(require,module,exports){
 /**
  * Get clientY/clientY from an event.
  * If index is passed, treat it as index of global touches, not the targetTouches.
@@ -3174,14 +2422,14 @@ getClientXY.x = getClientX;
 getClientXY.y = getClientY;
 
 module.exports = getClientXY;
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /** generate unique id for selector */
 var counter = Date.now() % 1e9;
 
 module.exports = function getUid(){
 	return (Math.random() * 1e9 >>> 0) + (counter++);
 };
-},{}],30:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 
 /**
  * isArray
@@ -3216,9 +2464,9 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],31:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],32:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"dup":5}],31:[function(require,module,exports){
 var on = require('emmy/on');
 var emit = require('emmy/emit');
 var off = require('emmy/off');
@@ -3374,9 +2622,11 @@ function getObservee(node) {
 		if (node.contains(target)) return target;
 	}
 }
-},{"emmy/emit":33,"emmy/off":41,"emmy/on":42,"tiny-element":64}],33:[function(require,module,exports){
+},{"emmy/emit":32,"emmy/off":40,"emmy/on":41,"tiny-element":63}],32:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"./listeners":33,"dup":9,"icicle":34,"mutype/is-event":35,"mutype/is-node":36,"mutype/is-string":37,"sliced":38}],33:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"./listeners":34,"dup":10,"icicle":35,"mutype/is-event":36,"mutype/is-node":37,"mutype/is-string":38,"sliced":39}],34:[function(require,module,exports){
+},{"dup":10}],34:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
 },{"dup":11}],35:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
@@ -3386,15 +2636,13 @@ arguments[4][13][0].apply(exports,arguments)
 arguments[4][14][0].apply(exports,arguments)
 },{"dup":14}],38:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],39:[function(require,module,exports){
+},{"./lib/sliced":39,"dup":15}],39:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"./lib/sliced":40,"dup":16}],40:[function(require,module,exports){
+},{"dup":16}],40:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],41:[function(require,module,exports){
+},{"./listeners":33,"dup":17,"icicle":34,"sliced":38}],41:[function(require,module,exports){
 arguments[4][18][0].apply(exports,arguments)
-},{"./listeners":34,"dup":18,"icicle":35,"sliced":39}],42:[function(require,module,exports){
-arguments[4][19][0].apply(exports,arguments)
-},{"./listeners":34,"dup":19,"icicle":35}],43:[function(require,module,exports){
+},{"./listeners":33,"dup":18,"icicle":34}],42:[function(require,module,exports){
 /**
  * Simple rect constructor.
  * It is just faster and smaller than constructing an object.
@@ -3418,7 +2666,7 @@ module.exports = function Rect (l,t,r,b,w,h) {
 	if (w!==undefined) this.width=w||this.right-this.left;
 	if (h!==undefined) this.height=h||this.bottom-this.top;
 };
-},{}],44:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 /**
  * Get or set element’s style, prefix-agnostic.
  *
@@ -3478,13 +2726,13 @@ function prefixize(name){
 	return '';
 }
 
-},{"./fake-element":45,"./prefix":50}],45:[function(require,module,exports){
+},{"./fake-element":44,"./prefix":49}],44:[function(require,module,exports){
 /** Just a fake element to test styles
  * @module mucss/fake-element
  */
 
 module.exports = document.createElement('div');
-},{}],46:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 /**
  * Window scrollbar detector.
  *
@@ -3496,7 +2744,7 @@ exports.x = function(){
 exports.y = function(){
 	return window.innerWidth > document.documentElement.clientWidth;
 };
-},{}],47:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /**
  * Detect whether element is placed to fixed container or is fixed itself.
  *
@@ -3521,7 +2769,7 @@ module.exports = function (el) {
 	}
 	return false;
 };
-},{}],48:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /**
  * Calculate absolute offsets of an element, relative to the document.
  *
@@ -3600,7 +2848,7 @@ function offsets (el) {
 
 	return result;
 };
-},{"./Rect":43,"./has-scroll":46,"./is-fixed":47,"./scrollbar":51}],49:[function(require,module,exports){
+},{"./Rect":42,"./has-scroll":45,"./is-fixed":46,"./scrollbar":50}],48:[function(require,module,exports){
 /**
  * Returns parsed css value.
  *
@@ -3616,7 +2864,7 @@ module.exports = function (str){
 };
 
 //FIXME: add parsing units
-},{}],50:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 /**
  * Vendor prefixes
  * Method of http://davidwalsh.name/vendor-prefix
@@ -3638,7 +2886,7 @@ module.exports = {
 	css: '-' + pre + '-',
 	js: pre[0].toUpperCase() + pre.substr(1)
 };
-},{}],51:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 /**
  * Calculate scrollbar width.
  *
@@ -3663,7 +2911,7 @@ module.exports = scrollDiv.offsetWidth - scrollDiv.clientWidth;
 
 // Delete fake DIV
 document.documentElement.removeChild(scrollDiv);
-},{}],52:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 /**
  * Enable/disable selectability of an element
  * @module mucss/selection
@@ -3700,7 +2948,7 @@ exports.enable = function(el){
 function pd(e){
 	e.preventDefault();
 }
-},{"./css":44}],53:[function(require,module,exports){
+},{"./css":43}],52:[function(require,module,exports){
 /**
  * Parse translate3d
  *
@@ -3727,7 +2975,7 @@ module.exports = function (el) {
 		return parseValue(value);
 	});
 };
-},{"./css":44,"./parse-value":49}],54:[function(require,module,exports){
+},{"./css":43,"./parse-value":48}],53:[function(require,module,exports){
 /**
  * Clamper.
  * Detects proper clamp min/max.
@@ -3742,7 +2990,7 @@ module.exports = function (el) {
 module.exports = require('./wrap')(function(a, min, max){
 	return max > min ? Math.max(Math.min(a,max),min) : Math.max(Math.min(a,min),max);
 });
-},{"./wrap":58}],55:[function(require,module,exports){
+},{"./wrap":57}],54:[function(require,module,exports){
 /**
  * @module  mumath/loop
  *
@@ -3771,7 +3019,7 @@ module.exports = require('./wrap')(function (value, left, right) {
 
 	return value;
 });
-},{"./wrap":58}],56:[function(require,module,exports){
+},{"./wrap":57}],55:[function(require,module,exports){
 /**
  * @module  mumath/precision
  *
@@ -3791,7 +3039,7 @@ module.exports = require('./wrap')(function(n){
 
 	return !d ? 0 : s.length - d;
 });
-},{"./wrap":58}],57:[function(require,module,exports){
+},{"./wrap":57}],56:[function(require,module,exports){
 /**
  * Precision round
  *
@@ -3814,7 +3062,7 @@ module.exports = require('./wrap')(function(value, step) {
 	value = Math.round(value / step) * step;
 	return parseFloat(value.toFixed(precision(step)));
 });
-},{"./precision":56,"./wrap":58}],58:[function(require,module,exports){
+},{"./precision":55,"./wrap":57}],57:[function(require,module,exports){
 /**
  * Get fn wrapped with array/object attrs recognition
  *
@@ -3854,21 +3102,21 @@ module.exports = function(fn){
 		}
 	};
 };
-},{}],59:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],60:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],59:[function(require,module,exports){
 module.exports = function(a){
 	return !!(a && a.apply);
 }
-},{}],61:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],62:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"dup":13}],61:[function(require,module,exports){
 module.exports = function(a){
 	return typeof a === 'number' || a instanceof Number;
 }
-},{}],63:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],64:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
+arguments[4][14][0].apply(exports,arguments)
+},{"dup":14}],63:[function(require,module,exports){
 var slice = [].slice;
 
 module.exports = function (selector, multiple) {
@@ -3878,7 +3126,7 @@ module.exports = function (selector, multiple) {
     ? (multiple) ? slice.call(ctx.querySelectorAll(selector), 0) : ctx.querySelector(selector)
     : (selector instanceof Node || selector === window || !selector.length) ? (multiple ? [selector] : selector) : slice.call(selector, 0);
 };
-},{}],65:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 module.exports = extend
 
 function extend(target) {
@@ -3895,5 +3143,758 @@ function extend(target) {
     return target
 }
 
-},{}]},{},[2])(2)
+},{}],65:[function(require,module,exports){
+/**
+ * Picker class.
+ * A controller for draggable.
+ * Because it has some intermediate API:
+ * - update
+ * - value
+ *
+ * Note that it’s not an extension of draggable due to method names conflict, like update.
+ */
+
+var Draggable = require('draggy');
+var defineState = require('define-state');
+var emit = require('emmy/emit');
+var on = require('emmy/on');
+var off = require('emmy/off');
+var css = require('mucss/css');
+var Emitter = require('events');
+var isFn = require('is-function');
+var round = require('mumath/round');
+var between = require('mumath/between');
+var loop = require('mumath/loop');
+var getUid = require('get-uid');
+var isArray = require('is-array');
+var extend = require('xtend/mutable');
+var getTransformer = require('mumath/wrap');
+
+
+module.exports = Picker;
+
+
+var doc = document, root = document.documentElement;
+
+
+/** The most precise step available. */
+var MIN_STEP = 0.00001;
+
+
+/** Default pageup/pagedown size, in steps */
+var PAGE = 5;
+
+
+/**
+ * Picker instance
+ *
+ * @constructor
+ */
+function Picker (el, options) {
+	if (!(this instanceof Picker)) return new Picker(el, options);
+
+	var self = this;
+
+	el.classList.add('slidy-picker');
+	self.element = el;
+
+	if (options.pickerClass) el.classList.add(options.pickerClass);
+
+	//generate self id
+	self.id = getUid();
+	self.ns = 'slidy-picker-' + self.id;
+	if (!self.element.id) self.element.id = self.ns;
+
+	//init draggable
+	self.draggable = new Draggable(el, {
+		threshold: 0,
+		within: options.within,
+		sniperSlowdown: 0.85,
+		repeat: options.repeat,
+		releaseDuration: 80
+	});
+
+	//define orientation of picker
+	defineState(self, 'orientation', self.orientation);
+
+	//add change listener, if passed one
+	if (isFn(options.change)) {
+		on(self, 'change', options.change);
+	}
+
+	//adopt options
+	//should go before enabled to set up proper flags
+	extend(self, options);
+
+	//calculate value & step
+	//detect step automatically based on min/max range (1/100 by default)
+	//native behaviour is always 1, so ignore it
+	if (options.step === undefined) {
+		self.step = Picker.detectStep(self.min, self.max);
+	}
+
+	//calc undefined valuea as a middle of range
+	if (options.value === undefined) {
+		self.value = Picker.detectStep(self.min, self.max);
+	}
+
+	//go enabled
+	self.enable();
+
+	//apply type of placement
+	self.orientation = options.orientation;
+}
+
+
+/**
+ * Default step detector
+ * Step is 0.1 or 1
+ */
+Picker.detectStep = function (min, max) {
+	var range = getTransformer(function (a, b) {
+		return Math.abs(a - b);
+	})(max, min);
+
+	var step = getTransformer(function (a) {
+		return a < 100 ? 0.01 : 1;
+	})(range);
+
+	return step;
+};
+
+
+/**
+ * Default value detector
+ * Default value is half of range
+ */
+Picker.detectValue = function (min, max) {
+	return getTransformer(function (a, b) {
+		return (a + b) * 0.5;
+	})(min, max);
+};
+
+
+var proto = Picker.prototype = Object.create(Emitter.prototype);
+
+
+/** Enabled/Disabled state */
+proto.enable = function () {
+	var self = this;
+
+	if (self.isEnabled) return self;
+	self.isEnabled = true;
+
+	if (self.aria) {
+		//ARIAs
+		self.element.removeAttribute('aria-disabled');
+	}
+
+	self.element.removeAttribute('disabled');
+
+	//events
+	on(self.draggable, 'dragstart.' + self.ns, function () {
+		css(root, 'cursor', 'none');
+		css(this.element, 'cursor', 'none');
+	});
+	on(self.draggable, 'drag.' + self.ns, function () {
+		//ignore animated state to avoid collisions of value
+		if (self.release && self.draggable.isAnimated) return;
+
+		var value = self.calcValue.apply(self, self.draggable.getCoords());
+
+		self.value = value;
+
+		//display snapping
+		if (self.snap) {
+			self.renderValue(self.value);
+		}
+
+	});
+	on(self.draggable, 'dragend.' + self.ns, function () {
+		if (self.release) {
+			self.draggable.isAnimated = true;
+		}
+
+		self.renderValue(self.value);
+		css(root, 'cursor', null);
+		css(this.element, 'cursor', null);
+	});
+
+	if (self.keyboard) {
+		//make focusable
+		self.element.setAttribute('tabindex', 0);
+
+		//kbd events
+		//borrowed from native input range mixed with multithumb range
+		//@ref http://access.aol.com/dhtml-style-guide-working-group/#slidertwothumb
+		self._pressedKeys = [];
+		on(self.element, 'keydown.' + self.ns, function (e) {
+			//track pressed keys, to do diagonal movements
+			self._pressedKeys[e.which] = true;
+
+			if (e.which === 27) {
+				self.blur();
+			}
+
+			if (e.which >= 33 && e.which <= 40) {
+				e.preventDefault();
+
+				self.value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
+
+				if (self.release) self.draggable.isAnimated = true;
+
+				self.renderValue(self.value);
+			}
+		});
+		on(self.element, 'keyup.' + self.ns, function (e) {
+			self._pressedKeys[e.which] = false;
+		});
+	}
+
+	return self;
+};
+proto.disable = function () {
+	var self = this;
+
+	self.isEnabled = false;
+
+	if (self.aria) {
+		//ARIAs
+		self.element.setAttribute('aria-disabled', true);
+	}
+
+	self.element.setAttribute('disabled', true);
+
+	//unbind events
+	off(self.element,'dragstart.' + self.ns);
+	off(self.element,'drag.' + self.ns);
+	off(self.element,'dragend.' + self.ns);
+
+	if (self.keyboard) {
+		//make unfocusable
+		self.element.setAttribute('tabindex', -1);
+		off(self.element,'keydown.' + self.ns);
+		off(self.element,'keyup.' + self.ns);
+	}
+
+	return self;
+};
+
+
+/** Default min/max values */
+proto.min = 0;
+proto.max = 100;
+
+
+/** Default step to bind value. It is automatically detected, if isn’t passed. */
+proto.step = 1;
+
+
+/** Loose snapping while drag */
+proto.snap = false;
+
+
+/** Animate release movement */
+proto.release = false;
+
+
+/** Point picker isn’t constrained by it’s shape */
+proto.point = false;
+
+
+/** Picker alignment relative to the mouse. Redefined by slidy, but to prevent empty value it is set to number. */
+proto.align = 0.5;
+
+
+/** Current picker value wrapper */
+Object.defineProperties(proto, {
+	value: {
+		set: function (value) {
+			if (value === undefined) throw Error('Picker value cannot be undefined.');
+
+			//apply repeat
+			if (this.repeat) {
+				if (isArray(value) && this.repeat === 'x') value[0] = loop(value[0], this.min[0], this.max[0]);
+				else if (isArray(value) && this.repeat === 'y') value[1] = loop(value[1], this.min[1], this.max[1]);
+				else value = loop(value, this.min, this.max);
+			}
+
+			//apply limiting
+			value = between(value, this.min, this.max);
+
+			//round value
+			if (this.step) {
+				if (isFn(this.step)) value = round(value, this.step(value));
+				else value = round(value, this.step);
+			}
+
+			this._value = value;
+
+			//trigger bubbling event, like all inputs do
+			this.emit('change', value);
+			emit(this.element, 'change', value, true);
+		},
+		get: function () {
+			return this._value;
+		}
+	}
+});
+
+
+/**
+ * Move picker visually to the value passed.
+ * Supposed to be redefined by type
+ *
+ * @param {number} value Value to render
+ *
+ * @return {Picker} Self instance
+ */
+proto.renderValue = function (value) {};
+
+
+/**
+ * Calc value from the picker position
+ * Supposed to be redefined by type
+ *
+ * @return {number} Value, min..max
+ */
+proto.calcValue = function (x, y) {};
+
+
+/**
+ * Update value based on keypress. Supposed to be redefined in type of picker.
+ */
+proto.handleKeys = function (key, value, step) {};
+
+
+/** Update self size, pin & position, according to the value */
+proto.update = function () {
+	//update pin - may depend on element’s size
+	//can’t use `draggable.offsets` here as they might be undefined
+	if (this.point) {
+		this.draggable.pin = [
+			this.element.offsetWidth * this.align,
+			this.element.offsetHeight * this.align
+		];
+	}
+
+	//update draggable limits
+	this.draggable.update();
+
+	//update position according to the value
+	this.renderValue(this.value);
+
+	return this;
+};
+
+
+/** Move picker to the x, y relative coordinates */
+proto.move = function (x, y) {
+	var self = this;
+
+	//correct point placement
+	if (self.point) {
+		var cx = this.draggable.pin.width * this.align;
+		var cy = this.draggable.pin.height * this.align;
+		x = x - this.draggable.pin[0] - cx;
+		y = y - this.draggable.pin[1] - cy;
+	}
+
+	//if thumb is more than visible area - subtract overflow coord
+	var overflowX = this.draggable.pin.width - this.element.parentNode.clientWidth;
+	var overflowY = this.draggable.pin.height - this.element.parentNode.clientHeight;
+	if (overflowX > 0) x -= overflowX;
+	if (overflowY > 0) y -= overflowY;
+
+	this.draggable.move(x, y);
+
+	//set value
+	this.value = this.calcValue(x, y);
+
+	return this;
+};
+
+
+/**
+ * Move picker to the point of click with the centered drag point
+ */
+proto.startDrag = function (e) {
+	var self = this;
+
+	//update drag limits based off event passed
+	self.draggable.setTouch(e).update(e);
+
+	//start drag
+	//ignore if already drags
+	if (self.draggable.state !== 'drag') {
+		self.draggable.state = 'drag';
+	}
+
+	//centrize picker
+	self.draggable.innerOffsetX = self.draggable.pin[0] + self.draggable.pin.width * 0.5;
+	self.draggable.innerOffsetY = self.draggable.pin[1] + self.draggable.pin.height * 0.5;
+
+	//emulate move
+	self.draggable.drag(e);
+
+	return this;
+};
+
+
+/** Make it active. */
+proto.focus = function () {
+	var self = this;
+	self.element.focus();
+};
+proto.blur = function () {
+	var self = this;
+	self.element.blur();
+};
+
+
+/**
+ * Placing type
+ * @enum {string}
+ * @default 'horizontal'
+ */
+proto.orientation = {
+	//default orientation is horizontal
+	_: 'horizontal',
+
+	horizontal: function () {
+		var self = this;
+
+		self.draggable.axis = 'x';
+
+		//place pickers according to the value
+		self.renderValue = function (value) {
+			var	lims = self.draggable.limits,
+				scope = lims.right - lims.left,
+				range = self.max - self.min,
+				ratio = (value - self.min) / range,
+				x = ratio * scope;
+
+			// console.log('render', value, ' : ', x)
+
+			self.move(x);
+
+			return self;
+		};
+
+		//round value on each drag
+		self.calcValue = function (x) {
+			var lims = self.draggable.limits,
+				scope = lims.right - lims.left,
+				normalValue = (x - lims.left) / scope;
+
+			var value = normalValue * (self.max - self.min) + self.min;
+			// console.log('calc', x, ' : ', value);
+
+			return value;
+		};
+
+		self.handleKeys = handle1dkeys;
+	},
+	vertical: function () {
+		var self = this;
+		self.draggable.axis = 'y';
+
+		//place pickers according to the value
+		self.renderValue = function (value) {
+			var	lims = self.draggable.limits,
+				scope = lims.bottom - lims.top,
+				range = self.max - self.min,
+				ratio = (-value + self.max) / range,
+				y = ratio * scope;
+			self.move(null, y);
+
+			return self;
+		};
+
+		//round value on each drag
+		self.calcValue = function (x, y) {
+			var lims = self.draggable.limits,
+				scope = lims.bottom - lims.top,
+				normalValue = (-y + lims.bottom) / scope;
+
+			return normalValue * (self.max - self.min) + self.min;
+		};
+
+		self.handleKeys = handle1dkeys;
+	},
+	cartesian: function () {
+		var self = this;
+		self.draggable.axis = null;
+
+		self.renderValue = function (value) {
+			var	lim = self.draggable.limits,
+				hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top);
+			var hRange = self.max[0] - self.min[0],
+				vRange = self.max[1] - self.min[1],
+				ratioX = (value[0] - self.min[0]) / hRange,
+				ratioY = (-value[1] + self.max[1]) / vRange;
+
+			self.move(ratioX * hScope, ratioY * vScope);
+
+			return self;
+		};
+
+		self.calcValue = function (x, y) {
+			var lim = self.draggable.limits,
+				hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top);
+
+			var normalValue = [(x - lim.left) / hScope, ( - y + lim.bottom) / vScope];
+
+			return [
+				normalValue[0] * (self.max[0] - self.min[0]) + self.min[0],
+				normalValue[1] * (self.max[1] - self.min[1]) + self.min[1]
+			];
+		};
+
+		self.handleKeys = handle2dkeys;
+	},
+	circular: function () {
+		var self = this;
+		self.draggable.axis = null;
+
+		//limit x/y by the circumference
+		self.draggable.move = function (x, y) {
+			var lim = this.limits;
+			var hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top);
+
+			var cx = hScope / 2 - this.pin[0],
+				cy = vScope / 2 - this.pin[1];
+
+			var angle = Math.atan2(y - cy, x - cx);
+
+			this.setCoords(
+				Math.cos(angle) * (cx + this.pin[0]) + cx,
+				Math.sin(angle) * (cy + this.pin[1]) + cy
+			);
+		};
+
+		self.renderValue = function (value) {
+			var	lim = self.draggable.limits,
+				hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top),
+				centerX = hScope * 0.5,
+				centerY = vScope * 0.5;
+
+			var range = self.max - self.min;
+
+			var	normalValue = (value - self.min) / range;
+			var angle = (normalValue - 0.5) * 2 * Math.PI;
+			self.move(
+				Math.cos(angle) * centerX + centerX,
+				Math.sin(angle) * centerY + centerY
+			);
+		};
+
+		self.calcValue = function (x, y) {
+			var lim = self.draggable.limits,
+				hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top);
+
+			x = x - hScope * 0.5 + self.draggable.pin[0];
+			y = y - vScope * 0.5 + self.draggable.pin[1];
+
+			//get angle
+			var angle = Math.atan2( y, x );
+
+			//get normal value
+			var normalValue = angle * 0.5 / Math.PI + 0.5;
+
+			//get value from coords
+			return normalValue * (self.max - self.min) + self.min;
+		};
+
+		self.handleKeys = handle1dkeys;
+	},
+	polar: function () {
+		var self = this;
+		self.draggable.axis = null;
+
+		//limit x/y within the circle
+		self.draggable.move = function (x, y) {
+			var lim = this.limits;
+			var hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top);
+
+			var cx = hScope / 2 - this.pin[0],
+				cy = vScope / 2 - this.pin[1];
+			var dx = x - cx,
+				dy = y - cy;
+
+			var angle = Math.atan2(y - cy, x - cx);
+			var r = Math.sqrt(dx * dx + dy * dy);
+
+			//limit max radius as a circumference
+			this.setCoords(
+				(r > hScope / 2) ? Math.cos(angle) * (cx + this.pin[0]) + cx : x,
+				(r > vScope / 2) ? Math.sin(angle) * (cy + this.pin[1]) + cy : y
+			);
+		};
+
+		self.renderValue = function (value) {
+			var	lim = self.draggable.limits,
+				hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top),
+				centerX = hScope * 0.5,
+				centerY = vScope * 0.5;
+
+			//get angle normal value
+			var aRange = self.max[0] - self.min[0];
+			var	normalAngleValue = (value[0] - self.min[0]) / aRange;
+			var angle = (normalAngleValue - 0.5) * 2 * Math.PI;
+
+			//get radius normal value
+			var rRange = self.max[1] - self.min[1];
+			var normalRadiusValue = (value[1] - self.min[1]) / rRange;
+
+			var xRadius = centerX * normalRadiusValue;
+			var yRadius = centerY * normalRadiusValue;
+
+			self.move(
+				Math.cos(angle) * xRadius + centerX,
+				Math.sin(angle) * yRadius + centerY
+			);
+		};
+
+		self.calcValue = function (x, y) {
+			var lim = self.draggable.limits,
+				hScope = (lim.right - lim.left),
+				vScope = (lim.bottom - lim.top);
+
+			x = x + self.draggable.pin[0] - hScope * 0.5;
+			y = y + self.draggable.pin[1] - vScope * 0.5;
+
+			//get angle
+			var angle = Math.atan2( y, x );
+
+			//get normal value
+			var normalAngleValue = (angle * 0.5 / Math.PI + 0.5);
+			var normalRadiusValue = Math.sqrt( x*x + y*y ) / hScope * 2;
+
+			//get value from coords
+			return [
+				normalAngleValue * (self.max[0] - self.min[0]) + self.min[0],
+				normalRadiusValue * (self.max[1] - self.min[1]) + self.min[1]
+			];
+		};
+
+		self.handleKeys = handle2dkeys;
+	}
+};
+
+
+/** Increment / decrement API */
+proto.inc = function (timesX, timesY) {
+	if (isArray(this.value)) {
+		this.value[0] = inc(this.value[0], this.step[0], timesX);
+		this.value[1] = inc(this.value[1], this.step[1], timesY);
+		this.renderValue(this.value);
+	} else {
+		var times = timesY || timesX;
+		this.value = inc(this.value, this.step, times);
+		this.renderValue(this.value);
+	}
+};
+
+
+/** Increment & decrement value by the step [N times] */
+function inc (value, step, mult) {
+	mult = mult || 0;
+
+	if (isFn(step)) step = step(value + (mult > 0 ? + MIN_STEP : - MIN_STEP));
+
+	return value + step * mult;
+}
+
+
+/** Apply pressed keys on the 2d value */
+function handle2dkeys (keys, value, step, min, max) {
+
+	//up and right - increase by one
+	if (keys[38]) {
+		value[1] = inc(value[1], step[1], 1);
+	}
+	if (keys[39]) {
+		value[0] = inc(value[0], step[0], 1);
+	}
+	if (keys[40]) {
+		value[1] = inc(value[1], step[1], -1);
+	}
+	if (keys[37]) {
+		value[0] = inc(value[0], step[0], -1);
+	}
+
+	//meta
+	var coordIdx = 1;
+	if (keys[18] || keys[91] || keys[17] || keys[16]) coordIdx = 0;
+
+	//home - min
+	if (keys[36]) {
+		value[coordIdx] = min[coordIdx];
+	}
+
+	//end - max
+	if (keys[35]) {
+		value[coordIdx] = max[coordIdx];
+	}
+
+	//pageup
+	if (keys[33]) {
+		value[coordIdx] = inc(value[coordIdx], step[coordIdx], PAGE);
+	}
+
+	//pagedown
+	if (keys[34]) {
+		value[coordIdx] = inc(value[coordIdx], step[coordIdx], -PAGE);
+	}
+
+
+	return value;
+}
+
+
+/** Apply pressed keys on the 1d value */
+function handle1dkeys (keys, value, step, min, max) {
+	step = step || 1;
+
+	//up and right - increase by one
+	if (keys[38] || keys[39]) {
+		value = inc(value, step, 1);
+	}
+
+	//down and left - decrease by one
+	if (keys[40] || keys[37]) {
+		value = inc(value, step, -1);
+	}
+
+	//home - min
+	if (keys[36]) {
+		value = min;
+	}
+
+	//end - max
+	if (keys[35]) {
+		value = max;
+	}
+
+	//pageup
+	if (keys[33]) {
+		value = inc(value, step, PAGE);
+	}
+
+	//pagedown
+	if (keys[34]) {
+		value = inc(value, step, -PAGE);
+	}
+
+	return value;
+}
+},{"define-state":3,"draggy":8,"emmy/emit":19,"emmy/off":24,"emmy/on":25,"events":1,"get-uid":28,"is-array":29,"is-function":30,"mucss/css":43,"mumath/between":53,"mumath/loop":54,"mumath/round":56,"mumath/wrap":57,"xtend/mutable":64}]},{},[2])(2)
 });
