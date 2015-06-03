@@ -270,8 +270,8 @@ Object.defineProperties(proto, {
 
 			//apply repeat
 			if (this.repeat) {
-				if (isArray(value) && this.repeat === 'x') value[0] = loop(value[0], this.min[0], this.max[0]);
-				else if (isArray(value) && this.repeat === 'y') value[1] = loop(value[1], this.min[1], this.max[1]);
+				if (value.length === 2 && this.repeat === 'x') value[0] = loop(value[0], this.min[0], this.max[0]);
+				else if (value.length === 2 && this.repeat === 'y') value[1] = loop(value[1], this.min[1], this.max[1]);
 				else value = loop(value, this.min, this.max);
 			}
 
@@ -291,32 +291,10 @@ Object.defineProperties(proto, {
 			emit(this.element, 'change', value, true);
 		},
 		get: function () {
-			return getFlattened(this._value);
-		}
-	},
-	min: {
-		set: function (value) {
-			this._min = value;
-		},
-		get: function () {
-			return getFlattened(this._min);
-		}
-	},
-	max: {
-		set: function (value) {
-			this._max = value;
-		},
-		get: function () {
-			return getFlattened(this._max);
+			return this._value;
 		}
 	}
 });
-
-
-/** If value is a single array - plainify it */
-function getFlattened (value) {
-	return value.length === 1 ? value[0] : value;
-}
 
 
 /**
@@ -446,10 +424,14 @@ proto.orientation = {
 
 		//place pickers according to the value
 		self.renderValue = function (value) {
+			value = plainify(value);
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			var	lims = self.draggable.limits,
 				scope = lims.right - lims.left,
-				range = self.max - self.min,
-				ratio = (value - self.min) / range,
+				range = max - min,
+				ratio = (value - min) / range,
 				x = ratio * scope;
 
 			// console.log('render', value, ' : ', x)
@@ -461,12 +443,18 @@ proto.orientation = {
 
 		//round value on each drag
 		self.calcValue = function (x) {
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			var lims = self.draggable.limits,
 				scope = lims.right - lims.left,
 				normalValue = (x - lims.left) / scope;
 
-			var value = normalValue * (self.max - self.min) + self.min;
+			var value = normalValue * (max - min) + min;
 			// console.log('calc', x, ' : ', value);
+
+			//keep user format of value
+			if (self.value.length) value = [value];
 
 			return value;
 		};
@@ -479,10 +467,13 @@ proto.orientation = {
 
 		//place pickers according to the value
 		self.renderValue = function (value) {
+			value = plainify(value);
+			var max = plainify(self.max);
+			var min = plainify(self.min);
 			var	lims = self.draggable.limits,
 				scope = lims.bottom - lims.top,
-				range = self.max - self.min,
-				ratio = (-value + self.max) / range,
+				range = max - min,
+				ratio = (-value + max) / range,
 				y = ratio * scope;
 			self.move(null, y);
 
@@ -491,11 +482,19 @@ proto.orientation = {
 
 		//round value on each drag
 		self.calcValue = function (x, y) {
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			var lims = self.draggable.limits,
 				scope = lims.bottom - lims.top,
 				normalValue = (-y + lims.bottom) / scope;
 
-			return normalValue * (self.max - self.min) + self.min;
+			var value = normalValue * (max - min) + min;
+
+			//keep user format of value
+			if (self.value.length) value = [value];
+
+			return value;
 		};
 
 		self.handleKeys = handle1dkeys;
@@ -555,15 +554,18 @@ proto.orientation = {
 		};
 
 		self.renderValue = function (value) {
+			value = plainify(value);
+			var max = plainify(self.max);
+			var min = plainify(self.min);
 			var	lim = self.draggable.limits,
 				hScope = (lim.right - lim.left),
 				vScope = (lim.bottom - lim.top),
 				centerX = hScope * 0.5,
 				centerY = vScope * 0.5;
 
-			var range = self.max - self.min;
+			var range = max - min;
 
-			var	normalValue = (value - self.min) / range;
+			var	normalValue = (value - min) / range;
 			var angle = (normalValue - 0.5) * 2 * Math.PI;
 			self.move(
 				Math.cos(angle) * centerX + centerX,
@@ -576,6 +578,9 @@ proto.orientation = {
 				hScope = (lim.right - lim.left),
 				vScope = (lim.bottom - lim.top);
 
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			x = x - hScope * 0.5 + self.draggable.pin[0];
 			y = y - vScope * 0.5 + self.draggable.pin[1];
 
@@ -586,7 +591,12 @@ proto.orientation = {
 			var normalValue = angle * 0.5 / Math.PI + 0.5;
 
 			//get value from coords
-			return normalValue * (self.max - self.min) + self.min;
+			var value = normalValue * (max - min) + min;
+
+			//keep user format of value
+			if (self.value.length) value = [value];
+
+			return value;
 		};
 
 		self.handleKeys = handle1dkeys;
@@ -773,4 +783,10 @@ function handle1dkeys (keys, value, step, min, max) {
 	}
 
 	return value;
+}
+
+
+/** If value is an array - return first value of it */
+function plainify (value) {
+	return value.length ? value[0] : value;
 }

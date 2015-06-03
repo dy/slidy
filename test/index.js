@@ -27,7 +27,9 @@ describe("Slidy", function () {
 			//update value in picker
 			for (var i = 0, l = slidy.pickers.length; i < l; i++){
 				if (slidy.pickers[i].value instanceof Array) {
-					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value[0].toFixed(2) + ',' + slidy.pickers[i].value[1].toFixed(2);
+					slidy.pickers[i].element.innerHTML =
+						slidy.pickers[i].value[0].toFixed(2) +
+						(slidy.pickers[i].value[1] ? ',' + slidy.pickers[i].value[1].toFixed(2) : '');
 				}
 				else {
 					slidy.pickers[i].element.innerHTML = slidy.pickers[i].value.toFixed(2);
