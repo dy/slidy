@@ -227,8 +227,12 @@ proto.enable = function () {
 					}), x, y);
 					pickers.push(picker);
 
+					var oldValue = picker.value;
+
 					//move picker to the point of click
 					picker.move(x,y).startDrag(e);
+
+					picker.interaction(picker.value, oldValue);
 				}
 			} else {
 				//get coords relative to the container (this)
@@ -239,8 +243,12 @@ proto.enable = function () {
 				picker = self.getClosestPicker(self.pickers, x, y);
 				pickers.push(picker);
 
+				var oldValue = picker.value;
+
 				//move picker to the point of click
 				picker.move(x,y).startDrag(e);
+
+				picker.interaction(picker.value, oldValue);
 
 				//focus picker (not always focusable)
 				picker.focus();
