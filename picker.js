@@ -112,7 +112,7 @@ proto.enable = function () {
 		//display snapping
 		self.setValue(value, !self.snap);
 
-		self.interaction(value, oldValue);
+		self.interaction(self.value, oldValue);
 	});
 	on(self.draggable, 'dragend.' + self.ns, function () {
 		if (self.release) {
@@ -156,7 +156,7 @@ proto.enable = function () {
 
 				self.value = value;
 
-				self.interaction(value, oldValue);
+				self.interaction(self.value, oldValue);
 			}
 		});
 		on(self.element, 'keyup.' + self.ns, function (e) {
