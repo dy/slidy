@@ -107,11 +107,12 @@ proto.enable = function () {
 		if (self.release && self.draggable.isAnimated) return;
 
 		var value = self.calcValue.apply(self, self.draggable.getCoords());
-
-		self.interaction(value, self.value);
+		var oldValue = self.value;
 
 		//display snapping
 		self.setValue(value, !self.snap);
+
+		self.interaction(value, oldValue);
 	});
 	on(self.draggable, 'dragend.' + self.ns, function () {
 		if (self.release) {
@@ -148,13 +149,14 @@ proto.enable = function () {
 
 
 				var value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
-
-				self.interaction(value, self.value);
+				var oldValue = self.value;
 
 				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
 
 				self.value = value;
+
+				self.interaction(value, oldValue);
 			}
 		});
 		on(self.element, 'keyup.' + self.ns, function (e) {

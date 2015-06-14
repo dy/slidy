@@ -389,6 +389,7 @@ proto.update = function () {
 };
 
 
+
 /**
  * Create a new picker.
  * It is better to keep it discrete, not as like `addPicker`
@@ -498,7 +499,7 @@ function detectStep (min, max) {
 	})(range);
 
 	return step;
-};
+}
 
 
 /**
@@ -509,4 +510,4 @@ function detectValue (min, max) {
 	return getTransformer(function (a, b) {
 		return (a + b) * 0.5;
 	})(min, max);
-};
+}
