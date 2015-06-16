@@ -321,6 +321,8 @@ var throttle = require('emmy/throttle');
 var getClientX = require('get-client-xy').x;
 var getClientY = require('get-client-xy').y;
 var getUid = require('get-uid');
+var isFn = require('is-function');
+var getTransformer = require('mumath/wrap');
 
 
 var win = window, doc = document;
@@ -365,12 +367,12 @@ function Slidy(target, options) {
 	//detect step automatically based on min/max range (1/100 by default)
 	//native behaviour is always 1, so ignore it
 	if (options.step === undefined) {
-		self.step = Picker.detectStep(self.min, self.max);
+		self.step = detectStep(self.min, self.max);
 	}
 
 	//calc undefined valuea as a middle of range
 	if (options.value === undefined) {
-		self.value = Picker.detectValue(self.min, self.max);
+		self.value = detectValue(self.min, self.max);
 	}
 
 	//bind passed callbacks, if any
@@ -486,6 +488,10 @@ proto.enable = function () {
 
 	self.element.removeAttribute('disabled');
 
+	//add change listenerw, if passed one
+	if (isFn(self.change)) on(self, 'change', self.change);
+	if (isFn(self.input)) on(self, 'input', self.input);
+
 	//Events
 	// Update pickers position on the first load and resize
 	throttle(win, 'resize.' + self.ns, 20, function () {
@@ -525,8 +531,12 @@ proto.enable = function () {
 					}), x, y);
 					pickers.push(picker);
 
+					var oldValue = picker.value;
+
 					//move picker to the point of click
 					picker.move(x,y).startDrag(e);
+
+					picker.interaction(picker.value, oldValue);
 				}
 			} else {
 				//get coords relative to the container (this)
@@ -537,8 +547,12 @@ proto.enable = function () {
 				picker = self.getClosestPicker(self.pickers, x, y);
 				pickers.push(picker);
 
+				var oldValue = picker.value;
+
 				//move picker to the point of click
 				picker.move(x,y).startDrag(e);
+
+				picker.interaction(picker.value, oldValue);
 
 				//focus picker (not always focusable)
 				picker.focus();
@@ -594,6 +608,8 @@ proto.enable = function () {
 			}
 
 			picker.inc(stepX, stepY);
+
+			self.emit('input', picker.value);
 		});
 	}
 
@@ -609,6 +625,22 @@ proto.enable = function () {
 
 	//enable pickers
 	self.pickers.forEach(function (picker) {
+		//on picker change trigger own change
+		picker.on('change', function (value) {
+			if (self.aria) {
+				//set aria value
+				self.element.setAttribute('aria-valuenow', value);
+				self.element.setAttribute('aria-valuetext', value);
+			}
+			self.emit('change', value);
+		})
+
+		//observe drag, treat as user input
+		.on('input', function (value, oldValue) {
+			self.emit('input', value, oldValue);
+		});
+
+		//enable picker - init value
 		picker.enable();
 	});
 
@@ -661,6 +693,7 @@ proto.update = function () {
 };
 
 
+
 /**
  * Create a new picker.
  * It is better to keep it discrete, not as like `addPicker`
@@ -693,8 +726,7 @@ proto.createPicker = function (options) {
 		keyboard: self.keyboard,
 		wheel: self.wheel,
 		point: self.point,
-		value: self.value,
-		change: self.change
+		value: self.value
 	}, options);
 
 	var el = options.element || document.createElement('div');
@@ -709,17 +741,6 @@ proto.createPicker = function (options) {
 	self.element.appendChild(el);
 
 	var picker = new Picker(el, options);
-
-	//on picker change trigger own change
-	picker.on('change', function (value) {
-		if (self.aria) {
-			//set aria value
-			self.element.setAttribute('aria-valuenow', value);
-			self.element.setAttribute('aria-valuetext', value);
-		}
-
-		self.emit('change', value);
-	});
 
 	return picker;
 };
@@ -765,7 +786,36 @@ proto.getActivePicker = function () {
 
 	return picker || this.pickers[0];
 };
-},{"./picker":65,"emmy/off":24,"emmy/on":25,"emmy/throttle":26,"events":1,"get-client-xy":27,"get-uid":28,"is-array":29,"lifecycle-events":31,"xtend/mutable":64}],3:[function(require,module,exports){
+
+
+
+/**
+ * Default step detector
+ * Step is 0.1 or 1
+ */
+function detectStep (min, max) {
+	var range = getTransformer(function (a, b) {
+		return Math.abs(a - b);
+	})(max, min);
+
+	var step = getTransformer(function (a) {
+		return a < 100 ? 0.01 : 1;
+	})(range);
+
+	return step;
+}
+
+
+/**
+ * Default value detector
+ * Default value is half of range
+ */
+function detectValue (min, max) {
+	return getTransformer(function (a, b) {
+		return (a + b) * 0.5;
+	})(min, max);
+}
+},{"./picker":70,"emmy/off":35,"emmy/on":36,"emmy/throttle":37,"events":1,"get-client-xy":38,"get-uid":39,"is-array":40,"is-function":41,"lifecycle-events":42,"mumath/wrap":60,"xtend/mutable":69}],3:[function(require,module,exports){
 /**
  * Define stateful property on an object
  */
@@ -1761,7 +1811,7 @@ function isZeroArray(arr) {
 
 
 module.exports = Draggable;
-},{"define-state":3,"emmy/emit":9,"emmy/off":17,"emmy/on":18,"events":1,"get-client-xy":27,"get-uid":28,"is-array":29,"is-function":30,"mucss/css":43,"mucss/offsets":47,"mucss/parse-value":48,"mucss/selection":51,"mucss/translate":52,"mumath/between":53,"mumath/loop":54,"mumath/round":56,"mutype/is-number":61,"xtend/mutable":64}],9:[function(require,module,exports){
+},{"define-state":3,"emmy/emit":9,"emmy/off":17,"emmy/on":18,"events":1,"get-client-xy":38,"get-uid":39,"is-array":40,"is-function":41,"mucss/css":20,"mucss/offsets":24,"mucss/parse-value":25,"mucss/selection":28,"mucss/translate":29,"mumath/between":56,"mumath/loop":57,"mumath/round":59,"mutype/is-number":64,"xtend/mutable":69}],9:[function(require,module,exports){
 /**
  * @module emmy/emit
  */
@@ -2286,20 +2336,353 @@ on.wrap = function(target, evt, fn, condition){
 	return cb;
 };
 },{"./listeners":10,"icicle":11}],19:[function(require,module,exports){
+/**
+ * Simple rect constructor.
+ * It is just faster and smaller than constructing an object.
+ *
+ * @module mucss/Rect
+ *
+ * @param {number} l left
+ * @param {number} t top
+ * @param {number} r right
+ * @param {number} b bottom
+ * @param {number}? w width
+ * @param {number}? h height
+ *
+ * @return {Rect} A rectangle object
+ */
+module.exports = function Rect (l,t,r,b,w,h) {
+	this.top=t||0;
+	this.bottom=b||0;
+	this.left=l||0;
+	this.right=r||0;
+	if (w!==undefined) this.width=w||this.right-this.left;
+	if (h!==undefined) this.height=h||this.bottom-this.top;
+};
+},{}],20:[function(require,module,exports){
+/**
+ * Get or set element’s style, prefix-agnostic.
+ *
+ * @module  mucss/css
+ */
+var fakeStyle = require('./fake-element').style;
+var prefix = require('./prefix').lowercase;
+
+
+/**
+ * Apply styles to an element.
+ *
+ * @param    {Element}   el   An element to apply styles.
+ * @param    {Object|string}   obj   Set of style rules or string to get style rule.
+ */
+module.exports = function(el, obj){
+	if (!el || !obj) return;
+
+	var name, value;
+
+	//return value, if string passed
+	if (typeof obj === 'string') {
+		name = obj;
+
+		//return value, if no value passed
+		if (arguments.length < 3) {
+			return el.style[prefixize(name)];
+		}
+
+		//set style, if value passed
+		value = arguments[2] || '';
+		obj = {};
+		obj[name] = value;
+	}
+
+	for (name in obj){
+		//convert numbers to px
+		if (typeof obj[name] === 'number' && /left|right|bottom|top|width|height/i.test(name)) obj[name] += 'px';
+
+		value = obj[name] || '';
+
+		el.style[prefixize(name)] = value;
+	}
+};
+
+
+/**
+ * Return prefixized prop name, if needed.
+ *
+ * @param    {string}   name   A property name.
+ * @return   {string}   Prefixed property name.
+ */
+function prefixize(name){
+	var uName = name[0].toUpperCase() + name.slice(1);
+	if (fakeStyle[name] !== undefined) return name;
+	if (fakeStyle[prefix + uName] !== undefined) return prefix + uName;
+	return '';
+}
+
+},{"./fake-element":21,"./prefix":26}],21:[function(require,module,exports){
+/** Just a fake element to test styles
+ * @module mucss/fake-element
+ */
+
+module.exports = document.createElement('div');
+},{}],22:[function(require,module,exports){
+/**
+ * Window scrollbar detector.
+ *
+ * @module mucss/has-scroll
+ */
+exports.x = function () {
+	return window.innerHeight > document.documentElement.clientHeight;
+};
+exports.y = function () {
+	return window.innerWidth > document.documentElement.clientWidth;
+};
+},{}],23:[function(require,module,exports){
+/**
+ * Detect whether element is placed to fixed container or is fixed itself.
+ *
+ * @module mucss/is-fixed
+ *
+ * @param {(Element|Object)} el Element to detect fixedness.
+ *
+ * @return {boolean} Whether element is nested.
+ */
+module.exports = function (el) {
+	var parentEl = el;
+
+	//window is fixed, btw
+	if (el === window) return true;
+
+	//unlike the doc
+	if (el === document) return false;
+
+	while (parentEl) {
+		if (getComputedStyle(parentEl).position === 'fixed') return true;
+		parentEl = parentEl.offsetParent;
+	}
+	return false;
+};
+},{}],24:[function(require,module,exports){
+/**
+ * Calculate absolute offsets of an element, relative to the document.
+ *
+ * @module mucss/offsets
+ *
+ */
+var win = window;
+var doc = document;
+var Rect = require('./Rect');
+var hasScroll = require('./has-scroll');
+var scrollbar = require('./scrollbar');
+var isFixedEl = require('./is-fixed');
+
+/**
+ * Return absolute offsets of any target passed
+ *
+ * @param    {Element|window}   el   A target. Pass window to calculate viewport offsets
+ * @return   {Object}   Offsets object with trbl.
+ */
+module.exports = offsets;
+
+function offsets (el) {
+	if (!el) throw Error('Bad argument');
+
+	//calc client rect
+	var cRect, result;
+
+	//return vp offsets
+	if (el === win) {
+		result = new Rect(
+			win.pageXOffset,
+			win.pageYOffset
+		);
+
+		result.width = win.innerWidth - (hasScroll.y() ? scrollbar : 0),
+		result.height = win.innerHeight - (hasScroll.x() ? scrollbar : 0)
+		result.right = result.left + result.width;
+		result.bottom = result.top + result.height;
+
+		return result;
+	}
+
+	//return absolute offsets if document requested
+	else if (el === doc) {
+		var res = offsets(doc.documentElement);
+		res.bottom = Math.max(window.innerHeight, res.bottom);
+		res.right = Math.max(window.innerWidth, res.right);
+		if (hasScroll.y(doc.documentElement)) res.right -= scrollbar;
+		if (hasScroll.x(doc.documentElement)) res.bottom -= scrollbar;
+		return res;
+	}
+
+	//FIXME: why not every element has getBoundingClientRect method?
+	try {
+		cRect = el.getBoundingClientRect();
+	} catch (e) {
+		cRect = new Rect(
+			el.clientLeft,
+			el.clientTop
+		);
+	}
+
+	//whether element is or is in fixed
+	var isFixed = isFixedEl(el);
+	var xOffset = isFixed ? 0 : win.pageXOffset;
+	var yOffset = isFixed ? 0 : win.pageYOffset;
+
+	result = new Rect(
+		cRect.left + xOffset,
+		cRect.top + yOffset,
+		cRect.left + xOffset + el.offsetWidth,
+		cRect.top + yOffset + el.offsetHeight,
+		el.offsetWidth,
+		el.offsetHeight
+	);
+
+	return result;
+};
+},{"./Rect":19,"./has-scroll":22,"./is-fixed":23,"./scrollbar":27}],25:[function(require,module,exports){
+/**
+ * Returns parsed css value.
+ *
+ * @module mucss/parse-value
+ *
+ * @param {string} str A string containing css units value
+ *
+ * @return {number} Parsed number value
+ */
+module.exports = function (str){
+	str += '';
+	return parseFloat(str.slice(0,-2)) || 0;
+};
+
+//FIXME: add parsing units
+},{}],26:[function(require,module,exports){
+/**
+ * Vendor prefixes
+ * Method of http://davidwalsh.name/vendor-prefix
+ * @module mucss/prefix
+ */
+
+var styles = getComputedStyle(document.documentElement, '');
+
+var pre = (Array.prototype.slice.call(styles)
+	.join('')
+	.match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
+)[1];
+
+dom = ('WebKit|Moz|MS|O').match(new RegExp('(' + pre + ')', 'i'))[1];
+
+module.exports = {
+	dom: dom,
+	lowercase: pre,
+	css: '-' + pre + '-',
+	js: pre[0].toUpperCase() + pre.substr(1)
+};
+},{}],27:[function(require,module,exports){
+/**
+ * Calculate scrollbar width.
+ *
+ * @module mucss/scrollbar
+ */
+
+// Create the measurement node
+var scrollDiv = document.createElement("div");
+
+var style = scrollDiv.style;
+
+style.width = '100px';
+style.height = '100px';
+style.overflow = 'scroll';
+style.position = 'absolute';
+style.top = '-9999px';
+
+document.documentElement.appendChild(scrollDiv);
+
+// the scrollbar width
+module.exports = scrollDiv.offsetWidth - scrollDiv.clientWidth;
+
+// Delete fake DIV
+document.documentElement.removeChild(scrollDiv);
+},{}],28:[function(require,module,exports){
+/**
+ * Enable/disable selectability of an element
+ * @module mucss/selection
+ */
+var css = require('./css');
+
+
+/**
+ * Disable or Enable any selection possibilities for an element.
+ *
+ * @param    {Element}   el   Target to make unselectable.
+ */
+exports.disable = function(el){
+	css(el, {
+		'user-select': 'none',
+		'user-drag': 'none',
+		'touch-callout': 'none'
+	});
+	el.setAttribute('unselectable', 'on');
+	el.addEventListener('selectstart', pd);
+};
+exports.enable = function(el){
+	css(el, {
+		'user-select': null,
+		'user-drag': null,
+		'touch-callout': null
+	});
+	el.removeAttribute('unselectable');
+	el.removeEventListener('selectstart', pd);
+};
+
+
+/** Prevent you know what. */
+function pd(e){
+	e.preventDefault();
+}
+},{"./css":20}],29:[function(require,module,exports){
+/**
+ * Parse translate3d
+ *
+ * @module mucss/translate
+ */
+
+var css = require('./css');
+var parseValue = require('./parse-value');
+
+module.exports = function (el) {
+	var translateStr = css(el, 'transform');
+
+	//find translate token, retrieve comma-enclosed values
+	//translate3d(1px, 2px, 2) → 1px, 2px, 2
+	//FIXME: handle nested calcs
+	var match = /translate(?:3d)?\s*\(([^\)]*)\)/.exec(translateStr);
+
+	if (!match) return null;
+	var values = match[1].split(/\s*,\s*/);
+
+	//parse values
+	//FIXME: nested values are not necessarily pixels
+	return values.map(function (value) {
+		return parseValue(value);
+	});
+};
+},{"./css":20,"./parse-value":25}],30:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"./listeners":20,"dup":9,"icicle":21,"mutype/is-event":58,"mutype/is-node":60,"mutype/is-string":62,"sliced":22}],20:[function(require,module,exports){
+},{"./listeners":31,"dup":9,"icicle":32,"mutype/is-event":61,"mutype/is-node":63,"mutype/is-string":65,"sliced":33}],31:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],21:[function(require,module,exports){
+},{"dup":10}],32:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],22:[function(require,module,exports){
+},{"dup":11}],33:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"./lib/sliced":23,"dup":15}],23:[function(require,module,exports){
+},{"./lib/sliced":34,"dup":15}],34:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],24:[function(require,module,exports){
+},{"dup":16}],35:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"./listeners":20,"dup":17,"icicle":21,"sliced":22}],25:[function(require,module,exports){
+},{"./listeners":31,"dup":17,"icicle":32,"sliced":33}],36:[function(require,module,exports){
 arguments[4][18][0].apply(exports,arguments)
-},{"./listeners":20,"dup":18,"icicle":21}],26:[function(require,module,exports){
+},{"./listeners":31,"dup":18,"icicle":32}],37:[function(require,module,exports){
 /**
  * Throttle function call.
  *
@@ -2373,7 +2756,7 @@ throttle.wrap = function (target, evt, fn, interval) {
 
 	return cb;
 };
-},{"./off":24,"./on":25,"mutype/is-fn":59}],27:[function(require,module,exports){
+},{"./off":35,"./on":36,"mutype/is-fn":62}],38:[function(require,module,exports){
 /**
  * Get clientY/clientY from an event.
  * If index is passed, treat it as index of global touches, not the targetTouches.
@@ -2422,14 +2805,14 @@ getClientXY.x = getClientX;
 getClientXY.y = getClientY;
 
 module.exports = getClientXY;
-},{}],28:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 /** generate unique id for selector */
 var counter = Date.now() % 1e9;
 
 module.exports = function getUid(){
 	return (Math.random() * 1e9 >>> 0) + (counter++);
 };
-},{}],29:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 
 /**
  * isArray
@@ -2464,9 +2847,9 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],30:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],31:[function(require,module,exports){
+},{"dup":5}],42:[function(require,module,exports){
 var on = require('emmy/on');
 var emit = require('emmy/emit');
 var off = require('emmy/off');
@@ -2622,360 +3005,33 @@ function getObservee(node) {
 		if (node.contains(target)) return target;
 	}
 }
-},{"emmy/emit":32,"emmy/off":40,"emmy/on":41,"tiny-element":63}],32:[function(require,module,exports){
+},{"emmy/emit":43,"emmy/off":51,"emmy/on":52,"tiny-element":68}],43:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"./listeners":33,"dup":9,"icicle":34,"mutype/is-event":35,"mutype/is-node":36,"mutype/is-string":37,"sliced":38}],33:[function(require,module,exports){
+},{"./listeners":44,"dup":9,"icicle":45,"mutype/is-event":46,"mutype/is-node":47,"mutype/is-string":48,"sliced":49}],44:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],34:[function(require,module,exports){
+},{"dup":10}],45:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],35:[function(require,module,exports){
+},{"dup":11}],46:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}],36:[function(require,module,exports){
+},{"dup":12}],47:[function(require,module,exports){
 arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],37:[function(require,module,exports){
+},{"dup":13}],48:[function(require,module,exports){
 arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],38:[function(require,module,exports){
+},{"dup":14}],49:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"./lib/sliced":39,"dup":15}],39:[function(require,module,exports){
+},{"./lib/sliced":50,"dup":15}],50:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],40:[function(require,module,exports){
+},{"dup":16}],51:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"./listeners":33,"dup":17,"icicle":34,"sliced":38}],41:[function(require,module,exports){
+},{"./listeners":44,"dup":17,"icicle":45,"sliced":49}],52:[function(require,module,exports){
 arguments[4][18][0].apply(exports,arguments)
-},{"./listeners":33,"dup":18,"icicle":34}],42:[function(require,module,exports){
-/**
- * Simple rect constructor.
- * It is just faster and smaller than constructing an object.
- *
- * @module mucss/Rect
- *
- * @param {number} l left
- * @param {number} t top
- * @param {number} r right
- * @param {number} b bottom
- * @param {number}? w width
- * @param {number}? h height
- *
- * @return {Rect} A rectangle object
- */
-module.exports = function Rect (l,t,r,b,w,h) {
-	this.top=t||0;
-	this.bottom=b||0;
-	this.left=l||0;
-	this.right=r||0;
-	if (w!==undefined) this.width=w||this.right-this.left;
-	if (h!==undefined) this.height=h||this.bottom-this.top;
-};
-},{}],43:[function(require,module,exports){
-/**
- * Get or set element’s style, prefix-agnostic.
- *
- * @module  mucss/css
- */
-var fakeStyle = require('./fake-element').style;
-var prefix = require('./prefix').dom;
-
-
-/**
- * Apply styles to an element.
- *
- * @param    {Element}   el   An element to apply styles.
- * @param    {Object|string}   obj   Set of style rules or string to get style rule.
- */
-module.exports = function(el, obj){
-	if (!el || !obj) return;
-
-	var name, value;
-
-	//return value, if string passed
-	if (typeof obj === 'string') {
-		name = obj;
-
-		//return value, if no value passed
-		if (arguments.length < 3) {
-			return el.style[prefixize(name)];
-		}
-
-		//set style, if value passed
-		value = arguments[2] || '';
-		obj = {};
-		obj[name] = value;
-	}
-
-	for (name in obj){
-		//convert numbers to px
-		if (typeof obj[name] === 'number' && /left|right|bottom|top|width|height/i.test(name)) obj[name] += 'px';
-
-		value = obj[name] || '';
-
-		el.style[prefixize(name)] = value;
-	}
-};
-
-
-/**
- * Return prefixized prop name, if needed.
- *
- * @param    {string}   name   A property name.
- * @return   {string}   Prefixed property name.
- */
-function prefixize(name){
-	var uName = name[0].toUpperCase() + name.slice(1);
-	if (fakeStyle[name] !== undefined) return name;
-	if (fakeStyle[prefix + uName] !== undefined) return prefix + uName;
-	return '';
-}
-
-},{"./fake-element":44,"./prefix":49}],44:[function(require,module,exports){
-/** Just a fake element to test styles
- * @module mucss/fake-element
- */
-
-module.exports = document.createElement('div');
-},{}],45:[function(require,module,exports){
-/**
- * Window scrollbar detector.
- *
- * @module mucss/has-scroll
- */
-exports.x = function(){
-	return window.innerHeight > document.documentElement.clientHeight;
-};
-exports.y = function(){
-	return window.innerWidth > document.documentElement.clientWidth;
-};
-},{}],46:[function(require,module,exports){
-/**
- * Detect whether element is placed to fixed container or is fixed itself.
- *
- * @module mucss/is-fixed
- *
- * @param {(Element|Object)} el Element to detect fixedness.
- *
- * @return {boolean} Whether element is nested.
- */
-module.exports = function (el) {
-	var parentEl = el;
-
-	//window is fixed, btw
-	if (el === window) return true;
-
-	//unlike the doc
-	if (el === document) return false;
-
-	while (parentEl) {
-		if (getComputedStyle(parentEl).position === 'fixed') return true;
-		parentEl = parentEl.offsetParent;
-	}
-	return false;
-};
-},{}],47:[function(require,module,exports){
-/**
- * Calculate absolute offsets of an element, relative to the document.
- *
- * @module mucss/offsets
- *
- */
-var win = window;
-var doc = document;
-var Rect = require('./Rect');
-var hasScroll = require('./has-scroll');
-var scrollbar = require('./scrollbar');
-var isFixedEl = require('./is-fixed');
-
-/**
- * Return absolute offsets of any target passed
- *
- * @param    {Element|window}   el   A target. Pass window to calculate viewport offsets
- * @return   {Object}   Offsets object with trbl.
- */
-module.exports = offsets;
-
-function offsets (el) {
-	if (!el) throw Error('Bad argument');
-
-	//calc client rect
-	var cRect, result;
-
-	//return vp offsets
-	if (el === win) {
-		result = new Rect(
-			win.pageXOffset,
-			win.pageYOffset
-		);
-
-		result.width = win.innerWidth - (hasScroll.y() ? scrollbar : 0),
-		result.height = win.innerHeight - (hasScroll.x() ? scrollbar : 0)
-		result.right = result.left + result.width;
-		result.bottom = result.top + result.height;
-
-		return result;
-	}
-
-	//return absolute offsets if document requested
-	else if (el === doc) {
-		var res = offsets(doc.documentElement);
-		res.bottom = Math.max(window.innerHeight, res.bottom);
-		res.right = Math.max(window.innerWidth, res.right);
-		if (hasScroll.y(doc.documentElement)) res.right -= scrollbar;
-		if (hasScroll.x(doc.documentElement)) res.bottom -= scrollbar;
-		return res;
-	}
-
-	//FIXME: why not every element has getBoundingClientRect method?
-	try {
-		cRect = el.getBoundingClientRect();
-	} catch (e) {
-		cRect = new Rect(
-			el.clientLeft,
-			el.clientTop
-		);
-	}
-
-	//whether element is or is in fixed
-	var isFixed = isFixedEl(el);
-	var xOffset = isFixed ? 0 : win.pageXOffset;
-	var yOffset = isFixed ? 0 : win.pageYOffset;
-
-	result = new Rect(
-		cRect.left + xOffset,
-		cRect.top + yOffset,
-		cRect.left + xOffset + el.offsetWidth,
-		cRect.top + yOffset + el.offsetHeight,
-		el.offsetWidth,
-		el.offsetHeight
-	);
-
-	return result;
-};
-},{"./Rect":42,"./has-scroll":45,"./is-fixed":46,"./scrollbar":50}],48:[function(require,module,exports){
-/**
- * Returns parsed css value.
- *
- * @module mucss/parse-value
- *
- * @param {string} str A string containing css units value
- *
- * @return {number} Parsed number value
- */
-module.exports = function (str){
-	str += '';
-	return parseFloat(str.slice(0,-2)) || 0;
-};
-
-//FIXME: add parsing units
-},{}],49:[function(require,module,exports){
-/**
- * Vendor prefixes
- * Method of http://davidwalsh.name/vendor-prefix
- * @module mucss/prefix
- */
-
-var styles = getComputedStyle(document.documentElement, '');
-
-var pre = (Array.prototype.slice.call(styles)
-	.join('')
-	.match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
-)[1];
-
-dom = ('WebKit|Moz|MS|O').match(new RegExp('(' + pre + ')', 'i'))[1];
-
-module.exports = {
-	dom: dom,
-	lowercase: pre,
-	css: '-' + pre + '-',
-	js: pre[0].toUpperCase() + pre.substr(1)
-};
-},{}],50:[function(require,module,exports){
-/**
- * Calculate scrollbar width.
- *
- * @module mucss/scrollbar
- */
-
-// Create the measurement node
-var scrollDiv = document.createElement("div");
-
-var style = scrollDiv.style;
-
-style.width = '100px';
-style.height = '100px';
-style.overflow = 'scroll';
-style.position = 'absolute';
-style.top = '-9999px';
-
-document.documentElement.appendChild(scrollDiv);
-
-// the scrollbar width
-module.exports = scrollDiv.offsetWidth - scrollDiv.clientWidth;
-
-// Delete fake DIV
-document.documentElement.removeChild(scrollDiv);
-},{}],51:[function(require,module,exports){
-/**
- * Enable/disable selectability of an element
- * @module mucss/selection
- */
-var css = require('./css');
-
-
-/**
- * Disable or Enable any selection possibilities for an element.
- *
- * @param    {Element}   el   Target to make unselectable.
- */
-exports.disable = function(el){
-	css(el, {
-		'user-select': 'none',
-		'user-drag': 'none',
-		'touch-callout': 'none'
-	});
-	el.setAttribute('unselectable', 'on');
-	el.addEventListener('selectstart', pd);
-};
-exports.enable = function(el){
-	css(el, {
-		'user-select': null,
-		'user-drag': null,
-		'touch-callout': null
-	});
-	el.removeAttribute('unselectable');
-	el.removeEventListener('selectstart', pd);
-};
-
-
-/** Prevent you know what. */
-function pd(e){
-	e.preventDefault();
-}
-},{"./css":43}],52:[function(require,module,exports){
-/**
- * Parse translate3d
- *
- * @module mucss/translate
- */
-
-var css = require('./css');
-var parseValue = require('./parse-value');
-
-module.exports = function (el) {
-	var translateStr = css(el, 'transform');
-
-	//find translate token, retrieve comma-enclosed values
-	//translate3d(1px, 2px, 2) → 1px, 2px, 2
-	//FIXME: handle nested calcs
-	var match = /translate(?:3d)?\s*\(([^\)]*)\)/.exec(translateStr);
-
-	if (!match) return null;
-	var values = match[1].split(/\s*,\s*/);
-
-	//parse values
-	//FIXME: nested values are not necessarily pixels
-	return values.map(function (value) {
-		return parseValue(value);
-	});
-};
-},{"./css":43,"./parse-value":48}],53:[function(require,module,exports){
+},{"./listeners":44,"dup":18,"icicle":45}],53:[function(require,module,exports){
+arguments[4][20][0].apply(exports,arguments)
+},{"./fake-element":54,"./prefix":55,"dup":20}],54:[function(require,module,exports){
+arguments[4][21][0].apply(exports,arguments)
+},{"dup":21}],55:[function(require,module,exports){
+arguments[4][26][0].apply(exports,arguments)
+},{"dup":26}],56:[function(require,module,exports){
 /**
  * Clamper.
  * Detects proper clamp min/max.
@@ -2990,7 +3046,7 @@ module.exports = function (el) {
 module.exports = require('./wrap')(function(a, min, max){
 	return max > min ? Math.max(Math.min(a,max),min) : Math.max(Math.min(a,min),max);
 });
-},{"./wrap":57}],54:[function(require,module,exports){
+},{"./wrap":60}],57:[function(require,module,exports){
 /**
  * @module  mumath/loop
  *
@@ -3019,7 +3075,7 @@ module.exports = require('./wrap')(function (value, left, right) {
 
 	return value;
 });
-},{"./wrap":57}],55:[function(require,module,exports){
+},{"./wrap":60}],58:[function(require,module,exports){
 /**
  * @module  mumath/precision
  *
@@ -3039,7 +3095,7 @@ module.exports = require('./wrap')(function(n){
 
 	return !d ? 0 : s.length - d;
 });
-},{"./wrap":57}],56:[function(require,module,exports){
+},{"./wrap":60}],59:[function(require,module,exports){
 /**
  * Precision round
  *
@@ -3062,7 +3118,7 @@ module.exports = require('./wrap')(function(value, step) {
 	value = Math.round(value / step) * step;
 	return parseFloat(value.toFixed(precision(step)));
 });
-},{"./precision":55,"./wrap":57}],57:[function(require,module,exports){
+},{"./precision":58,"./wrap":60}],60:[function(require,module,exports){
 /**
  * Get fn wrapped with array/object attrs recognition
  *
@@ -3102,21 +3158,25 @@ module.exports = function(fn){
 		}
 	};
 };
-},{}],58:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}],59:[function(require,module,exports){
+},{"dup":12}],62:[function(require,module,exports){
 module.exports = function(a){
 	return !!(a && a.apply);
 }
-},{}],60:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],61:[function(require,module,exports){
+},{"dup":13}],64:[function(require,module,exports){
 module.exports = function(a){
 	return typeof a === 'number' || a instanceof Number;
 }
-},{}],62:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 arguments[4][14][0].apply(exports,arguments)
-},{"dup":14}],63:[function(require,module,exports){
+},{"dup":14}],66:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"./lib/sliced":67,"dup":15}],67:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16}],68:[function(require,module,exports){
 var slice = [].slice;
 
 module.exports = function (selector, multiple) {
@@ -3126,7 +3186,7 @@ module.exports = function (selector, multiple) {
     ? (multiple) ? slice.call(ctx.querySelectorAll(selector), 0) : ctx.querySelector(selector)
     : (selector instanceof Node || selector === window || !selector.length) ? (multiple ? [selector] : selector) : slice.call(selector, 0);
 };
-},{}],64:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 module.exports = extend
 
 function extend(target) {
@@ -3143,7 +3203,7 @@ function extend(target) {
     return target
 }
 
-},{}],65:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 /**
  * Picker class.
  * A controller for draggable.
@@ -3168,7 +3228,7 @@ var loop = require('mumath/loop');
 var getUid = require('get-uid');
 var isArray = require('is-array');
 var extend = require('xtend/mutable');
-var getTransformer = require('mumath/wrap');
+var slice = require('sliced');
 
 
 module.exports = Picker;
@@ -3217,67 +3277,18 @@ function Picker (el, options) {
 	//define orientation of picker
 	defineState(self, 'orientation', self.orientation);
 
-	//add change listener, if passed one
-	if (isFn(options.change)) {
-		on(self, 'change', options.change);
-	}
-
 	//adopt options
 	//should go before enabled to set up proper flags
 	extend(self, options);
 
-	//calculate value & step
-	//detect step automatically based on min/max range (1/100 by default)
-	//native behaviour is always 1, so ignore it
-	if (options.step === undefined) {
-		self.step = Picker.detectStep(self.min, self.max);
-	}
-
-	//calc undefined valuea as a middle of range
-	if (options.value === undefined) {
-		self.value = Picker.detectStep(self.min, self.max);
-	}
-
-	//go enabled
-	self.enable();
-
-	//apply type of placement
-	self.orientation = options.orientation;
+	//NOTE: you have to enable picker manually
 }
-
-
-/**
- * Default step detector
- * Step is 0.1 or 1
- */
-Picker.detectStep = function (min, max) {
-	var range = getTransformer(function (a, b) {
-		return Math.abs(a - b);
-	})(max, min);
-
-	var step = getTransformer(function (a) {
-		return a < 100 ? 0.01 : 1;
-	})(range);
-
-	return step;
-};
-
-
-/**
- * Default value detector
- * Default value is half of range
- */
-Picker.detectValue = function (min, max) {
-	return getTransformer(function (a, b) {
-		return (a + b) * 0.5;
-	})(min, max);
-};
 
 
 var proto = Picker.prototype = Object.create(Emitter.prototype);
 
 
-/** Enabled/Disabled state */
+/** Enable/disable picker */
 proto.enable = function () {
 	var self = this;
 
@@ -3293,6 +3304,7 @@ proto.enable = function () {
 
 	//events
 	on(self.draggable, 'dragstart.' + self.ns, function () {
+		//hide cursor
 		css(root, 'cursor', 'none');
 		css(this.element, 'cursor', 'none');
 	});
@@ -3301,21 +3313,23 @@ proto.enable = function () {
 		if (self.release && self.draggable.isAnimated) return;
 
 		var value = self.calcValue.apply(self, self.draggable.getCoords());
-
-		self.value = value;
+		var oldValue = self.value;
 
 		//display snapping
-		if (self.snap) {
-			self.renderValue(self.value);
-		}
+		self.setValue(value, !self.snap);
 
+		self.interaction(self.value, oldValue);
 	});
 	on(self.draggable, 'dragend.' + self.ns, function () {
 		if (self.release) {
+			//set animation flag
 			self.draggable.isAnimated = true;
 		}
 
+		//move to a new position
 		self.renderValue(self.value);
+
+		//get cursor back
 		css(root, 'cursor', null);
 		css(this.element, 'cursor', null);
 	});
@@ -3339,17 +3353,27 @@ proto.enable = function () {
 			if (e.which >= 33 && e.which <= 40) {
 				e.preventDefault();
 
-				self.value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
 
+				var value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
+				var oldValue = self.value;
+
+				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
 
-				self.renderValue(self.value);
+				self.value = value;
+
+				self.interaction(self.value, oldValue);
 			}
 		});
 		on(self.element, 'keyup.' + self.ns, function (e) {
 			self._pressedKeys[e.which] = false;
+
 		});
 	}
+
+	//emit duplicate change
+	//as if change happens when picker is enabled
+	self.emit('change', self.value);
 
 	return self;
 };
@@ -3381,6 +3405,11 @@ proto.disable = function () {
 };
 
 
+proto.interaction = function (value, oldValue) {
+	if (!eq(value, oldValue)) emit(this, 'input', value, oldValue);
+};
+
+
 /** Default min/max values */
 proto.min = 0;
 proto.max = 100;
@@ -3391,7 +3420,7 @@ proto.step = 1;
 
 
 /** Loose snapping while drag */
-proto.snap = false;
+proto.snap = true;
 
 
 /** Animate release movement */
@@ -3406,36 +3435,55 @@ proto.point = false;
 proto.align = 0.5;
 
 
+/**
+ * Set own value
+ *
+ * @param {number|Array} value A value to set
+ */
+proto.setValue = function (value, ignoreRelocation) {
+	if (value === undefined) throw Error('Picker value cannot be undefined.');
+
+	var self = this;
+
+	//apply repeat
+	if (self.repeat) {
+		if (value.length === 2 && self.repeat === 'x') value[0] = loop(value[0], self.min[0], self.max[0]);
+		else if (value.length === 2 && self.repeat === 'y') value[1] = loop(value[1], self.min[1], self.max[1]);
+		else value = loop(value, self.min, self.max);
+	}
+
+	//apply limiting
+	value = between(value, self.min, self.max);
+
+	//round value
+	if (self.step) {
+		if (isFn(self.step)) value = round(value, self.step(value));
+		else value = round(value, self.step);
+	}
+
+	//update position
+	if (!ignoreRelocation) self.renderValue(value);
+
+	//check whether value is actually changed
+	if (!eq(self._value, value)) {
+		self._value = value;
+
+		//trigger change event on self
+		//not the same as native input change
+		self.emit('change', value);
+	}
+
+	return value;
+};
+
+
 /** Current picker value wrapper */
 Object.defineProperties(proto, {
 	value: {
-		set: function (value) {
-			if (value === undefined) throw Error('Picker value cannot be undefined.');
-
-			//apply repeat
-			if (this.repeat) {
-				if (isArray(value) && this.repeat === 'x') value[0] = loop(value[0], this.min[0], this.max[0]);
-				else if (isArray(value) && this.repeat === 'y') value[1] = loop(value[1], this.min[1], this.max[1]);
-				else value = loop(value, this.min, this.max);
-			}
-
-			//apply limiting
-			value = between(value, this.min, this.max);
-
-			//round value
-			if (this.step) {
-				if (isFn(this.step)) value = round(value, this.step(value));
-				else value = round(value, this.step);
-			}
-
-			this._value = value;
-
-			//trigger bubbling event, like all inputs do
-			this.emit('change', value);
-			emit(this.element, 'change', value, true);
-		},
+		set: proto.setValue,
 		get: function () {
-			return this._value;
+			//keep immutability
+			return isArray(this._value) ? slice(this._value) : this._value;
 		}
 	}
 });
@@ -3469,22 +3517,24 @@ proto.handleKeys = function (key, value, step) {};
 
 /** Update self size, pin & position, according to the value */
 proto.update = function () {
+	var self = this;
+
 	//update pin - may depend on element’s size
 	//can’t use `draggable.offsets` here as they might be undefined
-	if (this.point) {
-		this.draggable.pin = [
-			this.element.offsetWidth * this.align,
-			this.element.offsetHeight * this.align
+	if (self.point) {
+		self.draggable.pin = [
+			self.element.offsetWidth * self.align,
+			self.element.offsetHeight * self.align
 		];
 	}
 
 	//update draggable limits
-	this.draggable.update();
+	self.draggable.update();
 
 	//update position according to the value
-	this.renderValue(this.value);
+	self.renderValue(self.value);
 
-	return this;
+	return self;
 };
 
 
@@ -3494,24 +3544,26 @@ proto.move = function (x, y) {
 
 	//correct point placement
 	if (self.point) {
-		var cx = this.draggable.pin.width * this.align;
-		var cy = this.draggable.pin.height * this.align;
-		x = x - this.draggable.pin[0] - cx;
-		y = y - this.draggable.pin[1] - cy;
+		var cx = self.draggable.pin.width * self.align;
+		var cy = self.draggable.pin.height * self.align;
+		x = x - self.draggable.pin[0] - cx;
+		y = y - self.draggable.pin[1] - cy;
 	}
 
 	//if thumb is more than visible area - subtract overflow coord
-	var overflowX = this.draggable.pin.width - this.element.parentNode.clientWidth;
-	var overflowY = this.draggable.pin.height - this.element.parentNode.clientHeight;
+	var overflowX = self.draggable.pin.width - self.element.parentNode.clientWidth;
+	var overflowY = self.draggable.pin.height - self.element.parentNode.clientHeight;
 	if (overflowX > 0) x -= overflowX;
 	if (overflowY > 0) y -= overflowY;
 
-	this.draggable.move(x, y);
+	self.draggable.move(x, y);
+
+	var value = self.calcValue(x, y);
 
 	//set value
-	this.value = this.calcValue(x, y);
+	self.setValue(value, true);
 
-	return this;
+	return self;
 };
 
 
@@ -3568,13 +3620,15 @@ proto.orientation = {
 
 		//place pickers according to the value
 		self.renderValue = function (value) {
+			value = plainify(value);
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			var	lims = self.draggable.limits,
 				scope = lims.right - lims.left,
-				range = self.max - self.min,
-				ratio = (value - self.min) / range,
+				range = max - min,
+				ratio = (value - min) / range,
 				x = ratio * scope;
-
-			// console.log('render', value, ' : ', x)
 
 			self.move(x);
 
@@ -3583,12 +3637,17 @@ proto.orientation = {
 
 		//round value on each drag
 		self.calcValue = function (x) {
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			var lims = self.draggable.limits,
 				scope = lims.right - lims.left,
 				normalValue = (x - lims.left) / scope;
 
-			var value = normalValue * (self.max - self.min) + self.min;
-			// console.log('calc', x, ' : ', value);
+			var value = normalValue * (max - min) + min;
+
+			//keep user format of value
+			if (isArray(self.value)) value = [value];
 
 			return value;
 		};
@@ -3601,10 +3660,13 @@ proto.orientation = {
 
 		//place pickers according to the value
 		self.renderValue = function (value) {
+			value = plainify(value);
+			var max = plainify(self.max);
+			var min = plainify(self.min);
 			var	lims = self.draggable.limits,
 				scope = lims.bottom - lims.top,
-				range = self.max - self.min,
-				ratio = (-value + self.max) / range,
+				range = max - min,
+				ratio = (-value + max) / range,
 				y = ratio * scope;
 			self.move(null, y);
 
@@ -3613,11 +3675,19 @@ proto.orientation = {
 
 		//round value on each drag
 		self.calcValue = function (x, y) {
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			var lims = self.draggable.limits,
 				scope = lims.bottom - lims.top,
 				normalValue = (-y + lims.bottom) / scope;
 
-			return normalValue * (self.max - self.min) + self.min;
+			var value = normalValue * (max - min) + min;
+
+			//keep user format of value
+			if (isArray(self.value)) value = [value];
+
+			return value;
 		};
 
 		self.handleKeys = handle1dkeys;
@@ -3677,15 +3747,18 @@ proto.orientation = {
 		};
 
 		self.renderValue = function (value) {
+			value = plainify(value);
+			var max = plainify(self.max);
+			var min = plainify(self.min);
 			var	lim = self.draggable.limits,
 				hScope = (lim.right - lim.left),
 				vScope = (lim.bottom - lim.top),
 				centerX = hScope * 0.5,
 				centerY = vScope * 0.5;
 
-			var range = self.max - self.min;
+			var range = max - min;
 
-			var	normalValue = (value - self.min) / range;
+			var	normalValue = (value - min) / range;
 			var angle = (normalValue - 0.5) * 2 * Math.PI;
 			self.move(
 				Math.cos(angle) * centerX + centerX,
@@ -3698,6 +3771,9 @@ proto.orientation = {
 				hScope = (lim.right - lim.left),
 				vScope = (lim.bottom - lim.top);
 
+			var max = plainify(self.max);
+			var min = plainify(self.min);
+
 			x = x - hScope * 0.5 + self.draggable.pin[0];
 			y = y - vScope * 0.5 + self.draggable.pin[1];
 
@@ -3708,7 +3784,12 @@ proto.orientation = {
 			var normalValue = angle * 0.5 / Math.PI + 0.5;
 
 			//get value from coords
-			return normalValue * (self.max - self.min) + self.min;
+			var value = normalValue * (max - min) + min;
+
+			//keep user format of value
+			if (isArray(self.value)) value = [value];
+
+			return value;
 		};
 
 		self.handleKeys = handle1dkeys;
@@ -3792,14 +3873,14 @@ proto.orientation = {
 
 /** Increment / decrement API */
 proto.inc = function (timesX, timesY) {
-	if (isArray(this.value)) {
-		this.value[0] = inc(this.value[0], this.step[0], timesX);
-		this.value[1] = inc(this.value[1], this.step[1], timesY);
-		this.renderValue(this.value);
+	if (isArray(this.value) && this.value.length > 1) {
+		var value = this.value;
+		value[0] = inc(value[0], this.step[0], timesX);
+		value[1] = inc(value[1], this.step[1], timesY);
+		this.value = value;
 	} else {
 		var times = timesY || timesX;
 		this.value = inc(this.value, this.step, times);
-		this.renderValue(this.value);
 	}
 };
 
@@ -3808,15 +3889,19 @@ proto.inc = function (timesX, timesY) {
 function inc (value, step, mult) {
 	mult = mult || 0;
 
+	var isArr = isArray(value);
+	value = plainify(value);
+
 	if (isFn(step)) step = step(value + (mult > 0 ? + MIN_STEP : - MIN_STEP));
 
-	return value + step * mult;
+	value += step * mult;
+
+	return isArr ? [value] : value;
 }
 
 
 /** Apply pressed keys on the 2d value */
 function handle2dkeys (keys, value, step, min, max) {
-
 	//up and right - increase by one
 	if (keys[38]) {
 		value[1] = inc(value[1], step[1], 1);
@@ -3896,5 +3981,17 @@ function handle1dkeys (keys, value, step, min, max) {
 
 	return value;
 }
-},{"define-state":3,"draggy":8,"emmy/emit":19,"emmy/off":24,"emmy/on":25,"events":1,"get-uid":28,"is-array":29,"is-function":30,"mucss/css":43,"mumath/between":53,"mumath/loop":54,"mumath/round":56,"mumath/wrap":57,"xtend/mutable":64}]},{},[2])(2)
+
+
+/** If value is an array - return first value of it */
+function plainify (value) {
+	return value.length ? value[0] : value;
+}
+
+/** Whether all inner a’s === b’s */
+function eq (a,b) {
+	if (a && a.length) return a[0] === b[0] && a[1] === b[1];
+	return a === b;
+}
+},{"define-state":3,"draggy":8,"emmy/emit":30,"emmy/off":35,"emmy/on":36,"events":1,"get-uid":39,"is-array":40,"is-function":41,"mucss/css":53,"mumath/between":56,"mumath/loop":57,"mumath/round":59,"sliced":66,"xtend/mutable":69}]},{},[2])(2)
 });

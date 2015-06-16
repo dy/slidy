@@ -112,7 +112,7 @@ describe("Slidy", function () {
 				orientation: 'circular',
 				change: function (e) {
 					css(pointer, {
-						'-webkit-transform': 'rotate(' + (-this.value * 180 / 3.14) + 'deg)'
+						'transform': 'rotate(' + (-this.value * 180 / 3.14) + 'deg)'
 					});
 				}
 			});
@@ -131,7 +131,7 @@ describe("Slidy", function () {
 				orientation: 'polar',
 				change: function (e) {
 					css(pointer, {
-						'-webkit-transform': 'rotate(' + ((this.value[0]) + 180) + 'deg)',
+						'transform': 'rotate(' + ((this.value[0]) + 180) + 'deg)',
 						'width': this.value[1] + 'px'
 					});
 				}
