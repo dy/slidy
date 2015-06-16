@@ -149,13 +149,13 @@ proto.enable = function () {
 
 
 				var value = self.handleKeys(self._pressedKeys, self.value, self.step, self.min, self.max);
+
 				var oldValue = self.value;
 
 				//enable animation
 				if (self.release) self.draggable.isAnimated = true;
 
 				self.value = value;
-
 				self.interaction(self.value, oldValue);
 			}
 		});
@@ -669,8 +669,8 @@ proto.orientation = {
 proto.inc = function (timesX, timesY) {
 	if (isArray(this.value) && this.value.length > 1) {
 		var value = this.value;
-		value[0] = inc(value[0], this.step[0], timesX);
-		value[1] = inc(value[1], this.step[1], timesY);
+		value[0] = inc(value[0], plainify(this.step, 0), timesX);
+		value[1] = inc(value[1], plainify(this.step, 1), timesY);
 		this.value = value;
 	} else {
 		var times = timesY || timesX;
@@ -698,16 +698,16 @@ function inc (value, step, mult) {
 function handle2dkeys (keys, value, step, min, max) {
 	//up and right - increase by one
 	if (keys[38]) {
-		value[1] = inc(value[1], step[1], 1);
+		value[1] = inc(value[1], plainify(step, 1), 1);
 	}
 	if (keys[39]) {
-		value[0] = inc(value[0], step[0], 1);
+		value[0] = inc(value[0], plainify(step, 0), 1);
 	}
 	if (keys[40]) {
-		value[1] = inc(value[1], step[1], -1);
+		value[1] = inc(value[1], plainify(step, 1), -1);
 	}
 	if (keys[37]) {
-		value[0] = inc(value[0], step[0], -1);
+		value[0] = inc(value[0], plainify(step, 0), -1);
 	}
 
 	//meta
@@ -726,12 +726,12 @@ function handle2dkeys (keys, value, step, min, max) {
 
 	//pageup
 	if (keys[33]) {
-		value[coordIdx] = inc(value[coordIdx], step[coordIdx], PAGE);
+		value[coordIdx] = inc(value[coordIdx], plainify(step, coordIdx), PAGE);
 	}
 
 	//pagedown
 	if (keys[34]) {
-		value[coordIdx] = inc(value[coordIdx], step[coordIdx], -PAGE);
+		value[coordIdx] = inc(value[coordIdx], plainify(step, coordIdx), -PAGE);
 	}
 
 
@@ -778,8 +778,8 @@ function handle1dkeys (keys, value, step, min, max) {
 
 
 /** If value is an array - return first value of it */
-function plainify (value) {
-	return value.length ? value[0] : value;
+function plainify (value, i) {
+	return value.length ? value[i || 0] : value;
 }
 
 /** Whether all inner a’s === b’s */

@@ -404,6 +404,8 @@ describe("Slidy", function () {
 		it.skip('snap repeat', function () {
 
 		});
+
+		it.skip('2d picker with 1d step - test keys')
 	});
 
 });
