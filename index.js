@@ -96,7 +96,7 @@ function Slidy(target, options) {
 	}
 	//ensure at least one picker exists
 	else {
-		self.pickers.push(self.createPicker(options.picker));
+		self.pickers.push(self.createPicker(options.pickers));
 	}
 
 	// Define value as active picker value getter
@@ -393,7 +393,7 @@ proto.update = function () {
 /**
  * Create a new picker.
  * It is better to keep it discrete, not as like `addPicker`
- * as it leaves controlling the list of pickers.
+ * as it leaves controlling the list of pickers to user.
  *
  * @param {Object} options Options for draggable
  *
@@ -439,6 +439,21 @@ proto.createPicker = function (options) {
 	var picker = new Picker(el, options);
 
 	return picker;
+};
+
+
+/**
+ * Create & add picker.
+ * A useful name convention for the API.
+ */
+proto.addPicker = function (options) {
+	var self = this;
+
+	var picker = self.createPicker(options);
+
+	self.pickers.push(picker);
+
+	return self;
 };
 
 

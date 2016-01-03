@@ -19,19 +19,7 @@ Customizable range slider component. [Demo](http://dfcreative.github.io/slidy). 
 
 ## Usage
 
-`$ npm install slidy`
-
-```js
-var Slidy = require('slidy');
-
-var slidy = new Slidy({
-	min: 0,
-	max: 100,
-	value: 12
-});
-
-document.body.appendChild(slidy.element);
-```
+[![npm install slidy](https://nodei.co/npm/slidy.png?mini=true)](https://npmjs.org/package/slidy/)
 
 In order to extend supported browsers you may need to polyfill `WeakMap`, `WeakSet`, `Node.prototype.contains`, `MutationObserver`:
 
@@ -40,70 +28,122 @@ In order to extend supported browsers you may need to polyfill `WeakMap`, `WeakS
 https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.prototype.contains
 ```
 
+```js
+var Slidy = require('slidy');
 
-## API
+var slidy = new Slidy(el?, {
+	//Minimum value
+	min: 0,
 
-### Slidy
+	//Maximum value
+	max: 100,
 
-All these parameters can be passed to options or redefined straightly on the prototype.
+	//Round value to the step. Can be a function (value) { return ~~value }.
+	step: 1,
 
-| Option | Description |
-|---|---|
-| `min` | Minimum value. By default 0. |
-| `max` | Maximum value. By default 100. |
-| `value` | Picker value. In case of multiple pickers - first picker's value. By default - `( min - max ) / 2`. |
-| `orientation` | Type of pickers placement: `horizontal`, `vertical`, `cartesian`, `circular`, `polar` |
-| `repeat` | Repeat picker by axis: `'x'`, `'y'` or `'both'`, |
-| `pickerClass` | Class to add to each picker. |
-| `step` | Round value to the step. Can be a function, accepting value and returning rounded value. |
-| `snap` | Snap to steps always or only when released. |
-| `picker` | A picker element to init, if predefined already. Otherwise it will be created. If `pickers` passed - this option will be ignored. |
-| `pickers` | List of picker instances. Can be passed to options as a list of options for each picker. `Slidy({pickers: [{value:0}, {value: 1}, ...] })` |
-| `point` | Make point picker so that it is limited by slider only in one-pixel point. Useful for creating seamless repeating pickers, like hue range in color-picker. |
-| `click` | Enable click interaction or leave only drag. |
-| `keyboard` | Enable keyboard interactions. |
-| `wheel` | Enable mousewheel interactions. |
-| `aria` | Enable aria roles management. |
-| `change` | Change callback, will be instantly bound. The only way to catch initial `change` event. |
+	//Picker value. In case of multiple pickers - first picker's value.
+	value: ( this.min - this.max ) / 2,
 
-| Method | Description |
-|---|---|
-| `update()` | Update all pickers sizes and positions according to their values. |
-| `disable()` | Disable interactivity. |
-| `enable()` | Enable interactivity. |
+	//Type of placement: `horizontal`, `vertical`, `cartesian`, `circular`, `polar`.
+	orientation: 'horizontal',
 
-| Event | Description |
-|---|---|
-| `change` | Called on each value change. |
-| `input` | Called on each user input. |
+	//Repeat picker by axis: `'x'`, `'y'` or `'both'`.
+	repeat: false,
 
 
-### Picker (thumb)
+	//Snap to steps during the drag or only when released.
+	snap: false,
 
-Per-picker options can redefine slidy default options.
+	//List of picker instances.
+	//Can be passed to options as a list of options for each picker.
+	//[{value:0}, {value: 1}, ...]
+	pickers: [],
 
-| Option | Description |
-|---|---|
-| `min` | Minimum value. |
-| `max` | Maximum value. |
-| `value` | Current value of a picker. Changing it doesn’t update position of a picker, to do that, call `picker.renderValue(this.value)` or just `picker.update()`. |
-| `release` | Apply after-animation. |
-| `repeat` | Repeat picker by one of axis: x, y or both. |
+	//Class to add to each picker.
+	pickerClass: 'slidy-picker',
 
-| Method | Description |
-|---|---|
-| `move(x, y)` | Move picker to relative `x`, `y` coordinates, update value. |
-| `inc(times [, timesY])` | Increment/decrement picker value by `this.step` `times`. |
-| `update()` | Update size and position according to the value. |
+	//Make point picker so that it is limited by slider only in one-pixel point. Useful for creating seamless repeating pickers, like hue range in color-picker.
+	point: false,
+
+	//Enable click interaction or leave only drag.
+	click: true,
+
+	//Enable keyboard interactions.
+	keyboard: false,
+
+	//Enable mousewheel interactions.
+	wheel: false,
+
+	//Enable aria roles management.
+	aria: false,
+
+	//Change callback, will be instantly bound.
+	//The only way to catch initial `change` event.
+	change: function (e) { }
+})
+
+//Update all pickers sizes and positions according to their values (window resize etc).
+.update()
+
+//Disable interactivity.
+.disable()
+
+//Enable interactivity.
+.enable()
+
+//Called on value changed.
+.on('change')
+
+//Called on each user input.
+.on('input')
+
+//Append additional picker.
+.addPicker({
+	//Minimum/maximum values.
+	min: 0,
+	max: 100,
+
+	//Current value of a picker. Changing it doesn’t update position of a picker, to do that, call `picker.renderValue(this.value)` or just `picker.update()`.
+	value: 0,
+
+	//Apply after-animation.
+	release: false,
+
+	//Repeat picker by one of axis: x, y or both.
+	repeat: false
+});
+
+
+//Return picker being focused.
+slidy.getActivePicker()
+
+//Move picker to relative `x`, `y` coordinates, update value.
+.move(x, y)
+
+//Increment/decrement picker value by `this.step` `times`.
+.inc(times [, timesY])
+
+//Update size and position of the picker according to the value.
+.update();
+
+
+//Append slidy element to body.
+document.body.appendChild(slidy.element);
+```
+
 
 
 ## What slidy is not
 
 * Image slider. Use swiper, dragdealer or alike to create image sliders. Slidy is conceptually bound to value and it’s range, it is (almost) single-purpose plugin. Nonetheless, it is possible to create [simple carousel with slidy](http://dfcreative.github.io/slidy#carousel).
 * Content scroller. You can use [slidy as a scrollbar](http://dfcreative.github.io/slidy#scrollbar), but scrolling content is not slidy’s duty.
-* Slidy doesn’t paint range or any other visual information, because it is domain-specific data, and interpreting slidy input value[s] is farmed out to user. Slider just provides a reliable mechanism of input. To build domain-specific picker, create a new component, like [color-picker](https://github.com/dfcreative/picky).
+* Slidy doesn’t paint range or any other visual information, because it is domain-specific data, and interpreting slidy input value[s] is up to user. Slider just provides a reliable mechanism of input. To build domain-specific picker, create a new component, like [color-tool](https://github.com/dfcreative/color-tool).
 * Slidy doesn not do non-linear value picking by default, because it supposes linear mapping of screen plot to picking values. The best way to implement [logarithmic or similar non-linear picker](https://dfcreative.github.io/slidy#logarithmic) is to manage value separately in `change` callback.
 * It does not polyfill native input nor provide hidden form input. Both tasks are implementable externally quite easily via `change` callback, having them in code would mean useless lines not fitting exact user needs. It is difficult to decide beforehead how values are to be serialized, e. g. 2d values. Focus of the slidy is to provide reliable and agile mechanism of slider input, but not to provide bunch of interfaces.
 * It does not implement native input DOM event mechanics (`change`, `input`): if you need that, you can implement that via callbacks. It is done so to keep DOM space unpolluted.
 
-[![NPM](https://nodei.co/npm/slidy.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/slidy/)
+
+### Related
+
+> [draggy](https://npmjs.org/package/draggy) — draggable provider which just works.
+> [resizable](https://npmjs.org/package/resizable) — resizable provider for the full suite.

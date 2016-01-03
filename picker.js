@@ -104,7 +104,7 @@ proto.enable = function () {
 	});
 	on(self.draggable, 'drag.' + self.ns, function () {
 		//ignore animated state to avoid collisions of value
-		if (self.release && self.draggable.isAnimated) return;
+		if (self.release && self.draggable.state === 'release') return;
 
 		var value = self.calcValue.apply(self, self.draggable.getCoords());
 		var oldValue = self.value;
@@ -117,7 +117,7 @@ proto.enable = function () {
 	on(self.draggable, 'dragend.' + self.ns, function () {
 		if (self.release) {
 			//set animation flag
-			self.draggable.isAnimated = true;
+			self.draggable.state = 'release';
 		}
 
 		//move to a new position
@@ -153,7 +153,7 @@ proto.enable = function () {
 				var oldValue = self.value;
 
 				//enable animation
-				if (self.release) self.draggable.isAnimated = true;
+				if (self.release) self.draggable.state = 'release';
 
 				self.value = value;
 				self.interaction(self.value, oldValue);
