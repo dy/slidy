@@ -415,6 +415,13 @@ test('Multiple sliders', function () {
 	var slidy = Slidy.cache.get(el);
 
 	// var picker
-	var pickerEl = document.createElement('div');
-	// slidy.addPicker()
+	var pickerEl1 = document.createElement('div');
+	slidy.addPicker(pickerEl1, {
+		value: [40, 50]
+	})
+
+	var pickerEl2 = document.createElement('div');
+	slidy.addPicker(pickerEl2, {
+		value: [-40, -50]
+	});
 });

@@ -102,10 +102,12 @@ function Slidy(target, options) {
 	//FIXME: case of multiple pickers
 	Object.defineProperty(self, 'value', {
 		set: function (value) {
-			this.getActivePicker().value = value;
+			var picker = this.getActivePicker();
+			picker && (picker.value = value);
 		},
 		get: function () {
-			return this.getActivePicker().value;
+			var picker = this.getActivePicker();
+			return picker && picker.value;
 		}
 	});
 
@@ -320,21 +322,6 @@ proto.enable = function () {
 
 	//enable pickers
 	self.pickers.forEach(function (picker) {
-		//on picker change trigger own change
-		picker.on('change', function (value) {
-			if (self.aria) {
-				//set aria value
-				self.element.setAttribute('aria-valuenow', value);
-				self.element.setAttribute('aria-valuetext', value);
-			}
-			self.emit('change', value);
-		})
-
-		//observe drag, treat as user input
-		.on('input', function (value, oldValue) {
-			self.emit('input', value, oldValue);
-		});
-
 		//enable picker - init value
 		picker.enable();
 	});
@@ -398,13 +385,13 @@ proto.update = function () {
  *
  * @return {Picker} New picker instance
  */
-proto.createPicker = function (options) {
+proto.createPicker = function (el, options) {
 	var self = this;
 
-	//if opts is element - treat it as element for the picker
-	if (options instanceof Element) options = {
-		element: options
-	};
+	if (!options) {
+		options = el;
+		el = null;
+	}
 
 	options = extend({
 		within: self.element,
@@ -424,18 +411,32 @@ proto.createPicker = function (options) {
 		value: self.value
 	}, options);
 
-	var el = options.element || document.createElement('div');
+	el = el || document.createElement('div');
 
 	if (self.aria) {
 		//add ARIA
 		el.setAttribute('aria-describedby', self.element.id);
 	}
-
 	//place picker to self
 	//need to be appended before to bubble events
 	self.element.appendChild(el);
-
 	var picker = new Picker(el, options);
+
+
+	//on picker change trigger own change
+	picker.on('change', function (value) {
+		if (self.aria) {
+			//set aria value
+			self.element.setAttribute('aria-valuenow', value);
+			self.element.setAttribute('aria-valuetext', value);
+		}
+		self.emit('change', value);
+	})
+
+	//observe drag, treat as user input
+	.on('input', function (value, oldValue) {
+		self.emit('input', value, oldValue);
+	});
 
 	return picker;
 };
@@ -445,12 +446,17 @@ proto.createPicker = function (options) {
  * Create & add picker.
  * A useful name convention for the API.
  */
-proto.addPicker = function (options) {
+proto.addPicker = function (el, options) {
 	var self = this;
 
-	var picker = self.createPicker(options);
+	var picker = self.createPicker(el, options);
 
 	self.pickers.push(picker);
+
+	if (self.isEnabled) {
+		picker.enable();
+		self.update();
+	}
 
 	return self;
 };

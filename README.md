@@ -141,5 +141,5 @@ https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.pro
 
 ### Related
 
-> [draggy](https://npmjs.org/package/draggy) — draggable provider which just works.
-> [resizable](https://npmjs.org/package/resizable) — resizable provider for the full suite.
+> [draggy](https://npmjs.org/package/draggy) — draggable provider which just works.<br/>
+> [resizable](https://npmjs.org/package/resizable) — resizable provider for the full suite.<br/>

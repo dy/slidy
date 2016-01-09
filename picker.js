@@ -48,7 +48,6 @@ function Picker (el, options) {
 	if (!(this instanceof Picker)) return new Picker(el, options);
 
 	var self = this;
-
 	el.classList.add('slidy-picker');
 	self.element = el;
 
