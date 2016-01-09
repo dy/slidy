@@ -1,4 +1,4 @@
-# Slidy [![Code Climate](https://codeclimate.com/github/dfcreative/slidy/badges/gpa.svg)](https://codeclimate.com/github/dfcreative/slidy) ![deps](https://david-dm.org/dfcreative/slidy.svg) ![size](https://img.shields.io/badge/size-11.4kb-brightgreen.svg) [![unstable](http://badges.github.io/stability-badges/dist/unstable.svg)](http://github.com/badges/stability-badges)
+# Slidy [![unstable](http://badges.github.io/stability-badges/dist/unstable.svg)](http://github.com/badges/stability-badges)
 
 Customizable range slider component. [Demo](http://dfcreative.github.io/slidy). [Tests](http://cdn.rawgit.com/dfcreative/slidy).
 
@@ -66,10 +66,10 @@ var slidy = new Slidy(el?, {
 //Enable interactivity.
 .enable()
 
-//Calle on value changes.
+//Calls fn on value changes.
 .on('change', fn)
 
-//Calle on user inputs.
+//Calls fn on user inputs.
 .on('input', fn)
 
 //Append additional picker.
@@ -78,7 +78,12 @@ var slidy = new Slidy(el?, {
 	value: 0,
 
 	//Apply release-animation.
-	release: false
+	release: false,
+
+	//Unlikely you want to redefine slidy’s params, but in case
+	min: slidy.min,
+	max: slidy.max,
+	point: slidy.point
 });
 
 
@@ -107,7 +112,7 @@ https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.pro
 ```
 
 
-
+<!--
 ## Features
 
 * Range input API
@@ -121,12 +126,12 @@ https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.pro
 * Keyboard
 * Sniper mode
 * Animations
-
+-->
 
 
 ## What slidy is not
 
-* Image slider. Use swiper, dragdealer or alike to create image sliders. Slidy is conceptually bound to value and it’s range, it is (almost) single-purpose plugin. Nonetheless, it is possible to create [simple carousel with slidy](http://dfcreative.github.io/slidy#carousel).
+* Image slider. Use [swiper](https://github.com/nolimits4web/swiper/), [dragdealer](https://github.com/skidding/dragdealer) or alike to create image sliders. Slidy is conceptually bound to value and it’s range, it is single-purpose plugin. Nonetheless, it is possible to create [simple carousel with slidy](http://dfcreative.github.io/slidy#carousel).
 * Content scroller. You can use [slidy as a scrollbar](http://dfcreative.github.io/slidy#scrollbar), but scrolling content is not slidy’s duty.
 * Slidy doesn’t paint range or any other visual information, because it is domain-specific data, and interpreting slidy input value[s] is up to user. Slider just provides a reliable mechanism of input. To build domain-specific picker, create a new component, like [color-tool](https://github.com/dfcreative/color-tool).
 * Slidy doesn not do non-linear value picking by default, because it supposes linear mapping of screen plot to picking values. The best way to implement [logarithmic or similar non-linear picker](https://dfcreative.github.io/slidy#logarithmic) is to manage value separately in `change` callback.
