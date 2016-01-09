@@ -90,16 +90,16 @@ function Slidy(target, options) {
 	self.pickers = [];
 	if (isArray(options.pickers) && options.pickers.length) {
 		options.pickers.forEach(function (opts) {
-			var picker = self.createPicker(opts);
-			self.pickers.push(picker);
+			self.addPicker(opts);
 		});
 	}
-	//ensure at least one picker exists
-	else {
-		self.pickers.push(self.createPicker(options.pickers));
+	//ensure at least one picker exists, if not passed in options separately
+	else if (!options.hasOwnProperty('pickers')) {
+		self.addPicker(options.pickers);
 	}
 
 	// Define value as active picker value getter
+	//FIXME: case of multiple pickers
 	Object.defineProperty(self, 'value', {
 		set: function (value) {
 			this.getActivePicker().value = value;
@@ -108,7 +108,6 @@ function Slidy(target, options) {
 			return this.getActivePicker().value;
 		}
 	});
-
 
 	if (self.aria) {
 		//a11y

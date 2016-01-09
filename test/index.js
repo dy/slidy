@@ -1,7 +1,7 @@
 var Slidy = require('../');
 var css = require('mucss');
 var assert = require('assert');
-var test = require('tst');
+var test = require('tst')//.only();
 
 //TODO: handle same-value case for 2 & more pickers
 //TODO: centrize position
@@ -400,3 +400,21 @@ test.skip('snap repeat', function () {
 });
 
 test.skip('2d picker with 1d step - test keys');
+
+
+
+test('Multiple sliders', function () {
+	var el = createSlider('rectangular', {
+		orientation: 'cartesian',
+		min: [-100, -100],
+		max: [100, 100],
+		point: true,
+		pickers: null
+	});
+
+	var slidy = Slidy.cache.get(el);
+
+	// var picker
+	var pickerEl = document.createElement('div');
+	// slidy.addPicker()
+});

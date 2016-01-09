@@ -204,7 +204,10 @@ proto.interaction = function (value, oldValue) {
 };
 
 
-/** Default min/max values */
+/**
+ * Default min/max values.
+ * Copied from slidy container.
+ */
 proto.min = 0;
 proto.max = 100;
 
@@ -225,7 +228,10 @@ proto.release = false;
 proto.point = false;
 
 
-/** Picker alignment relative to the mouse. Redefined by slidy, but to prevent empty value it is set to number. */
+/**
+ * Picker alignment relative to the mouse.
+ * Redefined by slidy, but to prevent empty value it is set to number.
+ */
 proto.align = 0.5;
 
 
@@ -238,7 +244,6 @@ proto.setValue = function (value, ignoreRelocation) {
 	if (value === undefined) throw Error('Picker value cannot be undefined.');
 
 	var self = this;
-
 	//apply repeat
 	if (self.repeat) {
 		if (value.length === 2 && self.repeat === 'x') value[0] = loop(value[0], self.min[0], self.max[0]);
@@ -321,7 +326,6 @@ proto.update = function () {
 			self.element.offsetHeight * self.align
 		];
 	}
-
 	//update draggable limits
 	self.draggable.update();
 
@@ -353,7 +357,6 @@ proto.move = function (x, y) {
 	self.draggable.move(x, y);
 
 	var value = self.calcValue(x, y);
-
 	//set value
 	self.setValue(value, true);
 
@@ -421,7 +424,7 @@ proto.orientation = {
 			var	lims = self.draggable.limits,
 				scope = lims.right - lims.left,
 				range = max - min,
-				ratio = (value - min) / range,
+				ratio = (value - min) / range || 0,
 				x = ratio * scope;
 
 			self.move(x);
@@ -460,7 +463,7 @@ proto.orientation = {
 			var	lims = self.draggable.limits,
 				scope = lims.bottom - lims.top,
 				range = max - min,
-				ratio = (-value + max) / range,
+				ratio = (-value + max) / range || 0,
 				y = ratio * scope;
 			self.move(null, y);
 
@@ -496,8 +499,8 @@ proto.orientation = {
 				vScope = (lim.bottom - lim.top);
 			var hRange = self.max[0] - self.min[0],
 				vRange = self.max[1] - self.min[1],
-				ratioX = (value[0] - self.min[0]) / hRange,
-				ratioY = (-value[1] + self.max[1]) / vRange;
+				ratioX = (value[0] - self.min[0]) / hRange || 0,
+				ratioY = (-value[1] + self.max[1]) / vRange || 0;
 
 			self.move(ratioX * hScope, ratioY * vScope);
 
@@ -552,7 +555,7 @@ proto.orientation = {
 
 			var range = max - min;
 
-			var	normalValue = (value - min) / range;
+			var	normalValue = (value - min) / range || 0;
 			var angle = (normalValue - 0.5) * 2 * Math.PI;
 			self.move(
 				Math.cos(angle) * centerX + centerX,

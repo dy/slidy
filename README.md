@@ -2,31 +2,8 @@
 
 Customizable range slider component. [Demo](http://dfcreative.github.io/slidy). [Tests](http://cdn.rawgit.com/dfcreative/slidy).
 
-## Features
-
-* Range input API
-* 2d mode
-* Polar/circular mode
-* Multuple thumbs
-* Looping
-* Multitouch
-* Accessibility
-* Wheel
-* Keyboard
-* Sniper mode
-* Animations
-
-
-## Usage
 
 [![npm install slidy](https://nodei.co/npm/slidy.png?mini=true)](https://npmjs.org/package/slidy/)
-
-In order to extend supported browsers you may need to polyfill `WeakMap`, `WeakSet`, `Node.prototype.contains`, `MutationObserver`:
-
-
-```html
-https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.prototype.contains
-```
 
 ```js
 var Slidy = require('slidy');
@@ -38,7 +15,7 @@ var slidy = new Slidy(el?, {
 	//Maximum value
 	max: 100,
 
-	//Round value to the step. Can be a function (value) { return ~~value }.
+	//Step of the value. Can be a function (value) { return Math.round(value); }.
 	step: 1,
 
 	//Picker value. In case of multiple pickers - first picker's value.
@@ -50,19 +27,17 @@ var slidy = new Slidy(el?, {
 	//Repeat picker by axis: `'x'`, `'y'` or `'both'`.
 	repeat: false,
 
-
 	//Snap to steps during the drag or only when released.
 	snap: false,
 
-	//List of picker instances.
-	//Can be passed to options as a list of options for each picker.
+	//Options for picker instances (see addPicker method).
 	//[{value:0}, {value: 1}, ...]
 	pickers: [],
 
 	//Class to add to each picker.
 	pickerClass: 'slidy-picker',
 
-	//Make point picker so that it is limited by slider only in one-pixel point. Useful for creating seamless repeating pickers, like hue range in color-picker.
+	//Make pickers single-ponted.
 	point: false,
 
 	//Enable click interaction or leave only drag.
@@ -91,26 +66,19 @@ var slidy = new Slidy(el?, {
 //Enable interactivity.
 .enable()
 
-//Called on value changed.
-.on('change')
+//Calle on value changes.
+.on('change', fn)
 
-//Called on each user input.
-.on('input')
+//Calle on user inputs.
+.on('input', fn)
 
 //Append additional picker.
 .addPicker({
-	//Minimum/maximum values.
-	min: 0,
-	max: 100,
-
-	//Current value of a picker. Changing it doesn’t update position of a picker, to do that, call `picker.renderValue(this.value)` or just `picker.update()`.
+	//Starting value of a picker.
 	value: 0,
 
-	//Apply after-animation.
-	release: false,
-
-	//Repeat picker by one of axis: x, y or both.
-	repeat: false
+	//Apply release-animation.
+	release: false
 });
 
 
@@ -130,6 +98,29 @@ slidy.getActivePicker()
 //Append slidy element to body.
 document.body.appendChild(slidy.element);
 ```
+
+In order to extend supported browsers you may need to polyfill `WeakMap`, `WeakSet`, `Node.prototype.contains`, `MutationObserver`:
+
+
+```html
+https://cdn.polyfill.io/v1/polyfill.js?features=default,WeakMap,WeakSet,Node.prototype.contains
+```
+
+
+
+## Features
+
+* Range input API
+* 2d mode
+* Polar/circular mode
+* Multuple thumbs
+* Looping
+* Multitouch
+* Accessibility
+* Wheel
+* Keyboard
+* Sniper mode
+* Animations
 
 
 

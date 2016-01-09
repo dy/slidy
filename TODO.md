@@ -1,6 +1,7 @@
 * multiple selectors, as in sound-bg-gen
 * spiral selectors, as in sound-bg-gen
 * addPicker method
+* Resize pickers
 * demo-page
 
 ## Cases

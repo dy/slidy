@@ -12,24 +12,25 @@
     "test": "test"
   },
   "dependencies": {
-    "contains": "^0.1.1",
-    "define-state": "^1.0.0",
-    "draggy": "^1.1.8",
-    "emmy": "^5.2.5",
+    "contains": "latest",
+    "define-state": "^1.x",
+    "draggy": "^1.x",
+    "emmy": "^5.x",
     "get-client-xy": "^1.0.1",
-    "get-uid": "^1.0.1",
-    "is-array": "^1.0.1",
-    "is-function": "^1.0.1",
+    "get-uid": ">=1.0.0",
+    "is-array": ">=1.0.0",
+    "is-function": "latest",
     "lifecycle-events": "^1.0.0",
     "mucss": "^1.0",
     "mumath": "^1.0.0",
-    "mutype": "^0.3.9",
     "sliced": ">=0.0.5",
     "st8": "^1.1.0",
-    "tst": "github:dfcreative/tst",
     "xtend": "^4.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "resizable": "^1.0.5",
+    "tst": "^1.0.6"
+  },
   "style": "index.css",
   "scripts": {
     "watch": "watchify -r ./index.js:../ -r mucss -r assert -d -o ./bundle.js",
