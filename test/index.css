@@ -97,10 +97,16 @@
 	height: 100%;
 	box-shadow: inset 0 0 0 2px rgba(0,0,230,.2);
 }
-.slidy.huge .slidy-picker{
+.huge .slidy-picker{
 	width: 50px;
 	height: 50px;
 	border-radius: 25px;
+}
+.slidy-picker:after{
+	content: attr(value);
+}
+.slidy .picker-resizable {
+	border-radius: 1px;
 }
 
 .min, .value, .max{

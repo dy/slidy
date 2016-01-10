@@ -1,7 +1,9 @@
 var Slidy = require('../');
 var css = require('mucss');
 var assert = require('assert');
-var test = require('tst')//.only();
+// var Resizable = require('resizable');
+var Resizable = require('../../resizable/');
+var test = require('tst').only();
 
 //TODO: handle same-value case for 2 & more pickers
 //TODO: centrize position
@@ -25,12 +27,13 @@ function createSlider(name, opts, events){
 		//update value in picker
 		for (var i = 0, l = slidy.pickers.length; i < l; i++){
 			if (slidy.pickers[i].value instanceof Array) {
-				slidy.pickers[i].element.innerHTML =
+				slidy.pickers[i].element.setAttribute('value',
 					slidy.pickers[i].value[0].toFixed(2) +
-					(slidy.pickers[i].value[1] !== undefined ? ',' + slidy.pickers[i].value[1].toFixed(2) : '');
+					(slidy.pickers[i].value[1] !== undefined ? ',' + slidy.pickers[i].value[1].toFixed(2) : '')
+					);
 			}
 			else {
-				slidy.pickers[i].element.innerHTML = slidy.pickers[i].value.toFixed(2);
+				slidy.pickers[i].element.setAttribute('value', slidy.pickers[i].value.toFixed(2));
 			}
 		}
 
@@ -403,22 +406,29 @@ test.skip('2d picker with 1d step - test keys');
 
 
 
-test('Multiple sliders', function () {
-	var el = createSlider('rectangular', {
+test.only('Multiple sliders', function () {
+	var el = createSlider('rectangular huge', {
 		orientation: 'cartesian',
 		min: [-100, -100],
 		max: [100, 100],
 		point: true,
-		pickers: null
+		pickers: null,
+		click: false
 	});
 
 	var slidy = Slidy.cache.get(el);
 
 	// var picker
 	var pickerEl1 = document.createElement('div');
+	pickerEl1.classList.add('picker-resizable');
+
+	Resizable(pickerEl1, {
+	});
+
 	slidy.addPicker(pickerEl1, {
 		value: [40, 50]
-	})
+	});
+
 
 	var pickerEl2 = document.createElement('div');
 	slidy.addPicker(pickerEl2, {

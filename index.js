@@ -7,7 +7,7 @@
 var Picker = require('./picker');
 
 var extend = require('xtend/mutable');
-var isArray = require('is-array');
+var isArray = require('mutype/is-array');
 
 var lifecycle = require('lifecycle-events');
 var Emitter = require('events');
@@ -17,7 +17,7 @@ var throttle = require('emmy/throttle');
 var getClientX = require('get-client-xy').x;
 var getClientY = require('get-client-xy').y;
 var getUid = require('get-uid');
-var isFn = require('is-function');
+var isFn = require('mutype/is-fn');
 var getTransformer = require('mumath/wrap');
 
 
@@ -215,7 +215,6 @@ proto.enable = function () {
 			//list of active pickers
 			var pickers = [], picker, x, y;
 
-
 			if (e.touches) {
 				//get coords relative to the container (this)
 				for (var i = 0, l = e.touches.length; i < l; i++) {
@@ -410,7 +409,6 @@ proto.createPicker = function (el, options) {
 		point: self.point,
 		value: self.value
 	}, options);
-
 	el = el || document.createElement('div');
 
 	if (self.aria) {

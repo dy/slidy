@@ -15,12 +15,12 @@ var on = require('emmy/on');
 var off = require('emmy/off');
 var css = require('mucss/css');
 var Emitter = require('events');
-var isFn = require('is-function');
+var isFn = require('mutype/is-fn');
 var round = require('mumath/round');
 var between = require('mumath/between');
 var loop = require('mumath/loop');
 var getUid = require('get-uid');
-var isArray = require('is-array');
+var isArray = require('mutype/is-array');
 var extend = require('xtend/mutable');
 var slice = require('sliced');
 
@@ -96,6 +96,9 @@ proto.enable = function () {
 	self.element.removeAttribute('disabled');
 
 	//events
+	on(self.element, 'resize.' + self.ns, function () {
+		self.update();
+	});
 	on(self.draggable, 'dragstart.' + self.ns, function () {
 		//hide cursor
 		css(root, 'cursor', 'none');
@@ -183,9 +186,13 @@ proto.disable = function () {
 	self.element.setAttribute('disabled', true);
 
 	//unbind events
+	off(self.element,'resize.' + self.ns);
 	off(self.element,'dragstart.' + self.ns);
+	off(self.draggable,'dragstart.' + self.ns);
 	off(self.element,'drag.' + self.ns);
+	off(self.draggable,'drag.' + self.ns);
 	off(self.element,'dragend.' + self.ns);
+	off(self.draggable,'dragend.' + self.ns);
 
 	if (self.keyboard) {
 		//make unfocusable
@@ -317,14 +324,8 @@ proto.handleKeys = function (key, value, step) {};
 proto.update = function () {
 	var self = this;
 
-	//update pin - may depend on element’s size
-	//can’t use `draggable.offsets` here as they might be undefined
-	if (self.point) {
-		self.draggable.pin = [
-			self.element.offsetWidth * self.align,
-			self.element.offsetHeight * self.align
-		];
-	}
+	self.updatePin();
+
 	//update draggable limits
 	self.draggable.update();
 
@@ -334,6 +335,19 @@ proto.update = function () {
 	return self;
 };
 
+/** Update pin only */
+proto.updatePin = function () {
+	var self = this;
+
+	//update pin - may depend on element’s size
+	//can’t use `draggable.offsets` here as they might be undefined
+	if (self.point) {
+		self.draggable.pin = [
+			self.element.offsetWidth * self.align,
+			self.element.offsetHeight * self.align
+		];
+	}
+};
 
 /** Move picker to the x, y relative coordinates */
 proto.move = function (x, y) {
